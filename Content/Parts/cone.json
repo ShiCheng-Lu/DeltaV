@@ -1,0 +1,29 @@
+{
+  "name": "cone",
+  "mesh": "/Game/Shapes/Shape_Cone.Shape_Cone",
+  "attachment": [
+    {
+      "location": [ 0, 0, 0 ]
+    }
+  ],
+  "fields": [
+    {
+      "name": "width",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    }
+  ]
+}

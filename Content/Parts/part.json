@@ -1,0 +1,7 @@
+{
+  "name": "part",
+  "mesh": "/Game/Shapes/Shape_Engine.Shape_Engine",
+  "definition": "partdefinition.json",
+  "width": 5,
+  "height": 10
+}
