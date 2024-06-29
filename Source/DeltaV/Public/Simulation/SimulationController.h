@@ -25,10 +25,14 @@ public:
 
 	void SetupInputComponent();
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	ACraft* craft;
 
 	UPROPERTY()
 	USimulationHUD* HUD;
+
+	float ThrottleValue = 0;
 
 	void Throttle(float value);
 
@@ -37,4 +41,5 @@ public:
 	void Pitch(float value);
 	void Roll(float value);
 	void Yaw(float value);
+	void Stage();
 };

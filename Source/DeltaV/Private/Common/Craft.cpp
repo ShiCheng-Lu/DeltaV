@@ -125,7 +125,7 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 
 void ACraft::Throttle(float throttle) {
 	if (Engine) {
-		FVector thrust = FVector(0, 0, 30000 * throttle);
+		FVector thrust = FVector(0, 0, 50000 * throttle);
 		thrust = Engine->GetComponentRotation().RotateVector(thrust);
 		Engine->AddForce(thrust);
 	}

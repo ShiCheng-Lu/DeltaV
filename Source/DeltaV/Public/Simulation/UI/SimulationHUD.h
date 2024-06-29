@@ -6,7 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "SimulationHUD.generated.h"
 
-class UImage;
 class ASimulationController;
 class ACraft;
 
@@ -32,9 +31,12 @@ public:
 	ASimulationController* Controller;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UImage* Navball;
+	TObjectPtr<class UImage> Navball;
 
 	TObjectPtr<class ANavball> NavballActor;
 
 	void SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UProgressBar> Throttle;
 };

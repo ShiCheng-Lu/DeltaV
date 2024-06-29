@@ -4,12 +4,14 @@
 #include "Simulation/SimulationController.h"
 
 #include "GameFramework/PlayerInput.h"
+#include "Components/ProgressBar.h"
 
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
 #include "Common/JsonUtil.h"
 #include "Simulation/SimulationCamera.h"
 #include "Simulation/UI/SimulationHUD.h"
+
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -59,8 +61,10 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::LeftShift, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::LeftControl, -1.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::LeftShift, 0.01f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::LeftControl, -0.01f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::X, -1));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::Z, 1));
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
@@ -68,22 +72,34 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("RightClick", EKeys::RightMouseButton));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("MiddleClick", EKeys::MiddleMouseButton));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Stage", EKeys::SpaceBar));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
 
 	InputComponent->BindAxis("Throttle", this, &ASimulationController::Throttle);
+
+
 	InputComponent->BindAxis("CameraZoom", this, &ASimulationController::Zoom);
 
 	InputComponent->BindAxis("Pitch", this, &ASimulationController::Pitch);
 	InputComponent->BindAxis("Roll", this, &ASimulationController::Roll);
 	InputComponent->BindAxis("Yaw", this, &ASimulationController::Yaw);
+
+	InputComponent->BindAction("Stage", EInputEvent::IE_Pressed, this, &ASimulationController::Stage);
 }
 
 
 void ASimulationController::Throttle(float value) {
 	if (value != 0 && craft) {
-		craft->Throttle(value);
+		ThrottleValue = FMath::Clamp(ThrottleValue + value, 0, 1);
+		HUD->Throttle->SetPercent(ThrottleValue);
 	}
+}
+
+void ASimulationController::Tick(float DeltaSeconds) {
+	Super::Tick(DeltaSeconds);
+	craft->Throttle(ThrottleValue);
 }
 
 void ASimulationController::Zoom(float value) {
@@ -106,4 +122,8 @@ void ASimulationController::Yaw(float value) {
 	if (value != 0) {
 		craft->Rotate(FRotator(0, 90, 0), 100000000 * value);
 	}
+}
+void ASimulationController::Stage() {
+	auto NewCraft = GetWorld()->SpawnActor<ACraft>();
+	// craft->DetachPart(, NewCraft);
 }

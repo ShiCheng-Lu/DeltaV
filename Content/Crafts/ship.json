@@ -40,5 +40,17 @@
       "scale": [ 1, 1, 1 ],
       "attached_at": 1
     }
+  },
+  "stages": [
+    {
+      "attachment_part": "engine-1",
+      "parts": [ "" ]
+    }
+  ],
+  "engine_group": {
+    "group_id": {
+      "engines": [ "engine-1" ],
+      "fuel_tanks": ["cylinder-2", "cylinder-1"]
+    }
   }
 }
