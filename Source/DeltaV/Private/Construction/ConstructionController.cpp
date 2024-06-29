@@ -7,9 +7,13 @@
 
 #include "Common/JsonUtil.h"
 #include "Common/Part.h"
+#include "Common/AttachmentNode.h"
 #include "Construction/ConstructionCraft.h"
 #include "Construction/UI/ConstructionHUD.h"
+#include "Construction/PartShapeEditor.h"
 
+#include "DynamicMeshActor.h"
+#include "Components/DynamicMeshComponent.h"
 
 AConstructionController::AConstructionController() {
 
@@ -66,6 +70,39 @@ void AConstructionController::SetupInputComponent() {
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::I, 0.1f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::K, -0.1f));
 	InputComponent->BindAxis("Throttle", this, &AConstructionController::Throttle);
+
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
+	InputComponent->BindAction("DebugAction", IE_Pressed, this, &AConstructionController::DebugAction);
+}
+
+void AConstructionController::DebugAction() {
+	UPartShapeEditor* ShapeEditor = NewObject<UPartShapeEditor>();
+	SelectedPart->GetStaticMesh()->GetBounds().GetBox().GetVertices(ShapeEditor->TargetBound);
+	
+	double size = ShapeEditor->TargetBound[1].Z - ShapeEditor->TargetBound[0].Z;
+	ShapeEditor->TargetBound[0].Z += size * 0.1;
+	ShapeEditor->TargetBound[1].Z -= size * 0.1;
+	ShapeEditor->TargetBound[3].Z += size * 0.1;
+	ShapeEditor->TargetBound[5].Z -= size * 0.1;
+	
+	UE::Geometry::FDynamicMesh3 Mesh = ShapeEditor->Initialize(SelectedPart->GetStaticMesh());
+
+
+	UE_LOG(LogTemp, Warning, TEXT("Base Bound %s %s"), *ShapeEditor->BoundPosition.ToString(), *ShapeEditor->BoundSize.ToString());
+	for (int i = 0; i < 8; ++i) {
+		UE_LOG(LogTemp, Warning, TEXT("Target Bound %s"), *ShapeEditor->TargetBound[i].ToString());
+	}
+
+	UDynamicMesh* DynamicMesh = NewObject<UDynamicMesh>();
+
+	ADynamicMeshActor* NewActor = GetWorld()->SpawnActor<ADynamicMeshActor>();
+	NewActor->SetActorLocation(FVector(-200, -200, 0));
+	NewActor->GetDynamicMeshComponent()->SetDynamicMesh(DynamicMesh);
+	//DynamicMesh->bEnableMeshGenerator = true;
+	//DynamicMesh->SetMeshGenerator(ShapeEditor);
+	ShapeEditor->Generate(Mesh);
+	DynamicMesh->SetMesh(Mesh);
+	
 }
 
 UPart* AConstructionController::PlaceHeldPart() {
@@ -148,7 +185,7 @@ void AConstructionController::HandleClick(FKey Key) {
 						Selected = NewCraft;
 					}
 
-					UE_LOG(LogTemp, Warning, TEXT("Selected part %s - %s"), *SelectedPart->Id, *Selected->GetActorGuid().ToString());
+					UE_LOG(LogTemp, Warning, TEXT("Selected part %s - %d"), *SelectedPart->Id, Selected->GetUniqueID());
 
 					// Craft->SetAttachmentNodeVisibility(false);
 				}
@@ -170,7 +207,7 @@ void AConstructionController::HandleClick(FKey Key) {
 			if (GEngine) {
 				FHitResult result;
 				if (GetHitResultUnderCursor(ECC_WorldStatic, true, result)) {
-					FGuid actorGuid = result.GetComponent()->GetOwner()->GetActorGuid();
+					int actorGuid = result.GetComponent()->GetOwner()->GetUniqueID();
 					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::FromInt(result.GetComponent()->GetOwner()->GetUniqueID()));
 				}
 			}
@@ -188,7 +225,7 @@ void AConstructionController::Save() {
 	if (!Craft) {
 		return;
 	}
-	JsonUtil::WriteFile(FPaths::ProjectDir() + "Content/Crafts/ship2.json", Craft->Json);
+	JsonUtil::WriteFile(FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json"), Craft->Json);
 }
 
 void AConstructionController::Load() {

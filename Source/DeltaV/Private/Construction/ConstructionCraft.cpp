@@ -4,6 +4,7 @@
 #include "Construction/ConstructionCraft.h"
 
 #include "Common/JsonUtil.h"
+#include "Common/AttachmentNode.h"
 
 AConstructionCraft::AConstructionCraft(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) 
@@ -14,7 +15,6 @@ AConstructionCraft::AConstructionCraft(const FObjectInitializer& ObjectInitializ
 void AConstructionCraft::Initialize(TSharedPtr<FJsonObject> CraftJson) {
 	Super::Initialize(CraftJson);
 
-	SetRootComponent(RootPart);
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
 
@@ -52,8 +52,8 @@ void AConstructionCraft::AttachPart(AConstructionCraft* SourceCraft, UPart* Atta
 	}
 }
 
-void AConstructionCraft::DetachPart(UPart* Part, AConstructionCraft* NewCraft) {
-	Super::DetachPart(Part, NewCraft);
+void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCraft) {
+	Super::DetachPart(DetachPart, NewCraft);
 
 	auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 	auto AttachemtnRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);

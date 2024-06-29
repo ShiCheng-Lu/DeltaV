@@ -50,5 +50,8 @@ public:
 
 	void DetachPart(UPart* Part, ACraft* NewCraft);
 
+	// control
+	void Rotate(FRotator rotator, float strength);
+
 	void Throttle(float throttle);
 };

@@ -7,6 +7,7 @@
 #include "SimulationController.generated.h"
 
 class ACraft;
+class USimulationHUD;
 
 /**
  * 
@@ -26,7 +27,14 @@ public:
 
 	ACraft* craft;
 
+	UPROPERTY()
+	USimulationHUD* HUD;
+
 	void Throttle(float value);
 
-	// void StageCraft();
+	void Zoom(float value);
+
+	void Pitch(float value);
+	void Roll(float value);
+	void Yaw(float value);
 };

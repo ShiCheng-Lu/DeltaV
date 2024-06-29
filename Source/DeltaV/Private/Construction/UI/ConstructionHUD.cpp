@@ -31,17 +31,13 @@ void UConstructionHUD::NativeOnInitialized() {
 
 	CraftName->SetText(FText::FromString("Hello"));
 
-	Controller = Cast<AConstructionController>(GetOwningPlayer());
+	Controller = GetOwningPlayer<AConstructionController>();
 }
 
 void UConstructionHUD::LaunchButtonClicked() {
 	Controller->Save();
 
-	if (Controller->Craft) {
-		Controller->Craft->Destroy();
-	}
-
-	Cast<UMainGameInstance>(GetGameInstance())->CraftPath = FPaths::ProjectDir() + "Content/Crafts/ship2.json";
+	Cast<UMainGameInstance>(GetGameInstance())->CraftPath = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 
 	UGameplayStatics::OpenLevel(GetWorld(), "Simulation");
 }

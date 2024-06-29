@@ -102,6 +102,7 @@ void AConstructionPawn::MoveForward(float Val)
 
 			FVector Direction = FRotationMatrix(ControlSpaceRot).GetScaledAxis(EAxis::X);
 			Direction.Z = 0;
+			Direction.Normalize();
 			AddMovementInput(Direction, Val);
 		}
 	}

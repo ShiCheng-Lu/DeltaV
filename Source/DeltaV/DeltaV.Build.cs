@@ -8,9 +8,13 @@ public class DeltaV : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "GeometryFramework", "GeometryCore", "DynamicMesh"
+        });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "UMG", "Json" });
+		PrivateDependencyModuleNames.AddRange(new string[] { 
+			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "DynamicMesh" 
+		});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

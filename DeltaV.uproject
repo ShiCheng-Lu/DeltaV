@@ -12,7 +12,8 @@
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"UMG"
+				"UMG",
+				"GeometryFramework"
 			]
 		}
 	],
@@ -23,6 +24,14 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "PCG",
+			"Enabled": true
+		},
+		{
+			"Name": "PCGGeometryScriptInterop",
+			"Enabled": true
 		}
 	]
 }

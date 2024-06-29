@@ -57,6 +57,8 @@ public:
 
 	Mode ConstructionMode = Mode::EditMode;
 
+	void DebugAction();
+
 	void Save();
 
 	void Load();

@@ -12,14 +12,12 @@ UAttachmentNode::UAttachmentNode(const FObjectInitializer& ObjectInitializer) : 
 	// off to improve performance if you don't need them.
 	// PrimaryComponentTick.bCanEverTick = true;
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>SphereMeshAsset(TEXT("/Game/Shapes/Shape_Sphere.Shape_Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>SphereMeshAsset(TEXT("/Game/Shapes/AttachmentNode"));
 
 	SetStaticMesh(SphereMeshAsset.Object);
 	SetRelativeScale3D(FVector(0.1f));
-	SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
-	AttachToComponent(Cast<UPart>(GetOuter()), FAttachmentTransformRules(EAttachmentRule::KeepRelative, true));
-
+	SetupAttachment(Cast<UPart>(GetOuter()));
 }
 
 void UAttachmentNode::Initialize(FVector& InRelativeLocation) {

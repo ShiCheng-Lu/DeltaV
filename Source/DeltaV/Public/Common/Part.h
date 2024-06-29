@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h"
-
-#include "Common/AttachmentNode.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
-
 #include "Part.generated.h"
+
+class UAttachmentNode;
+class UPhysicsConstraintComponent;
 
 /**
  * 
