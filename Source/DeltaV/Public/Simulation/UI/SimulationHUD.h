@@ -39,4 +39,10 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UProgressBar> Throttle;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class USlider> Velocity;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class USlider> Gravity;
 };

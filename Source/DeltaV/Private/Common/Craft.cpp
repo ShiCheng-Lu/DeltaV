@@ -53,7 +53,9 @@ void ACraft::Initialize(TSharedPtr<FJsonObject> InJson)
 	}
 
 	RootPart = *Parts.Find(PartStructures[0].Value->Values.begin().Key());
-	Engine = *Parts.Find("engine-1");
+	if (Parts.Find("engine-1")) {
+		Engine = *Parts.Find("engine-1");
+	}
 	SetRootComponent(RootPart);
 }
 
@@ -132,10 +134,12 @@ void ACraft::Throttle(float throttle) {
 }
 
 void ACraft::Rotate(FRotator rotator, float strength) {
-	FRotator shortest_rotation = rotator;
-	FQuat quaternion = shortest_rotation.Quaternion();
+	if (Engine) {
+		FRotator shortest_rotation = rotator;
+		FQuat quaternion = shortest_rotation.Quaternion();
 
-	FVector rotation_axis = GetActorRotation().RotateVector(quaternion.GetRotationAxis());
+		FVector rotation_axis = GetActorRotation().RotateVector(quaternion.GetRotationAxis());
 
-	Engine->AddTorqueInDegrees(rotation_axis * strength);
+		Engine->AddTorqueInDegrees(rotation_axis * strength);
+	}
 }

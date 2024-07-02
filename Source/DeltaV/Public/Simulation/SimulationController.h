@@ -42,4 +42,13 @@ public:
 	void Roll(float value);
 	void Yaw(float value);
 	void Stage();
+	void ToggleMap();
+
+	float vel = 0;
+	float grav = 0;
+
+	UFUNCTION()
+	void VelChange(float value);
+	UFUNCTION()
+	void GravChange(float value);
 };

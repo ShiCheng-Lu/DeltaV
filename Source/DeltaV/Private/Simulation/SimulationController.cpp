@@ -4,13 +4,17 @@
 #include "Simulation/SimulationController.h"
 
 #include "GameFramework/PlayerInput.h"
+#include "GameFramework/HUD.h"
 #include "Components/ProgressBar.h"
+#include "Components/Slider.h"
 
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
 #include "Common/JsonUtil.h"
 #include "Simulation/SimulationCamera.h"
 #include "Simulation/UI/SimulationHUD.h"
+#include "Simulation/MapViewPawn.h"
+#include "Simulation/OrbitComponent.h"
 
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
@@ -74,6 +78,8 @@ void ASimulationController::SetupInputComponent() {
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Stage", EKeys::SpaceBar));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("ToggleMap", EKeys::M));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
 
@@ -87,6 +93,7 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAxis("Yaw", this, &ASimulationController::Yaw);
 
 	InputComponent->BindAction("Stage", EInputEvent::IE_Pressed, this, &ASimulationController::Stage);
+	InputComponent->BindAction("ToggleMap", EInputEvent::IE_Pressed, this, &ASimulationController::ToggleMap);
 }
 
 
@@ -103,27 +110,72 @@ void ASimulationController::Tick(float DeltaSeconds) {
 }
 
 void ASimulationController::Zoom(float value) {
-	if (value != 0) {
+	if (value != 0 && GetPawn() == craft) {
 		PlayerCameraManager->FreeCamDistance *= (1 - value);
 	}
 }
 
 void ASimulationController::Pitch(float value) {
-	if (value != 0) {
+	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(90, 0, 0), 100000000 * value);
 	}
 }
 void ASimulationController::Roll(float value) {
-	if (value != 0) {
+	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(0, 0, 90), 100000000 * value);
 	}
 }
 void ASimulationController::Yaw(float value) {
-	if (value != 0) {
+	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(0, 90, 0), 100000000 * value);
 	}
 }
 void ASimulationController::Stage() {
 	auto NewCraft = GetWorld()->SpawnActor<ACraft>();
 	// craft->DetachPart(, NewCraft);
+}
+
+
+
+void ASimulationController::VelChange(float value) {
+	vel = value;
+
+	UE_LOG(LogTemp, Warning, TEXT("vel changed %f"), value);
+}
+void ASimulationController::GravChange(float value) {
+	grav = value;
+	UE_LOG(LogTemp, Warning, TEXT("grav changed %f"), value);
+}
+
+void ASimulationController::ToggleMap() {
+	/*
+	if (PlayerCameraManager->FreeCamDistance == 1000) {
+		PlayerCameraManager->FreeCamDistance = 100000000;
+	}
+	else {
+		PlayerCameraManager->FreeCamDistance = 1000;
+		return;
+	}
+	*/
+	// Debug orbit;
+
+	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->Value, HUD->Velocity->Value);
+	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
+	orbit->gravitational_parameter = HUD->Gravity->Value;
+	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(0, HUD->Velocity->Value, 0), FVector(0));
+	
+	TArray<FVector> array;
+	for (int i = 0; i < 36; i++) {
+		array.Add(orbit->GetPosition(10 * i));
+	}
+
+	for (int i = 0; i < 35; i++) {
+		DrawDebugLine(GetWorld(), array[i], array[i + 1], FColor(200, 0, 200), false, 5, 0, 2);
+		UE_LOG(LogTemp, Warning, TEXT("p %d: %s"), i, *array[i].ToString());
+	}
+	// GetHUD()->Draw3DLine(array[0], array[35], FColor(230, 230, 0));
+	DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
+	DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);
+
+	UE_LOG(LogTemp, Warning, TEXT("drawn line supposedly"));
 }

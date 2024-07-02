@@ -4,6 +4,7 @@
 #include "Simulation/UI/SimulationHUD.h"
 
 #include "Components/Image.h"
+#include "Components/Slider.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Common/Craft.h"
@@ -27,6 +28,14 @@ void USimulationHUD::NativeOnInitialized() {
 	Controller = Cast<ASimulationController>(GetOwningPlayer());
 
 	NavballActor = GetWorld()->SpawnActor<ANavball>();
+
+	FScriptDelegate delegate;
+	delegate.BindUFunction(Controller, "VelChanged");
+	Velocity->OnValueChanged.Add(delegate);
+
+	FScriptDelegate delegate1;
+	delegate1.BindUFunction(Controller, "GravChanged");
+	Gravity->OnValueChanged.Add(delegate1);
 }
 
 void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {

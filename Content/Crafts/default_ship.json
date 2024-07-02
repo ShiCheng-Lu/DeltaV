@@ -1,8 +1,37 @@
 {
-  "name": "default",
-  "root": "",
+  "name": "ship name",
   "location": [ 0, 0, 0 ],
   "rotation": [ 0, 0, 0, 1 ],
-  "parts": [
-  ]
+  "structure": {
+    "cylinder-1": {
+      "cylinder-2": {
+        "engine-1": {
+        }
+      }
+    }
+  },
+  "parts": {
+    "cylinder-1": {
+      "type": "cylinder",
+      "location": [ 0, 0, 0 ],
+      "rotation": [ 0, 0, 0, 1 ],
+      "scale": [ 1, 1, 1 ],
+      "attached_at": 1,
+      "attached_with": 1
+    },
+    "engine-1": {
+      "type": "engine",
+      "location": [ 0, -150, -50 ],
+      "rotation": [ 0, 0, 0, 1 ],
+      "scale": [ 1, 1, 1 ],
+      "attached_at": 1
+    },
+    "cylinder-2": {
+      "type": "cylinder",
+      "location": [ 0, 150, -50 ],
+      "rotation": [ 0, 0, 0, 1 ],
+      "scale": [ 1, 1, 1 ],
+      "attached_at": 1
+    }
+  }
 }
