@@ -15,6 +15,7 @@
 #include "Simulation/UI/SimulationHUD.h"
 #include "Simulation/MapViewPawn.h"
 #include "Simulation/OrbitComponent.h"
+#include "Simulation/CelestialBody.h"
 
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
@@ -48,6 +49,8 @@ void ASimulationController::BeginPlay() {
 	HUD->AddToPlayerScreen();
 
 	HUD->SetNavballTarget(craft, FVector(0, 0, 0));
+
+	earth = GetWorld()->SpawnActor<ACelestialBody>();
 }
 
 void ASimulationController::SetupInputComponent() {
@@ -161,21 +164,22 @@ void ASimulationController::ToggleMap() {
 
 	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->Value, HUD->Velocity->Value);
 	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
-	orbit->gravitational_parameter = HUD->Gravity->Value;
-	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(0, HUD->Velocity->Value, 0), FVector(0));
+
+	ACelestialBody* body = NewObject<ACelestialBody>(this);
+	body->mu = HUD->Gravity->Value;
+
+	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(20, HUD->Velocity->Value, 40), body);
 	
 	TArray<FVector> array;
-	for (int i = 0; i < 36; i++) {
-		array.Add(orbit->GetPosition(10 * i));
+	for (int i = 0; i < 360; i++) {
+		array.Add(orbit->GetPosition(i));
 	}
 
-	for (int i = 0; i < 35; i++) {
+	for (int i = 0; i < 359; i++) {
 		DrawDebugLine(GetWorld(), array[i], array[i + 1], FColor(200, 0, 200), false, 5, 0, 2);
-		UE_LOG(LogTemp, Warning, TEXT("p %d: %s"), i, *array[i].ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("p %d: %s"), i, *array[i].ToString());
 	}
 	// GetHUD()->Draw3DLine(array[0], array[35], FColor(230, 230, 0));
 	DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
 	DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);
-
-	UE_LOG(LogTemp, Warning, TEXT("drawn line supposedly"));
 }

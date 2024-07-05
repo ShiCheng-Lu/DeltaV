@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OrbitComponent.generated.h"
 
+class ACelestialBody;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DELTAV_API UOrbitComponent : public UActorComponent
@@ -26,21 +27,19 @@ public:
 
 	
 	double mass;
-	double gravitational_parameter;
+
 	double angular_momentum;
+	FVector axis_of_rotation;
 	double eccentricity;
+	FVector periapsis_direction;
 
 	double orbit_time;
 	double time_at_periapsis;
+	ACelestialBody* central_body;
 
-	FVector periapsis;
-	FVector central_body;
-	FPlane orbital_plane;
-
-	void UpdateOrbit(FVector orbiting_body, FVector velocity, FVector in_central_body);
+	void UpdateOrbit(FVector relative_position, FVector relative_velocity, ACelestialBody* central_body);
 
 	FVector GetPosition(float Time);
 
 	FVector GetVelocity(float Time);
-
 };

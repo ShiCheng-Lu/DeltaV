@@ -28,6 +28,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 	ACraft* craft;
+	TObjectPtr<class ACelestialBody> earth;
 
 	UPROPERTY()
 	USimulationHUD* HUD;

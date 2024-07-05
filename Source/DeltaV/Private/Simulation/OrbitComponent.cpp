@@ -2,6 +2,7 @@
 
 
 #include "Simulation/OrbitComponent.h"
+#include "Simulation/CelestialBody.h"
 
 // Sets default values for this component's properties
 UOrbitComponent::UOrbitComponent()
@@ -33,37 +34,32 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 }
 
-
-void UOrbitComponent::UpdateOrbit(FVector orbiting_body, FVector velocity, FVector in_central_body) {
-	periapsis = orbiting_body;
+void UOrbitComponent::UpdateOrbit(FVector relative_position, FVector relative_velocity, ACelestialBody* in_central_body) {
 	central_body = in_central_body;
 
-	mass = 10;
+	FVector angular_momentum_vector = relative_position.Cross(relative_velocity);
+	axis_of_rotation = angular_momentum_vector.GetSafeNormal();
+	angular_momentum = angular_momentum_vector.SquaredLength();
 
-	orbital_plane = FPlane(central_body, periapsis, periapsis + velocity);
+	double energy = relative_velocity.SquaredLength() / 2 - central_body->mu / relative_position.Length();
+	eccentricity = sqrt(1 + 2 * energy * angular_momentum / (central_body->mu * central_body->mu));
 
-	// constant for an orbit
-	double radius = FVector::Distance(central_body, periapsis);
-	FVector angular_component = velocity.ProjectOnTo(orbital_plane.GetNormal().Cross(orbiting_body - central_body));
-	double angular_velocity = angular_component.Length() / radius;
-	angular_momentum = mass * radius * radius * angular_velocity;
+	// find the periapsis point
+	double angle = FMath::Acos((angular_momentum / (central_body->mu * relative_position.Length()) - 1) / eccentricity);
 
-	double radial_velocity = (velocity - angular_component).Length();
+	periapsis_direction = relative_position.RotateAngleAxisRad(angle, axis_of_rotation);
+	periapsis_direction.Normalize();
 
-	// double energy = mass * gravitational_parameter + mass * velocity.SquaredLength();
-	eccentricity = angular_momentum * angular_momentum / (mass * mass * gravitational_parameter * radius) - 1;
-
-	UE_LOG(LogTemp, Warning, TEXT("setup: %f, %f"), angular_momentum, eccentricity);
+	UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), angular_momentum, eccentricity, angle);
 }
 
 FVector UOrbitComponent::GetPosition(float Time) {
 	double angle = FMath::DegreesToRadians(Time);
-	double radius = angular_momentum * angular_momentum / (mass * mass * gravitational_parameter * (1 + eccentricity * FMath::Cos(angle)));
+	double radius = angular_momentum / (central_body->mu + central_body->mu * eccentricity * FMath::Cos(angle));
 
-	FVector result = (periapsis - central_body).RotateAngleAxisRad(angle, orbital_plane.GetNormal());
-	result.Normalize();
+	FVector result = periapsis_direction.RotateAngleAxisRad(angle, axis_of_rotation);
 
-	return result * radius + central_body;
+	return result * radius;
 }
 
 FVector UOrbitComponent::GetVelocity(float Time) {
