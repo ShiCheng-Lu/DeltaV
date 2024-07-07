@@ -7,6 +7,7 @@
 #include "GameFramework/HUD.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
@@ -25,10 +26,23 @@ ASimulationController::ASimulationController(const FObjectInitializer& ObjectIni
 }
 
 void ASimulationController::BeginPlay() {
-	FString Path = Cast<UMainGameInstance>(GetGameInstance())->CraftPath;
-
 	SetShowMouseCursor(true);
 	SetInputMode(FInputModeGameAndUI());
+
+	// get references to the celestial bodies placed in the world
+	TArray<AActor*> celestial_bodies;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACelestialBody::StaticClass(), celestial_bodies);
+
+	if (celestial_bodies.Num() > 0) {
+		earth = (ACelestialBody*)celestial_bodies[0];
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("No celestial body"));
+		return;
+	}
+
+	FString Path = Cast<UMainGameInstance>(GetGameInstance())->CraftPath;
+
 
 	UE_LOG(LogTemp, Warning, TEXT("Path: %s"), *Path);
 
@@ -37,10 +51,20 @@ void ASimulationController::BeginPlay() {
 		UE_LOG(LogTemp, Warning, TEXT("No craft, using default"));
 	}
 
+	FActorSpawnParameters spawn_parameters;
 	craft = GetWorld()->SpawnActor<ACraft>();
 	craft->Initialize(JsonUtil::ReadFile(Path));
 
+	FVector origin, extent;
+	craft->GetActorBounds(true, origin, extent);
+	UE_LOG(LogTemp, Warning, TEXT("craft bounds %s %s"), *origin.ToString(), *extent.ToString());
+
+	craft->SetActorLocation(FVector(-(earth->radius * 100 + extent.Z), 0, 0));
+	craft->SetActorRotation(FRotator(90, 0, 0));
+	craft->SetPhysicsEnabled(true);
+
 	Possess(craft);
+	SetControlRotation(FRotator(0));
 
 	PlayerCameraManager->SetViewTarget(craft);
 	PlayerCameraManager->FreeCamDistance = 1000;
@@ -50,7 +74,7 @@ void ASimulationController::BeginPlay() {
 
 	HUD->SetNavballTarget(craft, FVector(0, 0, 0));
 
-	earth = GetWorld()->SpawnActor<ACelestialBody>();
+	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *craft->GetActorLocation().ToString(), earth->radius);
 }
 
 void ASimulationController::SetupInputComponent() {
@@ -87,7 +111,6 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
 
 	InputComponent->BindAxis("Throttle", this, &ASimulationController::Throttle);
-
 
 	InputComponent->BindAxis("CameraZoom", this, &ASimulationController::Zoom);
 

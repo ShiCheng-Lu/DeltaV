@@ -18,6 +18,8 @@ class UPart : public UStaticMeshComponent
 	GENERATED_BODY()
 	
 public:
+	virtual void SetSimulatePhysics(bool bSimulate) override;
+
 	TSharedPtr<FJsonObject> Json;
 	TSharedPtr<FJsonObject> Structure;
 

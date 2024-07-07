@@ -20,6 +20,7 @@ public:
 	TMap<FString, UPart*> Parts;
 	UPart* RootPart;
 	UPart* Engine;
+	bool PhysicsEnabled;
 
 public:
 	// Sets default values for this pawn's properties
@@ -54,4 +55,6 @@ public:
 	void Rotate(FRotator rotator, float strength);
 
 	void Throttle(float throttle);
+
+	void SetPhysicsEnabled(bool enabled);
 };

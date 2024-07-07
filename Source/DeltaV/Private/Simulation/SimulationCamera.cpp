@@ -2,7 +2,7 @@
 
 
 #include "Simulation/SimulationCamera.h"
-
+#include "Kismet/KismetMathLibrary.h"
 
 ASimulationCamera::ASimulationCamera(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer) 
@@ -12,6 +12,6 @@ ASimulationCamera::ASimulationCamera(const FObjectInitializer& ObjectInitializer
 
 void ASimulationCamera::GetCameraViewPoint(FVector& OutCamLoc, FRotator& OutCamRot) const {
 	const FMinimalViewInfo& CurrentPOV = GetCameraCacheView();
-	OutCamLoc = CurrentPOV.Location - CurrentPOV.Rotation.Vector() * FreeCamDistance;
-	OutCamRot = CurrentPOV.Rotation;
+	OutCamRot = UKismetMathLibrary::ComposeRotators(CurrentPOV.Rotation, FRotator(90, 0, 0));
+	OutCamLoc = CurrentPOV.Location - OutCamRot.Vector() * FreeCamDistance;
 }

@@ -3,12 +3,13 @@
 
 #include "Common/Part.h"
 
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 #include "Common/JsonUtil.h"
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
 
@@ -21,13 +22,12 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
 
 	SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SetSimulatePhysics(true);
 
 	// TODO: this should be at the position of the attachment node, maybe then the limit can be smaller
 	// and also add a drive to push the connection back towards to default position
 	Physics = CreateDefaultSubobject<UPhysicsConstraintComponent>("Link");
-	Physics->SetupAttachment(this);
 	Physics->SetRelativeLocation(FVector(0));
+	Physics->SetupAttachment(this);
 	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
 	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
 	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.1);
@@ -60,6 +60,7 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	SetRelativeScale3D(JsonUtil::Vector(Json->GetArrayField(L"scale")));
 	
 	RegisterComponent();
+	Physics->RegisterComponent();
 }
 
 void UPart::SetAttachmentNodeVisibility(bool visibility) {
@@ -84,4 +85,15 @@ void UPart::SetParent(UPart* NewParent) {
 	else {
 		Physics->BreakConstraint();
 	}
+}
+
+void UPart::SetSimulatePhysics(bool bSimulate) {
+	UE_LOG(LogTemp, Warning, TEXT("phys constraint: %s, %s"), *Id, *Physics->GetComponentLocation().ToString());
+	if (Parent && bSimulate) {
+		Physics->SetConstrainedComponents(this, "", Parent, "");
+	}
+	else {
+		Physics->BreakConstraint();
+	}
+	Super::SetSimulatePhysics(bSimulate);
 }

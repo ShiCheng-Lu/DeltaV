@@ -2,7 +2,14 @@
 
 
 #include "Common/Craft.h"
+
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "Components/SphereComponent.h"
+
 #include "Common/JsonUtil.h"
+
+auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
+auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -10,6 +17,9 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	USphereComponent* Root = CreateDefaultSubobject<USphereComponent>("Root");
+	SetRootComponent(Root);
 }
 
 // Called when the game starts or when spawned
@@ -49,14 +59,16 @@ void ACraft::Initialize(TSharedPtr<FJsonObject> InJson)
 
 			PartStructures.Add({ Part, PartKVP.Value->AsObject() });
 			UE_LOG(LogTemp, Warning, TEXT("created: %s"), *PartKVP.Key);
+
+			Part->AttachToComponent(RootComponent, AttachmentRule);
 		}
 	}
 
 	RootPart = *Parts.Find(PartStructures[0].Value->Values.begin().Key());
+
 	if (Parts.Find("engine-1")) {
 		Engine = *Parts.Find("engine-1");
 	}
-	SetRootComponent(RootPart);
 }
 
 void ACraft::SetAttachmentNodeVisibility(bool visibility) {
@@ -142,4 +154,33 @@ void ACraft::Rotate(FRotator rotator, float strength) {
 
 		Engine->AddTorqueInDegrees(rotation_axis * strength);
 	}
+}
+
+void ACraft::SetPhysicsEnabled(bool enabled) {
+	if (enabled == PhysicsEnabled) {
+		return;
+	}
+	PhysicsEnabled = enabled;
+
+	if (enabled) {
+		for (auto& PartKVP : Parts) {
+			auto Part = PartKVP.Value;
+			Part->DetachFromComponent(DetachmentRule);
+			Part->SetSimulatePhysics(true);
+		}
+		UPrimitiveComponent* RC = Cast<UPrimitiveComponent>(RootComponent);
+		RC->SetSimulatePhysics(true);
+		RootPart->Physics->SetConstrainedComponents(RootPart, "", RC, "");
+	}
+	else {
+		RootPart->Physics->BreakConstraint();
+		for (auto& PartKVP : Parts) {
+			auto Part = PartKVP.Value;
+			Part->SetSimulatePhysics(false);
+			Part->AttachToComponent(RootComponent, AttachmentRule);
+		}
+		UPrimitiveComponent* RC = Cast<UPrimitiveComponent>(RootComponent);
+		RC->SetSimulatePhysics(false);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("root loc %s"), *GetRootComponent()->GetComponentLocation().ToString());
 }

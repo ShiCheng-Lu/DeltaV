@@ -44,7 +44,7 @@ public:
 	double atmosphere_height = 100;
 
 	UPROPERTY(EditAnywhere)
-	float radius = 100;
+	double radius = 100;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

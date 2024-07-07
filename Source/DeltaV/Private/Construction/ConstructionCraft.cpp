@@ -59,11 +59,6 @@ void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCr
 	auto AttachemtnRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 	for (auto& PartKVP : NewCraft->Parts) {
 		auto& Part = PartKVP.Value;
-		if (Part == NewCraft->RootPart) {
-			Part->DetachFromComponent(DetachmentRule);
-		}
-		else {
-			Part->AttachToComponent(NewCraft->RootPart, AttachemtnRule);
-		}
+		Part->AttachToComponent(NewCraft->RootComponent, AttachemtnRule);
 	}
 }

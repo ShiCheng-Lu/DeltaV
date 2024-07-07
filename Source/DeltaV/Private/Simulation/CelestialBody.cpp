@@ -48,13 +48,13 @@ void ACelestialBody::Tick(float DeltaTime)
 void ACelestialBody::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	UE_LOG(LogTemp, Warning, TEXT("changed field: %s"), *PropertyChangedEvent.GetPropertyName().ToString());
-
 	if (PropertyChangedEvent.GetPropertyName() == "radius") {
+		radius = FMath::Max(0, radius);
 		mesh->SetRelativeScale3D(FVector(radius));
 		atmosphere->SetBottomRadius(radius / 1000); // in km
 	}
 	if (PropertyChangedEvent.GetPropertyName() == "atmosphere_height") {
+		atmosphere_height = FMath::Max(100, atmosphere_height); // atmosphere height 
 		atmosphere->SetAtmosphereHeight(atmosphere_height / 1000);
 	}
 }
