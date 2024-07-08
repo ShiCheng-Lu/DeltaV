@@ -51,22 +51,18 @@ void ASimulationController::BeginPlay() {
 		UE_LOG(LogTemp, Warning, TEXT("No craft, using default"));
 	}
 
-	FActorSpawnParameters spawn_parameters;
 	craft = GetWorld()->SpawnActor<ACraft>();
 	craft->Initialize(JsonUtil::ReadFile(Path));
 
 	FVector origin, extent;
 	craft->GetActorBounds(true, origin, extent);
-	UE_LOG(LogTemp, Warning, TEXT("craft bounds %s %s"), *origin.ToString(), *extent.ToString());
-
-	craft->SetActorLocation(FVector(-(earth->radius * 100 + extent.Z), 0, 0));
+	craft->SetActorLocation(FVector(-(earth->radius * 100 + extent.Z * 2), 0, 0));
 	craft->SetActorRotation(FRotator(90, 0, 0));
 	craft->SetPhysicsEnabled(true);
 
 	Possess(craft);
 	SetControlRotation(FRotator(0));
 
-	PlayerCameraManager->SetViewTarget(craft);
 	PlayerCameraManager->FreeCamDistance = 1000;
 
 	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
@@ -133,6 +129,9 @@ void ASimulationController::Throttle(float value) {
 void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	craft->Throttle(ThrottleValue);
+
+
+	DrawDebugSphere(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
 }
 
 void ASimulationController::Zoom(float value) {

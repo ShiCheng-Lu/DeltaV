@@ -8,8 +8,8 @@
 
 #include "Common/JsonUtil.h"
 
-auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
-auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
+static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
+static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -20,6 +20,8 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 	USphereComponent* Root = CreateDefaultSubobject<USphereComponent>("Root");
 	SetRootComponent(Root);
+
+	BaseEyeHeight = 0;
 }
 
 // Called when the game starts or when spawned
