@@ -8,13 +8,10 @@ ASimulationCamera::ASimulationCamera(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer) 
 {
 
-
 }
 
 void ASimulationCamera::GetCameraViewPoint(FVector& OutCamLoc, FRotator& OutCamRot) const {
 	const FMinimalViewInfo& CurrentPOV = GetCameraCacheView();
 	OutCamRot = UKismetMathLibrary::ComposeRotators(CurrentPOV.Rotation, FRotator(90, 0, 0));
 	OutCamLoc = CurrentPOV.Location - OutCamRot.Vector() * FreeCamDistance;
-
-	UE_LOG(LogTemp, Warning, TEXT("cam %s"), *CurrentPOV.Location.ToString());
 }

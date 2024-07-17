@@ -76,14 +76,14 @@ void ASimulationController::BeginPlay() {
 void ASimulationController::SetupInputComponent() {
 	Super::SetupInputComponent();
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Pitch", EKeys::W, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Pitch", EKeys::S, -1.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Pitch", EKeys::W, -1.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Pitch", EKeys::S, 1.f));
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Roll", EKeys::Q, -1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Roll", EKeys::E, 1.f));
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Yaw", EKeys::A, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Yaw", EKeys::D, -1.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Yaw", EKeys::A, -1.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Yaw", EKeys::D, 1.f));
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
@@ -130,6 +130,10 @@ void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	craft->Throttle(ThrottleValue);
 
+
+	UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
+
+	DrawDebugDirectionalArrow(GetWorld(), craft->GetActorLocation(), craft->GetActorLocation() + craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
 
 	DrawDebugSphere(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
 }
