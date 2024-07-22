@@ -18,13 +18,15 @@ void AConstructionCraft::Initialize(TSharedPtr<FJsonObject> CraftJson) {
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
 
-		Part->AttachToComponent(Part == RootPart ? nullptr : RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		if (Part != RootPart()) {
+			Part->AttachToComponent(RootPart(), FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		}
 
 		Part->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Part->SetSimulatePhysics(false);
 
-		for (auto& node : Part->definition->GetArrayField(L"attachment")) {
-			auto location = JsonUtil::Vector(node->AsObject()->GetArrayField(L"location"));
+		for (auto& node : Part->definition->GetArrayField(TEXT("attachment"))) {
+			auto location = JsonUtil::Vector(node->AsObject()->GetArrayField(TEXT("location")));
 
 			auto attachment_node = NewObject<UAttachmentNode>(Part);
 			attachment_node->SetRelativeLocation(location);
@@ -40,24 +42,28 @@ void AConstructionCraft::SetAttachmentNodeVisibility(bool visibility) {
 }
 
 void AConstructionCraft::AttachPart(AConstructionCraft* SourceCraft, UPart* AttachToPart) {
+	
 	TArray<UPart*> SourceParts;
 	for (auto& PartKVP : SourceCraft->Parts) {
 		SourceParts.Add(PartKVP.Value);
 	}
 
 	Super::AttachPart(SourceCraft, AttachToPart);
-
+	
 	for (auto& Part : SourceParts) {
-		Part->AttachToComponent(RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		Part->AttachToComponent(RootPart(), FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
 	}
 }
 
 void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCraft) {
 	Super::DetachPart(DetachPart, NewCraft);
 
-	auto AttachemtnRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
+	
+	auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 	for (auto& PartKVP : NewCraft->Parts) {
 		auto& Part = PartKVP.Value;
-		Part->AttachToComponent(NewCraft->RootComponent, AttachemtnRule);
+		Part->AttachToComponent(NewCraft->RootComponent, AttachmentRule);
+
+		UE_LOG(LogTemp, Warning, TEXT("Detached part %s"), *PartKVP.Key);
 	}
 }

@@ -1,0 +1,19 @@
+{
+  "name": "empty ship",
+  "location": [ 0, 0, 0 ],
+  "rotation": [ 0, 0, 0, 1 ],
+  "structure": {
+    "{part_id}": {}
+  },
+  "parts": {
+    "{part_id}": {
+      "type": "{part_type}",
+      "location": [ 0, 0, 0 ],
+      "rotation": [ 0, 0, 0, 1 ],
+      "scale": [ 1, 1, 1 ],
+      "attached_at": 1
+    }
+  },
+  "stages": [],
+  "engine_group": {}
+}

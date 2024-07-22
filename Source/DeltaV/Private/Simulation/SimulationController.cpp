@@ -52,12 +52,13 @@ void ASimulationController::BeginPlay() {
 	}
 
 	craft = GetWorld()->SpawnActor<ACraft>();
+	craft->SetActorRotation(FRotator(90, 0, 0));
 	craft->Initialize(JsonUtil::ReadFile(Path));
 
 	FVector origin, extent;
 	craft->GetActorBounds(true, origin, extent);
 	craft->SetActorLocation(FVector(-(earth->radius * 100 + extent.Z * 2), 0, 0));
-	craft->SetActorRotation(FRotator(90, 0, 0));
+	craft->SetActorRotation(FRotator(180, 0, 0));
 	craft->SetPhysicsEnabled(true);
 
 	Possess(craft);
@@ -130,12 +131,12 @@ void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	craft->Throttle(ThrottleValue);
 
-
 	UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
 
 	DrawDebugDirectionalArrow(GetWorld(), craft->GetActorLocation(), craft->GetActorLocation() + craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
 
 	DrawDebugSphere(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
+	DrawDebugDirectionalArrow(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), FVector(-(earth->radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
 }
 
 void ASimulationController::Zoom(float value) {

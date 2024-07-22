@@ -4,41 +4,44 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "ConstructionHUD.generated.h"
+#include "PartItem.generated.h"
+
+class UImage;
+class UPart;
+class UTextBlock;
+class UButton;
 
 class AConstructionController;
-class UButton;
-class UTextBlock;
-class UUniformGridPanel;
 
 /**
  * 
  */
 UCLASS()
-class DELTAV_API UConstructionHUD : public UUserWidget
+class DELTAV_API UPartItem : public UUserWidget
 {
 	GENERATED_BODY()
-
+	
 public:
-	UConstructionHUD(const FObjectInitializer& ObjectInitializer);
+	UPartItem(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void NativeOnInitialized() override;
 
 public:
+	AConstructionController* Controller;
+	FString PartName;
+
 	inline static TSubclassOf<UUserWidget> BlueprintClass;
 
-	AConstructionController* Controller;
-
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UButton* LaunchButton;
+	UButton* MainButton;
 
 	UFUNCTION(BlueprintCallable)
-	void LaunchButtonClicked();
+	void MainButtonClicked();
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UTextBlock* CraftName;
+	UTextBlock* PartLabel;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UUniformGridPanel* PartsList;
+	UImage* Thumbnail;
 };

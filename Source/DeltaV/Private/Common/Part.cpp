@@ -43,9 +43,9 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	Structure = InStructure;
 	Json = InJson;
 	
-	FString DefinitionName = FPaths::Combine(FPaths::ProjectContentDir(), "Parts", Json->GetStringField(L"type") + ".json");
+	FString DefinitionName = FPaths::Combine(FPaths::ProjectContentDir(), "Parts", Json->GetStringField(TEXT("type")) + ".json");
 	definition = JsonUtil::ReadFile(DefinitionName);
-	FString MeshPath = definition->GetStringField(L"mesh");
+	FString MeshPath = definition->GetStringField(TEXT("mesh"));
 
 	UStaticMesh* Mesh = UAssetLibrary::LoadAsset<UStaticMesh>(*MeshPath);
 	if (Mesh != nullptr) {
@@ -88,7 +88,7 @@ void UPart::SetParent(UPart* NewParent) {
 }
 
 void UPart::SetSimulatePhysics(bool bSimulate) {
-	UE_LOG(LogTemp, Warning, TEXT("phys constraint: %s, %s"), *Id, *Physics->GetComponentLocation().ToString());
+	// UE_LOG(LogTemp, Warning, TEXT("phys constraint: %s, %s"), *Id, *Physics->GetComponentLocation().ToString());
 	if (Parent && bSimulate) {
 		Physics->SetConstrainedComponents(this, "", Parent, "");
 	}

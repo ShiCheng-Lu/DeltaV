@@ -1,0 +1,11 @@
+{
+  "name": "empty ship",
+  "location": [ 0, 0, 0 ],
+  "rotation": [ 0, 0, 0, 1 ],
+  "structure": {
+  },
+  "parts": {
+  },
+  "stages": [],
+  "engine_group": {}
+}

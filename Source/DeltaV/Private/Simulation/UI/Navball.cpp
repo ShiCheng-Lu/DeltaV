@@ -32,6 +32,7 @@ ANavball::ANavball()
 		UE_LOG(LogTemp, Warning, TEXT("texture not found"));
 	}
 	Mesh->SetMaterial(0, Material);
+	
 	SetRootComponent(Mesh);
 
 	RenderTarget = UAssetLibrary::LoadAsset<UTextureRenderTarget2D>(L"/Game/Simulation/UI/Navballrender");
@@ -41,8 +42,8 @@ ANavball::ANavball()
 	double CameraDistance = 1000;
 
 	Camera = CreateDefaultSubobject<USceneCaptureComponent2D>("Camera");
-	Camera->SetRelativeLocation(FVector(0, 0, CameraDistance));
-	Camera->SetRelativeRotation(FQuat(FVector(0, 1, 0), PI / 2));
+	Camera->SetRelativeLocation(FVector(CameraDistance, 0, 0));
+	Camera->SetRelativeRotation(FQuat(FVector(0, 1, 0), PI));
 	Camera->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	Camera->ShowOnlyActorComponents(this);
 	Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
@@ -66,13 +67,14 @@ void ANavball::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FQuat base_rotation = FQuat(0, 0.707, 0, 0.707);
 	// FVector Start = Camera->GetComponentLocation();
 	// FVector End = Start + Camera->GetComponentRotation().RotateVector(FVector(100, 0, 0));
 	// DrawDebugDirectionalArrow(GetWorld(), Start, End, 10, FColor(130, 0, 0), false, -1, 0, 3);
 	FQuat direction_from_origin = (Target->GetActorLocation() - Origin).ToOrientationQuat();
 	FQuat target_rotation = Target->GetActorQuat().Inverse();
 
-	Mesh->SetRelativeRotation(direction_from_origin * target_rotation);
+	Mesh->SetRelativeRotation(direction_from_origin * target_rotation * base_rotation);
 }
 
 void ANavball::SetTarget(ACraft* Craft, FVector PlanetCenter) {

@@ -18,9 +18,8 @@ class DELTAV_API ACraft : public APawn
 public:
 	TSharedPtr<FJsonObject> Json;
 	TMap<FString, UPart*> Parts;
-	UPart* RootPart;
-	UPart* Engine;
 	bool PhysicsEnabled;
+	TArray<TSharedPtr<FJsonValue>> Stages;
 
 public:
 	// Sets default values for this pawn's properties
@@ -38,6 +37,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void Initialize(TSharedPtr<FJsonObject> CraftJson);
+
+	UPart* RootPart();
 
 	void AddPart(UPart* Part);
 
@@ -57,4 +58,6 @@ public:
 	void Throttle(float throttle);
 
 	void SetPhysicsEnabled(bool enabled);
+
+	TArray<ACraft*> Stage();
 };

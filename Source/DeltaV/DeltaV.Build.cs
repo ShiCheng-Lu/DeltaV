@@ -9,7 +9,7 @@ public class DeltaV : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { 
-			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "GeometryFramework", "GeometryCore", "DynamicMesh"
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "GeometryFramework", "GeometryCore", "DynamicMesh", "ImageWrapper"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 

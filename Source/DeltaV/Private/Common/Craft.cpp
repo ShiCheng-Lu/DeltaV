@@ -22,6 +22,8 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Root);
 
 	BaseEyeHeight = 0;
+
+	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
 }
 
 // Called when the game starts or when spawned
@@ -50,9 +52,9 @@ void ACraft::Initialize(TSharedPtr<FJsonObject> InJson)
 	TArray<TPair<UPart*, TSharedPtr<FJsonObject>>> PartStructures = { { nullptr, Json->GetObjectField(TEXT("structure")) } };
 	for (int i = 0; i < PartStructures.Num(); ++i) {
 		for (auto& PartKVP : PartStructures[i].Value->Values) {
-			auto Part = NewObject<UPart>(this);
+			auto Part = NewObject<UPart>(this, FName(PartKVP.Key));
 
-			auto& PartListJson = Json->GetObjectField(L"parts");
+			auto& PartListJson = Json->GetObjectField(TEXT("parts"));
 			auto& PartJson = PartListJson->GetObjectField(PartKVP.Key);
 			Part->Initialize(PartKVP.Key, PartKVP.Value->AsObject(), PartJson);
 			Part->SetParent(PartStructures[i].Key);
@@ -66,11 +68,15 @@ void ACraft::Initialize(TSharedPtr<FJsonObject> InJson)
 		}
 	}
 
-	RootPart = *Parts.Find(PartStructures[0].Value->Values.begin().Key());
+	Stages = Json->GetArrayField(TEXT("stages"));
+}
 
-	if (Parts.Find("engine-1")) {
-		Engine = *Parts.Find("engine-1");
+UPart* ACraft::RootPart() {
+	for (auto& PartKVP : Json->GetObjectField(TEXT("structure"))->Values) {
+		UE_LOG(LogTemp, Warning, TEXT("Get Root: %s"), *PartKVP.Key)
+		return *Parts.Find(PartKVP.Key);
 	}
+	return nullptr;
 }
 
 void ACraft::SetAttachmentNodeVisibility(bool visibility) {
@@ -81,14 +87,14 @@ void ACraft::SetAttachmentNodeVisibility(bool visibility) {
 
 void ACraft::AddPart(UPart* Part) {
 	Parts.Add(Part->Id, Part);
-	Json->GetObjectField(L"parts")->SetObjectField(Part->Id, Part->Json);
+	Json->GetObjectField(TEXT("parts"))->SetObjectField(Part->Id, Part->Json);
 	// change ownership
 	Part->Rename(*Part->GetName(), this);
 }
 
 void ACraft::RemovePart(UPart* Part) {
 	Parts.Remove(Part->Id);
-	Json->GetObjectField(L"parts")->RemoveField(Part->Id);
+	Json->GetObjectField(TEXT("parts"))->RemoveField(Part->Id);
 }
 
 // transfer ownership of part and any children to another craft
@@ -102,7 +108,7 @@ void ACraft::TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 	FromCraft->RemovePart(Part);
 	ToCraft->AddPart(Part);
 
-	Part->Json->SetArrayField(L"location", JsonUtil::Vector(Part->GetComponentLocation() - ToCraft->RootPart->GetComponentLocation()));
+	Part->Json->SetArrayField(TEXT("location"), JsonUtil::Vector(Part->GetComponentLocation() - ToCraft->RootPart()->GetComponentLocation()));
 
 	for (auto& Child : Part->Children) {
 		TransferPart(Child, FromCraft, ToCraft);
@@ -110,26 +116,32 @@ void ACraft::TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 }
 
 void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
-	NewCraft->RootPart = Part;
-	NewCraft->Json = MakeShareable(new FJsonObject());
+	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
+	if (!CraftJson.IsValid()) {
+		UE_LOG(LogTemp, Warning, TEXT("invalid new craft"));
+		return;
+	}
+	
+	NewCraft->Initialize(CraftJson);
 	NewCraft->Json->SetStringField(L"name", "sub craft");
-	TSharedPtr<FJsonObject> structure = MakeShareable(new FJsonObject());
-	structure->SetObjectField(Part->Id, Part->Structure);
-	NewCraft->Json->SetObjectField(L"structure", structure);
-	NewCraft->Json->SetObjectField(L"parts", MakeShareable(new FJsonObject()));
+	NewCraft->Json->GetObjectField(L"structure")->SetObjectField(Part->Id, Part->Structure);
 
 	NewCraft->SetActorLocation(Part->GetComponentLocation());
 
 	TransferPart(Part, this, NewCraft);
 	
 	Part->SetParent(nullptr);
-	NewCraft->SetRootComponent(Part);
 }
 
 void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
-	TransferPart(SourceCraft->RootPart, SourceCraft, this);
+	if (!SourceCraft->RootPart()) {
+		UE_LOG(LogTemp, Warning, TEXT("Source craft has no root part!"));
+	}
 
-	SourceCraft->RootPart->SetParent(AttachToPart);
+	UPart* RootPart = SourceCraft->RootPart();
+	TransferPart(RootPart, SourceCraft, this);
+
+	RootPart->SetParent(AttachToPart);
 
 	if (SourceCraft->Parts.IsEmpty()) {
 		SourceCraft->Destroy();
@@ -140,6 +152,7 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 }
 
 void ACraft::Throttle(float throttle) {
+	UPart* Engine = RootPart();
 	if (Engine) {
 		FVector thrust = FVector(0, 0, 50000 * throttle);
 		thrust = Engine->GetComponentRotation().RotateVector(thrust);
@@ -148,6 +161,7 @@ void ACraft::Throttle(float throttle) {
 }
 
 void ACraft::Rotate(FRotator rotator, float strength) {
+	UPart* Engine = RootPart();
 	if (Engine) {
 		FRotator shortest_rotation = rotator;
 		FQuat quaternion = shortest_rotation.Quaternion();
@@ -172,10 +186,10 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 		}
 		UPrimitiveComponent* RC = Cast<UPrimitiveComponent>(RootComponent);
 		RC->SetSimulatePhysics(true);
-		RootPart->Physics->SetConstrainedComponents(RootPart, "", RC, "");
+		RootPart()->Physics->SetConstrainedComponents(RootPart(), "", RC, "");
 	}
 	else {
-		RootPart->Physics->BreakConstraint();
+		RootPart()->Physics->BreakConstraint();
 		for (auto& PartKVP : Parts) {
 			auto Part = PartKVP.Value;
 			Part->SetSimulatePhysics(false);
@@ -185,4 +199,19 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 		RC->SetSimulatePhysics(false);
 	}
 	UE_LOG(LogTemp, Warning, TEXT("root loc %s"), *GetRootComponent()->GetComponentLocation().ToString());
+}
+
+TArray<ACraft*> ACraft::Stage() {
+	if (Stages.IsEmpty()) {
+		return TArray<ACraft*>();
+	}
+
+	TArray<ACraft*> detached;
+	for (auto& part : Stages[0]->AsArray()) {
+		ACraft* craft = NewObject<ACraft>();
+		detached.Add(craft);
+		DetachPart(*Parts.Find(part->AsString()), craft);
+	}
+	Stages.RemoveAt(0);
+	return detached;
 }

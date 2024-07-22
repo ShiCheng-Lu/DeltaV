@@ -5,10 +5,12 @@
 
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/UniformGridPanel.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "Construction/ConstructionController.h"
 #include "Construction/ConstructionCraft.h"
+#include "Construction/UI/PartItem.h"
 #include "Common/MainGameInstance.h"
 
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
@@ -24,14 +26,19 @@ UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 
 void UConstructionHUD::NativeOnInitialized() {
 	Super::NativeOnInitialized();
+	Controller = GetOwningPlayer<AConstructionController>();
 
+	// launch button
 	FScriptDelegate LaunchButtonClicked;
 	LaunchButtonClicked.BindUFunction(this, "LaunchButtonClicked");
 	LaunchButton->OnClicked.Add(LaunchButtonClicked);
 
+	// craft name display
 	CraftName->SetText(FText::FromString("Hello"));
 
-	Controller = GetOwningPlayer<AConstructionController>();
+	// part list
+	UPartItem* partItem = CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cone");
+	PartsList->AddChildToUniformGrid(partItem, 0, 0);
 }
 
 void UConstructionHUD::LaunchButtonClicked() {

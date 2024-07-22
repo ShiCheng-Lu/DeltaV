@@ -11,14 +11,11 @@ JsonUtil::~JsonUtil()
 {
 }
 
-TSharedPtr<FJsonObject> JsonUtil::ReadFile(FString FilePath) {
+TSharedPtr<FJsonObject> JsonUtil::ReadFile(FString FilePath, FStringFormatNamedArguments TemplateArguments) {
 	FString JsonString;
 	FFileHelper::LoadFileToString(JsonString, *FilePath);
 
-	TSharedPtr<FJsonObject> Result;
-	FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), Result);
-
-	return Result;
+	return FromString(JsonString, TemplateArguments);
 }
 
 bool JsonUtil::WriteFile(FString FilePath, TSharedPtr<FJsonObject> JsonObject) {
@@ -31,6 +28,16 @@ bool JsonUtil::WriteFile(FString FilePath, TSharedPtr<FJsonObject> JsonObject) {
 	return FFileHelper::SaveStringToFile(JsonString, *FilePath);
 }
 
+TSharedPtr<FJsonObject> JsonUtil::FromString(FString JsonString, FStringFormatNamedArguments TemplateArguments) {
+	if (!TemplateArguments.IsEmpty()) {
+		JsonString = FString::Format(*JsonString, TemplateArguments);
+	}
+
+	TSharedPtr<FJsonObject> Result;
+	FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), Result);
+
+	return Result;
+}
 
 FVector JsonUtil::Vector(const TArray<TSharedPtr<FJsonValue>>& Values) {
 	if (Values.Num() != 3) {

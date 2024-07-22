@@ -1,0 +1,32 @@
+{
+  "name": "cylinder",
+  "mesh": "/Game/Shapes/Decoupler.Decoupler",
+  "attachment": [
+    {
+      "location": [ 0, 0, 10 ]
+    },
+    {
+      "location": [ 0, 0, -10 ]
+    }
+  ],
+  "fields": [
+    {
+      "name": "width",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    }
+  ]
+}

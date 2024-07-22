@@ -157,6 +157,7 @@ void AConstructionController::HandleClick(FKey Key) {
 	if (ConstructionMode == AConstructionController::EditMode) {
 		if (Key == EKeys::LeftMouseButton) {
 			if (Selected != nullptr) {
+				// Place
 				UPart* AttachToPart = PlaceHeldPart();
 				if (AttachToPart != nullptr) {
 					Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
@@ -166,6 +167,7 @@ void AConstructionController::HandleClick(FKey Key) {
 				// Craft->SetAttachmentNodeVisibility(true);
 			}
 			else {
+				// Select
 				FHitResult result;
 				if (GetHitResultUnderCursor(ECC_WorldStatic, true, result)) {
 					SelectedPart = Cast<UPart>(result.GetComponent());
@@ -179,10 +181,17 @@ void AConstructionController::HandleClick(FKey Key) {
 
 					Selected = Cast<AConstructionCraft>(SelectedPart->GetOwner());
 
-					if (Selected->RootPart != SelectedPart) {
-						auto NewCraft = GetWorld()->SpawnActor<AConstructionCraft>();
-						Selected->DetachPart(SelectedPart, NewCraft);
-						Selected = NewCraft;
+					if (Selected->RootPart() != SelectedPart) {
+						FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
+						SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+						auto NewCraft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
+						if (NewCraft) {
+							Selected->DetachPart(SelectedPart, NewCraft);
+							Selected = NewCraft;
+						}
+						else {
+							UE_LOG(LogTemp, Warning, TEXT("Craft not spawned"));
+						}
 					}
 
 					UE_LOG(LogTemp, Warning, TEXT("Selected part %s - %d"), *SelectedPart->Id, Selected->GetUniqueID());
@@ -235,6 +244,8 @@ void AConstructionController::Load() {
 
 void AConstructionController::PlayerTick(float DeltaTime) {
 	Super::PlayerTick(DeltaTime);
+
+	// UE_LOG(LogTemp, Warning, TEXT("tick"));
 
 	switch (ConstructionMode)
 	{
