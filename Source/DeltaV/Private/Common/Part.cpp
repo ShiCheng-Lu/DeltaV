@@ -43,6 +43,11 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	Structure = InStructure;
 	Json = InJson;
 	
+
+	// set locaiton and scale
+	SetRelativeLocation(JsonUtil::Vector(Json, "location"));
+	SetRelativeScale3D(JsonUtil::Vector(Json, "scale"));
+
 	FString DefinitionName = FPaths::Combine(FPaths::ProjectContentDir(), "Parts", Json->GetStringField(TEXT("type")) + ".json");
 	definition = JsonUtil::ReadFile(DefinitionName);
 	FString MeshPath = definition->GetStringField(TEXT("mesh"));
@@ -54,10 +59,6 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("failed to load mesh for: %s"), *Id);
 	}
-
-	// set locaiton and scale
-	SetRelativeLocation(JsonUtil::Vector(Json->GetArrayField(L"location")));
-	SetRelativeScale3D(JsonUtil::Vector(Json->GetArrayField(L"scale")));
 	
 	RegisterComponent();
 	Physics->RegisterComponent();
@@ -96,4 +97,23 @@ void UPart::SetSimulatePhysics(bool bSimulate) {
 		Physics->BreakConstraint();
 	}
 	Super::SetSimulatePhysics(bSimulate);
+}
+
+
+void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
+	type = InJson->GetStringField(TEXT("type"));
+
+	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
+	SetRelativeRotation(JsonUtil::Quat(InJson, "rotation"));
+	SetRelativeScale3D(JsonUtil::Vector(InJson, "scale"));
+}
+TSharedPtr<FJsonObject> UPart::ToJson() {
+	TSharedPtr<FJsonObject> OutJson = MakeShareable(new FJsonObject());
+
+	OutJson->SetStringField(TEXT("type"), type);
+	JsonUtil::Vector(OutJson, "location", GetRelativeLocation());
+	JsonUtil::Quat(OutJson, "rotation", GetRelativeRotation().Quaternion());
+	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());
+
+	return OutJson;
 }

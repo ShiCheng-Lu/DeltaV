@@ -17,6 +17,7 @@
 #include "Simulation/MapViewPawn.h"
 #include "Simulation/OrbitComponent.h"
 #include "Simulation/CelestialBody.h"
+#include "Simulation/ControlStabilizer.h"
 
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
@@ -148,16 +149,19 @@ void ASimulationController::Zoom(float value) {
 void ASimulationController::Pitch(float value) {
 	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(90, 0, 0), 100000000 * value);
+		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Roll(float value) {
 	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(0, 0, 90), 100000000 * value);
+		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Yaw(float value) {
 	if (value != 0 && GetPawn() == craft) {
 		craft->Rotate(FRotator(0, 90, 0), 100000000 * value);
+		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Stage() {
@@ -189,13 +193,13 @@ void ASimulationController::ToggleMap() {
 	*/
 	// Debug orbit;
 
-	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->Value, HUD->Velocity->Value);
+	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->GetValue(), HUD->Velocity->GetValue());
 	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 
 	ACelestialBody* body = NewObject<ACelestialBody>(this);
-	body->mu = HUD->Gravity->Value;
+	body->mu = HUD->Gravity->GetValue();
 
-	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(20, HUD->Velocity->Value, 40), body);
+	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(20, HUD->Velocity->GetValue(), 40), body);
 	
 	TArray<FVector> array;
 	for (int i = 0; i < 360; i++) {

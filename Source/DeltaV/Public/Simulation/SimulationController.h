@@ -8,6 +8,7 @@
 
 class ACraft;
 class USimulationHUD;
+class UControlStabilizer;
 
 /**
  * 
@@ -50,6 +51,9 @@ public:
 
 	UFUNCTION()
 	void VelChange(float value);
+
 	UFUNCTION()
 	void GravChange(float value);
+
+	UControlStabilizer* ControlStabilizer;
 };

@@ -26,7 +26,7 @@ void AConstructionCraft::Initialize(TSharedPtr<FJsonObject> CraftJson) {
 		Part->SetSimulatePhysics(false);
 
 		for (auto& node : Part->definition->GetArrayField(TEXT("attachment"))) {
-			auto location = JsonUtil::Vector(node->AsObject()->GetArrayField(TEXT("location")));
+			auto location = JsonUtil::Vector(node->AsObject(), "location");
 
 			auto attachment_node = NewObject<UAttachmentNode>(Part);
 			attachment_node->SetRelativeLocation(location);

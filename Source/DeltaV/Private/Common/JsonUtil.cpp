@@ -39,7 +39,9 @@ TSharedPtr<FJsonObject> JsonUtil::FromString(FString JsonString, FStringFormatNa
 	return Result;
 }
 
-FVector JsonUtil::Vector(const TArray<TSharedPtr<FJsonValue>>& Values) {
+FVector JsonUtil::Vector(const TSharedPtr<FJsonObject>& Json, const FString& FieldName) {
+	TArray<TSharedPtr<FJsonValue>> Values = Json->GetArrayField(FieldName);
+
 	if (Values.Num() != 3) {
 		return FVector();
 	}
@@ -51,13 +53,38 @@ FVector JsonUtil::Vector(const TArray<TSharedPtr<FJsonValue>>& Values) {
 	);
 }
 
-TArray<TSharedPtr<FJsonValue>> JsonUtil::Vector(const FVector& Vector) {
+void JsonUtil::Vector(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FVector& Vector) {
 	TArray<TSharedPtr<FJsonValue>> Array;
 	
 	Array.Add(MakeShareable(new FJsonValueNumber(Vector.X)));
 	Array.Add(MakeShareable(new FJsonValueNumber(Vector.Y)));
 	Array.Add(MakeShareable(new FJsonValueNumber(Vector.Z)));
 
-	return Array;
+	Json->SetArrayField(FieldName, Array);
 }
 
+FQuat JsonUtil::Quat(const TSharedPtr<FJsonObject>& Json, const FString& FieldName) {
+	TArray<TSharedPtr<FJsonValue>> Values = Json->GetArrayField(FieldName);
+
+	if (Values.Num() != 3) {
+		return FQuat();
+	}
+
+	return FQuat(
+		Values[0]->AsNumber(),
+		Values[1]->AsNumber(),
+		Values[2]->AsNumber(),
+		Values[3]->AsNumber()
+	);
+}
+
+void JsonUtil::Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FQuat& Quat) {
+	TArray<TSharedPtr<FJsonValue>> Array;
+
+	Array.Add(MakeShareable(new FJsonValueNumber(Quat.X)));
+	Array.Add(MakeShareable(new FJsonValueNumber(Quat.Y)));
+	Array.Add(MakeShareable(new FJsonValueNumber(Quat.Z)));
+	Array.Add(MakeShareable(new FJsonValueNumber(Quat.W)));
+
+	Json->SetArrayField(FieldName, Array);
+}

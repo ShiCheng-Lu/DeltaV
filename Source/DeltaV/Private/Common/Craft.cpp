@@ -108,7 +108,7 @@ void ACraft::TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 	FromCraft->RemovePart(Part);
 	ToCraft->AddPart(Part);
 
-	Part->Json->SetArrayField(TEXT("location"), JsonUtil::Vector(Part->GetComponentLocation() - ToCraft->RootPart()->GetComponentLocation()));
+	JsonUtil::Vector(Part->Json, TEXT("location"), (Part->GetComponentLocation() - ToCraft->RootPart()->GetComponentLocation()));
 
 	for (auto& Child : Part->Children) {
 		TransferPart(Child, FromCraft, ToCraft);

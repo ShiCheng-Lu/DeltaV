@@ -18,6 +18,9 @@ public:
 	static TSharedPtr<FJsonObject> ReadFile(FString FilePath, FStringFormatNamedArguments TemplateArguments = FStringFormatNamedArguments());
 	static TSharedPtr<FJsonObject> FromString(FString Json, FStringFormatNamedArguments TemplateArguments = FStringFormatNamedArguments());
 
-	static FVector Vector(const TArray<TSharedPtr<FJsonValue>>& Values);
-	static TArray<TSharedPtr<FJsonValue>> Vector(const FVector& Vector);
+	static FVector Vector(const TSharedPtr<FJsonObject>& Json, const FString& FieldName);
+	static void Vector(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FVector& Vector);
+
+	static FQuat Quat(const TSharedPtr<FJsonObject>& Json, const FString& FieldName);
+	static void Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FQuat& Vector);
 };

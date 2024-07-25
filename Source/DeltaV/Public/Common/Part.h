@@ -40,4 +40,22 @@ public:
 	void SetAttachmentNodeVisibility(bool visibility);
 
 	void SetParent(UPart* Part);
+
+
+
+	/*
+	Json serialization
+
+	{
+	  "type": <part type>,
+	  "location": [x, y, z],
+	  "rotation": [x, y, z, w],
+	  "scale": [x, y, z],
+	  "attached_at": <int>
+	}
+	*/
+	void FromJson(TSharedPtr<FJsonObject> Json);
+	TSharedPtr<FJsonObject> ToJson();
+
+	FString type;
 };

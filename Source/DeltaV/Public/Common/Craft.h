@@ -21,6 +21,9 @@ public:
 	bool PhysicsEnabled;
 	TArray<TSharedPtr<FJsonValue>> Stages;
 
+	void FromJson(TSharedPtr<FJsonObject> Json);
+	TSharedPtr<FJsonObject> ToJson();
+
 public:
 	// Sets default values for this pawn's properties
 	ACraft(const FObjectInitializer& ObjectInitializer);
