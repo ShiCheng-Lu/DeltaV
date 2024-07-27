@@ -8,6 +8,21 @@
 
 class ASimulationController;
 
+UENUM()
+enum EStabilizationMode : uint8 {
+	NONE,
+	HOLD_ATTITUDE,
+	MANEUVER,
+	PROGRADE,
+	RETROGRADE,
+	RADIAL_IN,
+	RADIAL_OUT,
+	NORMAL,
+	ANTI_NORMAL,
+	TARGET,
+	ANTI_TARGET,
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DELTAV_API UControlStabilizer : public UActorComponent
 {
@@ -26,27 +41,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	enum StabilizationMode {
-		HOLD_ATTITUDE,
-		MANEUVER,
-		PROGRADE,
-		RETROGRADE,
-		RADIAL_IN,
-		RADIAL_OUT,
-		NORMAL,
-		ANTI_NORMAL,
-		TARGET,
-		ANTI_TARGET,
-	};
-
 	float TimeSinceLastInput;
 	float TimeSinceLastInputThreshold;
 
 	ASimulationController* Controller;
 	FQuat TargetOrientation;
-	StabilizationMode Mode;
-
-	void SetStabilizationMode(StabilizationMode Mode);
-
-
+	EStabilizationMode Mode;
 };

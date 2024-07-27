@@ -73,7 +73,7 @@ void ACraft::Initialize(TSharedPtr<FJsonObject> InJson)
 
 UPart* ACraft::RootPart() {
 	for (auto& PartKVP : Json->GetObjectField(TEXT("structure"))->Values) {
-		UE_LOG(LogTemp, Warning, TEXT("Get Root: %s"), *PartKVP.Key)
+		// UE_LOG(LogTemp, Warning, TEXT("Get Root: %s"), *PartKVP.Key)
 		return *Parts.Find(PartKVP.Key);
 	}
 	return nullptr;
@@ -162,11 +162,8 @@ void ACraft::Throttle(float throttle) {
 
 void ACraft::Rotate(FRotator rotator, float strength) {
 	UPart* Engine = RootPart();
-	if (Engine) {
-		FRotator shortest_rotation = rotator;
-		FQuat quaternion = shortest_rotation.Quaternion();
-
-		FVector rotation_axis = GetActorRotation().RotateVector(quaternion.GetRotationAxis());
+	if (Engine && !rotator.IsZero()) {
+		FVector rotation_axis = GetActorRotation().RotateVector(rotator.Quaternion().GetRotationAxis());
 
 		Engine->AddTorqueInDegrees(rotation_axis * strength);
 	}
@@ -214,4 +211,8 @@ TArray<ACraft*> ACraft::Stage() {
 	}
 	Stages.RemoveAt(0);
 	return detached;
+}
+
+FVector ACraft::GetAngularVelocity() {
+	return RootPart()->GetPhysicsAngularVelocityInRadians();
 }

@@ -24,6 +24,7 @@ ASimulationController::ASimulationController(const FObjectInitializer& ObjectIni
 	: Super(ObjectInitializer)
 {
 	PlayerCameraManagerClass = ASimulationCamera::StaticClass();
+
 }
 
 void ASimulationController::BeginPlay() {
@@ -73,6 +74,12 @@ void ASimulationController::BeginPlay() {
 	HUD->SetNavballTarget(craft, FVector(0, 0, 0));
 
 	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *craft->GetActorLocation().ToString(), earth->radius);
+
+	
+	ControlStabilizer = NewObject<UControlStabilizer>(this); // CreateDefaultSubobject<UControlStabilizer>("Stabilizer");
+	ControlStabilizer->Controller = this;
+
+	ControlStabilizer->RegisterComponent();
 }
 
 void ASimulationController::SetupInputComponent() {
@@ -132,7 +139,7 @@ void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	craft->Throttle(ThrottleValue);
 
-	UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
+	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
 
 	DrawDebugDirectionalArrow(GetWorld(), craft->GetActorLocation(), craft->GetActorLocation() + craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
 
@@ -148,19 +155,19 @@ void ASimulationController::Zoom(float value) {
 
 void ASimulationController::Pitch(float value) {
 	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(90, 0, 0), 100000000 * value);
+		craft->Rotate(FRotator(45, 0, 0), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Roll(float value) {
 	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(0, 0, 90), 100000000 * value);
+		craft->Rotate(FRotator(0, 0, 45), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Yaw(float value) {
 	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(0, 90, 0), 100000000 * value);
+		craft->Rotate(FRotator(0, 45, 0), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }

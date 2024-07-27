@@ -63,4 +63,6 @@ public:
 	void SetPhysicsEnabled(bool enabled);
 
 	TArray<ACraft*> Stage();
+
+	FVector GetAngularVelocity();
 };

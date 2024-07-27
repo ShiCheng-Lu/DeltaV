@@ -6,8 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "SimulationHUD.generated.h"
 
+
 class ASimulationController;
 class ACraft;
+enum EStabilizationMode : uint8;
 
 /**
  * 
@@ -45,4 +47,7 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class USlider> Gravity;
+
+	UFUNCTION(BlueprintCallable)
+	void SetStabilizationMode(EStabilizationMode Mode);
 };
