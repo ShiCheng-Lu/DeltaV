@@ -68,7 +68,7 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 			Rotation.Roll = 0;
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("Target: %s, V: %s,  R: %s"),  *TargetOrientation.ToString(), *LocalAngularVelocity.ToString(), *Rotation.ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("Target: %s, V: %s,  R: %s"),  *TargetOrientation.ToString(), *LocalAngularVelocity.ToString(), *Rotation.ToString());
 
 		Controller->craft->Rotate(Rotation, 50000000);
 	}

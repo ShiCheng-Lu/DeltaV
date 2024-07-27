@@ -5,6 +5,9 @@
 
 #include "Components/Image.h"
 #include "Components/Slider.h"
+#include "Components/Button.h"
+#include "Components/UniformGridPanel.h"
+#include "Components/CheckBox.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 
@@ -48,46 +51,83 @@ void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const
 	NavballActor->SetTarget(Craft, PlanetCenter);
 }
 
-void USimulationHUD::SetStabilizationMode(EStabilizationMode Mode) {
-	Controller->ControlStabilizer->Mode = Mode;
-
+void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode) {
+	FString ModeString;
 	switch (Mode)
 	{
-	case EStabilizationMode::NONE:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization NONE"));
+	case NONE:
+		ModeString = "None";
 		break;
-	case EStabilizationMode::HOLD_ATTITUDE:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization HOLD_ATTITUDE"));
+	case HOLD_ATTITUDE:
+		ModeString = "HoldAttitude";
 		break;
-	case EStabilizationMode::MANEUVER:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization MANEUVER"));
+	case MANEUVER:
+		ModeString = "Maneuver";
 		break;
-	case EStabilizationMode::PROGRADE:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization PROGRADE"));
+	case PROGRADE:
+		ModeString = "Prograde";
 		break;
-	case EStabilizationMode::RETROGRADE:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization RETROGRADE"));
+	case RETROGRADE:
+		ModeString = "Retrograde";
 		break;
-	case EStabilizationMode::RADIAL_IN:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization RADIAL_IN"));
+	case RADIAL_IN:
+		ModeString = "RadialIn";
 		break;
-	case EStabilizationMode::RADIAL_OUT:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization RADIAL_OUT"));
+	case RADIAL_OUT:
+		ModeString = "RadialOut";
 		break;
-	case EStabilizationMode::NORMAL:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization NORMAL"));
+	case NORMAL:
+		ModeString = "Normal";
 		break;
-	case EStabilizationMode::ANTI_NORMAL:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization ANTI_NORMAL"));
+	case ANTI_NORMAL:
+		ModeString = "AntiNormal";
 		break;
-	case EStabilizationMode::TARGET:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization TARGET"));
+	case TARGET:
+		ModeString = "Target";
 		break;
-	case EStabilizationMode::ANTI_TARGET:
-		UE_LOG(LogTemp, Warning, TEXT("Stabilization ANTI_TARGET"));
+	case ANTI_TARGET:
+		ModeString = "AntiTarget";
 		break;
 	default:
 		break;
 	}
 
+	if (Checked) {
+		// deselect all others
+		for (UWidget* Child : StabilizationPanel->GetAllChildren()) {
+			UCheckBox* Checkbox = Cast<UCheckBox>(Child);
+			if (Checkbox->GetName() != ModeString && Checkbox->GetCheckedState() == ECheckBoxState::Checked) {
+				Checkbox->SetCheckedState(ECheckBoxState::Unchecked);
+			}
+		}
+		Controller->ControlStabilizer->Mode = Mode;
+	}
+	else {
+		// if any other checkbox is checked, this was the result of a change
+		for (UWidget* Child : StabilizationPanel->GetAllChildren()) {
+			UCheckBox* Checkbox = Cast<UCheckBox>(Child);
+			if (Checkbox->GetName() != ModeString && Checkbox->GetCheckedState() == ECheckBoxState::Checked) {
+				return;
+			}
+		}
+		// no other stabilization is checked, disable stabilization
+		Controller->ControlStabilizer->Mode = EStabilizationMode::NONE;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Stabilization %s"), *ModeString);
+}
+
+void USimulationHUD::ButtonClicked(UButton* Button) {
+	UE_LOG(LogTemp, Warning, TEXT("Button clicked %s"), *Button->GetName());
+
+	if (Button->GetName() == "Stabilization") {
+		if (StabilizationPanel->IsVisible()) {
+			StabilizationPanel->SetVisibility(ESlateVisibility::Hidden);
+			SetStabilizationMode(true, EStabilizationMode::NONE);
+		}
+		else {
+			StabilizationPanel->SetVisibility(ESlateVisibility::Visible);
+			SetStabilizationMode(true, EStabilizationMode::HOLD_ATTITUDE);
+		}
+	}
 }

@@ -59,10 +59,10 @@ void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCr
 	Super::DetachPart(DetachPart, NewCraft);
 
 	
-	auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
+	auto AttachmentRule2 = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 	for (auto& PartKVP : NewCraft->Parts) {
 		auto& Part = PartKVP.Value;
-		Part->AttachToComponent(NewCraft->RootComponent, AttachmentRule);
+		Part->AttachToComponent(NewCraft->RootComponent, AttachmentRule2);
 
 		UE_LOG(LogTemp, Warning, TEXT("Detached part %s"), *PartKVP.Key);
 	}

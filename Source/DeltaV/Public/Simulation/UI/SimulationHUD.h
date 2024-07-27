@@ -9,7 +9,10 @@
 
 class ASimulationController;
 class ACraft;
+class UButton;
+class UCheckBox;
 enum EStabilizationMode : uint8;
+
 
 /**
  * 
@@ -48,6 +51,14 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class USlider> Gravity;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UUniformGridPanel> StabilizationPanel;
+
 	UFUNCTION(BlueprintCallable)
-	void SetStabilizationMode(EStabilizationMode Mode);
+	void SetStabilizationMode(bool Checked, EStabilizationMode Mode);
+
+	UFUNCTION(BlueprintCallable)
+	void ButtonClicked(UButton* Button);
+
+	TMap<UCheckBox*, EStabilizationMode> StabilizationSelects;
 };
