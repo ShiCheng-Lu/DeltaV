@@ -58,7 +58,5 @@ public:
 	void SetStabilizationMode(bool Checked, EStabilizationMode Mode);
 
 	UFUNCTION(BlueprintCallable)
-	void ButtonClicked(UButton* Button);
-
-	TMap<UCheckBox*, EStabilizationMode> StabilizationSelects;
+	void ButtonClicked(UCheckBox* Button);
 };

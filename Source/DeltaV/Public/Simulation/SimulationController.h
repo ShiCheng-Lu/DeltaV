@@ -49,10 +49,10 @@ public:
 	float vel = 0;
 	float grav = 0;
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void VelChange(float value);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void GravChange(float value);
 
 	UControlStabilizer* ControlStabilizer;

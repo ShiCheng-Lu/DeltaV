@@ -117,17 +117,25 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 	UE_LOG(LogTemp, Warning, TEXT("Stabilization %s"), *ModeString);
 }
 
-void USimulationHUD::ButtonClicked(UButton* Button) {
-	UE_LOG(LogTemp, Warning, TEXT("Button clicked %s"), *Button->GetName());
+void USimulationHUD::ButtonClicked(UCheckBox* Checkbox) {
+	UE_LOG(LogTemp, Warning, TEXT("Button clicked %s"), *Checkbox->GetName());
 
-	if (Button->GetName() == "Stabilization") {
-		if (StabilizationPanel->IsVisible()) {
+	if (Checkbox->GetName() == "Stabilization") {
+		if (Checkbox->GetCheckedState() == ECheckBoxState::Checked) {
+			StabilizationPanel->SetVisibility(ESlateVisibility::Visible);
+			SetStabilizationMode(true, EStabilizationMode::HOLD_ATTITUDE);
+		} else {
 			StabilizationPanel->SetVisibility(ESlateVisibility::Hidden);
 			SetStabilizationMode(true, EStabilizationMode::NONE);
 		}
-		else {
-			StabilizationPanel->SetVisibility(ESlateVisibility::Visible);
-			SetStabilizationMode(true, EStabilizationMode::HOLD_ATTITUDE);
-		}
+	}
+	else if (Checkbox->GetName() == "RCS") {
+
+	}
+	else if (Checkbox->GetName() == "Gear") {
+
+	}
+	else if (Checkbox->GetName() == "Lights") {
+
 	}
 }

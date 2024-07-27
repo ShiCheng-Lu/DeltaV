@@ -36,6 +36,13 @@ void ACraft::BeginPlay()
 void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	for (auto& PartKVP : Parts) {
+		UPart* Part = PartKVP.Value;
+		FVector GravityDirection = Part->GetComponentLocation() - FVector(0, 0, 0);
+		GravityDirection.Normalize();
+		Part->AddForce(GravityDirection * -30, "", true);
+	}
 }
 
 // Called to bind functionality to input
