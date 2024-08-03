@@ -13,8 +13,8 @@ public class DeltaV : ModuleRules
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
-			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "DynamicMesh" 
-		});
+			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "DynamicMesh"
+        });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

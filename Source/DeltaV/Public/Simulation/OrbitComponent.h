@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/SplineComponent.h"
 #include "OrbitComponent.generated.h"
 
 class ACelestialBody;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UOrbitComponent : public UActorComponent
+class DELTAV_API UOrbitComponent : public USplineComponent
 {
 	GENERATED_BODY()
 
@@ -25,7 +25,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	
 	double mass;
 
 	double angular_momentum;
@@ -42,4 +41,14 @@ public:
 	FVector GetPosition(float Time);
 
 	FVector GetVelocity(float Time);
+
+	inline static TObjectPtr<class UStaticMesh> SplineMesh;
+
+	TArray<TObjectPtr<class USplineMeshComponent>> Spline;
+
+	void UpdateSplineWithOrbit();
+
+	virtual void UpdateSpline() override;
+
+	virtual void OnVisibilityChanged() override;
 };

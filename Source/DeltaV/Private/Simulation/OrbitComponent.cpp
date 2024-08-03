@@ -4,6 +4,9 @@
 #include "Simulation/OrbitComponent.h"
 #include "Simulation/CelestialBody.h"
 
+#include "Components/StaticMeshComponent.h"
+#include "Components/SplineMeshComponent.h"
+
 // Sets default values for this component's properties
 UOrbitComponent::UOrbitComponent()
 {
@@ -12,6 +15,14 @@ UOrbitComponent::UOrbitComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("/Game/Shapes/OrbitLine"));
+	if (MeshFinder.Succeeded()) {
+		UOrbitComponent::SplineMesh = MeshFinder.Object;
+	}
+
+	SetUsingAbsoluteLocation(true);
+	SetUsingAbsoluteRotation(true);
+	SetUsingAbsoluteScale(true);
 }
 
 
@@ -21,7 +32,7 @@ void UOrbitComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	
+
 }
 
 
@@ -51,6 +62,10 @@ void UOrbitComponent::UpdateOrbit(FVector relative_position, FVector relative_ve
 	periapsis_direction.Normalize();
 
 	UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), angular_momentum, eccentricity, angle);
+
+	if (IsVisible()) {
+		UpdateSplineWithOrbit();
+	}
 }
 
 FVector UOrbitComponent::GetPosition(float Time) {
@@ -64,4 +79,94 @@ FVector UOrbitComponent::GetPosition(float Time) {
 
 FVector UOrbitComponent::GetVelocity(float Time) {
 	return FVector();
+}
+
+void UOrbitComponent::UpdateSpline() {
+	Super::UpdateSpline();
+
+	UE_LOG(LogTemp, Warning, TEXT("Spline updated"));
+	
+	// update spline meshes
+	
+	// remove extra spline mesh components
+	for (int i = Spline.Num() - GetNumberOfSplineSegments(); i > 0; --i) {
+		USplineMeshComponent* SplineComponent = Spline.Pop();
+		SplineComponent->UnregisterComponent();
+		SplineComponent->DestroyComponent();
+	}
+	// add missing spline mesh components
+	for (int i = GetNumberOfSplineSegments() - Spline.Num(); i > 0; --i) {
+		USplineMeshComponent* SplineComponent = NewObject<USplineMeshComponent>(this);
+		SplineComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		SplineComponent->SetStaticMesh(SplineMesh);
+		SplineComponent->SetForwardAxis(ESplineMeshAxis::Z);
+		SplineComponent->SetupAttachment(this);
+		SplineComponent->RegisterComponent();
+		Spline.Add(SplineComponent);
+	}
+
+	if (GetNumberOfSplineSegments() != Spline.Num()) {
+		UE_LOG(LogTemp, Warning, TEXT("Something went terribly wrong, spline component length mismatch"));
+	}
+
+	// update spline mesh components
+	FInterpCurveVector SplinePoints = GetSplinePointsPosition();
+
+	for (int i = 0; i < Spline.Num(); ++i) {
+		Spline[i]->SetStartAndEnd(
+			SplinePoints.Points[i].OutVal,
+			SplinePoints.Points[i].LeaveTangent,
+			SplinePoints.Points[(i + 1) % Spline.Num()].OutVal,
+			SplinePoints.Points[(i + 1) % Spline.Num()].ArriveTangent
+		);
+	}
+}
+
+void UOrbitComponent::UpdateSplineWithOrbit() {
+	
+	FVector Periapsis;
+	FVector Apoapsis;
+
+	FVector Midpoint = (Periapsis + Apoapsis) / 2;
+
+	FVector FocalPoint;
+
+	FVector HighFocalPoint = Periapsis - FocalPoint + Apoapsis;
+
+	// construct until midpoint
+	ClearSplinePoints(false);
+	// while point doesn't cross midpoint axis
+	//   add point
+
+	
+	// mirror into high half until apoapsis
+	for (int i = GetNumberOfSplineSegments(); i > 0; --i) {
+		FSplinePoint Point = GetSplinePointAt(i, ESplineCoordinateSpace::Local);
+		FSplinePoint NewPoint = FSplinePoint(
+			0, // key
+			Point.Position, // TODO: reflect this across midpoint axis
+			Point.LeaveTangent, // TODO: reflect this across midpont axis
+			Point.ArriveTangent // TODO: reflect this across midpont axis
+		);
+		AddPoint(NewPoint, false);
+	}
+
+	// mirror into second half, from apoapsis back to periapsis
+	for (int i = GetNumberOfSplineSegments() - 1; i > 1; --i) {
+		FSplinePoint Point = GetSplinePointAt(i, ESplineCoordinateSpace::Local);
+		FSplinePoint NewPoint = FSplinePoint(
+			0, // key
+			Point.Position, // TODO: reflect this across apsis axis
+			Point.LeaveTangent, // TODO: reflect this across apsis axis
+			Point.ArriveTangent // TODO: reflect this across apsis axis
+		);
+		AddPoint(NewPoint, false);
+	}
+
+	// call update spline once everything has updated to update the mesh
+	UpdateSpline();
+}
+
+void UOrbitComponent::OnVisibilityChanged() {
+	UpdateSplineWithOrbit();
 }
