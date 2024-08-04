@@ -24,27 +24,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class USkyAtmosphereComponent> atmosphere;
+	TObjectPtr<class USkyAtmosphereComponent> Atmosphere;
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class UStaticMeshComponent> mesh;
+	TObjectPtr<class UStaticMeshComponent> Mesh;
 
 	double angle;
 	FVector axis_of_rotation;
 	double angle_to_parent;
 
 	TObjectPtr<ACelestialBody> parent;
-	double mass;
-	double mu; // gravitational parameter
+	double Mass;
+	double Mu; // gravitational parameter = Mass * G
+	double Radius;
 
 	// condition
 	double radius_of_influence;
-
-	UPROPERTY(EditAnywhere)
-	double atmosphere_height = 100;
-
-	UPROPERTY(EditAnywhere)
-	double radius = 100;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

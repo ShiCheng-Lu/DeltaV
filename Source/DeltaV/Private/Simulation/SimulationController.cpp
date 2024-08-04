@@ -59,12 +59,13 @@ void ASimulationController::BeginPlay() {
 
 	FVector origin, extent;
 	craft->GetActorBounds(true, origin, extent);
-	craft->SetActorLocation(FVector(-(earth->radius * 100 + extent.Z * 2), 0, 0));
+	craft->SetActorLocation(FVector(-(earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0));
 	craft->SetActorRotation(FRotator(180, 0, 0));
 	craft->SetPhysicsEnabled(true);
 
 	Possess(craft);
 	SetControlRotation(FRotator(0));
+	craft->CentralBody = earth;
 
 	PlayerCameraManager->FreeCamDistance = 1000;
 
@@ -73,7 +74,7 @@ void ASimulationController::BeginPlay() {
 
 	HUD->SetNavballTarget(craft, FVector(0, 0, 0));
 
-	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *craft->GetActorLocation().ToString(), earth->radius);
+	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *craft->GetActorLocation().ToString(), earth->GetActorScale3D().Z);
 
 	
 	ControlStabilizer = NewObject<UControlStabilizer>(this); // CreateDefaultSubobject<UControlStabilizer>("Stabilizer");
@@ -143,8 +144,8 @@ void ASimulationController::Tick(float DeltaSeconds) {
 
 	DrawDebugDirectionalArrow(GetWorld(), craft->GetActorLocation(), craft->GetActorLocation() + craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
 
-	DrawDebugSphere(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
-	DrawDebugDirectionalArrow(GetWorld(), FVector(-(earth->radius * 100 + 400), 0, 0), FVector(-(earth->radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
+	DrawDebugSphere(GetWorld(), FVector(-(earth->Radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
+	DrawDebugDirectionalArrow(GetWorld(), FVector(-(earth->Radius * 100 + 400), 0, 0), FVector(-(earth->Radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
 }
 
 void ASimulationController::Zoom(float value) {
@@ -204,7 +205,7 @@ void ASimulationController::ToggleMap() {
 	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 
 	ACelestialBody* body = NewObject<ACelestialBody>(this);
-	body->mu = HUD->Gravity->GetValue();
+	body->Mu = HUD->Gravity->GetValue();
 
 	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(20, HUD->Velocity->GetValue(), 40), body);
 	

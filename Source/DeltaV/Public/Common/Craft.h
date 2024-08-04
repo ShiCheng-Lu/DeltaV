@@ -24,6 +24,8 @@ public:
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 
+	TObjectPtr<class ACelestialBody> CentralBody;
+
 public:
 	// Sets default values for this pawn's properties
 	ACraft(const FObjectInitializer& ObjectInitializer);

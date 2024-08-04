@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "SimulationController.generated.h"
 
-class ACraft;
 class USimulationHUD;
 class UControlStabilizer;
 
@@ -28,7 +27,9 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	ACraft* craft;
+	TObjectPtr<class ACraft> craft;
+	TObjectPtr<class UObjectComponent> CraftOrbit;
+
 	TObjectPtr<class ACelestialBody> earth;
 
 	UPROPERTY()

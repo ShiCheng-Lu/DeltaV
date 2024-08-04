@@ -6,8 +6,6 @@
 #include "Components/SplineComponent.h"
 #include "OrbitComponent.generated.h"
 
-class ACelestialBody;
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DELTAV_API UOrbitComponent : public USplineComponent
 {
@@ -25,18 +23,18 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	double mass;
+	double Mass;
 
-	double angular_momentum;
-	FVector axis_of_rotation;
-	double eccentricity;
-	FVector periapsis_direction;
+	double AngularMomentum;
+	FVector AxisOfRotation;
+	double Eccentricity;
+	FVector PeriapsisDirection;
 
-	double orbit_time;
-	double time_at_periapsis;
-	ACelestialBody* central_body;
+	double OrbitDuration;
+	double TimeAtPeriapsis;
+	TObjectPtr<class ACelestialBody> CentralBody;
 
-	void UpdateOrbit(FVector relative_position, FVector relative_velocity, ACelestialBody* central_body);
+	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity, TObjectPtr<ACelestialBody> CelestialBody);
 
 	FVector GetPosition(float Time);
 

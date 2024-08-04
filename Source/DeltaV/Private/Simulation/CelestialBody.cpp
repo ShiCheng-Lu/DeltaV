@@ -12,28 +12,26 @@ ACelestialBody::ACelestialBody(const FObjectInitializer& ObjectInitializer) : Su
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("StaticMesh'/Game/Shapes/Shape_Sphere.Shape_Sphere'"));
 	if (MeshFinder.Succeeded()) {
-		mesh->SetStaticMesh(MeshFinder.Object);
+		Mesh->SetStaticMesh(MeshFinder.Object);
 	}
-	mesh->SetRelativeScale3D(FVector(radius));
 
-	atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>("Atmosphere");
-	atmosphere->TransformMode = ESkyAtmosphereTransformMode::PlanetCenterAtComponentTransform;
-	atmosphere->SetBottomRadius(radius / 1000); // in km
-	atmosphere->SetAtmosphereHeight(atmosphere_height / 1000); // in km
+	Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>("Atmosphere");
+	Atmosphere->TransformMode = ESkyAtmosphereTransformMode::PlanetCenterAtComponentTransform;
 
-	SetRootComponent(mesh);
+	SetRootComponent(Mesh);
 
-	atmosphere->SetupAttachment(mesh);
+	Atmosphere->SetupAttachment(Mesh);
 }
 
 // Called when the game starts or when spawned
 void ACelestialBody::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	Mu = Mesh->CalculateMass() * 6.6743E-11;
 }
 
 // Called every frame
@@ -47,14 +45,12 @@ void ACelestialBody::Tick(float DeltaTime)
 void ACelestialBody::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.GetPropertyName() == "radius") {
-		radius = FMath::Max(0, radius);
-		mesh->SetRelativeScale3D(FVector(radius));
-		atmosphere->SetBottomRadius(radius / 1000); // in km
+	UE_LOG(LogTemp, Warning, TEXT("Changed: %s"), *PropertyChangedEvent.GetPropertyName().ToString());
+	if (PropertyChangedEvent.GetPropertyName() == "RelativeScale3D" || PropertyChangedEvent.GetPropertyName() == "Mesh") {
+		Radius = FMath::Max(Mesh->GetRelativeScale3D().X, 0);
+		Mesh->SetRelativeScale3D(FVector(Radius));
+		Atmosphere->SetBottomRadius(Radius / 1000); // in km
 	}
-	if (PropertyChangedEvent.GetPropertyName() == "atmosphere_height") {
-		atmosphere_height = FMath::Max(100, atmosphere_height); // atmosphere height 
-		atmosphere->SetAtmosphereHeight(atmosphere_height / 1000);
-	}
+
 }
 #endif

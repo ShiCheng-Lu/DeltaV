@@ -37,6 +37,7 @@ void UConstructionHUD::NativeOnInitialized() {
 	CraftName->SetText(FText::FromString("Hello"));
 
 	// part list
+
 	UPartItem* partItem = CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cone");
 	PartsList->AddChildToUniformGrid(partItem, 0, 0);
 }

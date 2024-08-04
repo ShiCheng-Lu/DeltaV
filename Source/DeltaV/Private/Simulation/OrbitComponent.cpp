@@ -45,23 +45,23 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 }
 
-void UOrbitComponent::UpdateOrbit(FVector relative_position, FVector relative_velocity, ACelestialBody* in_central_body) {
-	central_body = in_central_body;
+void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector RelativeVelocity, TObjectPtr<ACelestialBody> CelestialBody) {
+	CentralBody = CelestialBody;
 
-	FVector angular_momentum_vector = relative_position.Cross(relative_velocity);
-	axis_of_rotation = angular_momentum_vector.GetSafeNormal();
-	angular_momentum = angular_momentum_vector.SquaredLength();
+	FVector AngularMomentumVector = OrbitRelativeLocation.Cross(RelativeVelocity);
+	AxisOfRotation = AngularMomentumVector.GetSafeNormal();
+	AngularMomentum = AngularMomentumVector.SquaredLength();
 
-	double energy = relative_velocity.SquaredLength() / 2 - central_body->mu / relative_position.Length();
-	eccentricity = sqrt(1 + 2 * energy * angular_momentum / (central_body->mu * central_body->mu));
+	double Energy = RelativeVelocity.SquaredLength() / 2 - CentralBody->Mu / OrbitRelativeLocation.Length();
+	Eccentricity = sqrt(1 + 2 * Energy * AngularMomentum / (CentralBody->Mu * CentralBody->Mu));
 
 	// find the periapsis point
-	double angle = FMath::Acos((angular_momentum / (central_body->mu * relative_position.Length()) - 1) / eccentricity);
+	double Angle = FMath::Acos((AngularMomentum / (CentralBody->Mu * OrbitRelativeLocation.Length()) - 1) / Eccentricity);
 
-	periapsis_direction = relative_position.RotateAngleAxisRad(angle, axis_of_rotation);
-	periapsis_direction.Normalize();
+	PeriapsisDirection = OrbitRelativeLocation.RotateAngleAxisRad(Angle, AxisOfRotation);
+	PeriapsisDirection.Normalize();
 
-	UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), angular_momentum, eccentricity, angle);
+	UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), AngularMomentum, Eccentricity, Angle);
 
 	if (IsVisible()) {
 		UpdateSplineWithOrbit();
@@ -69,12 +69,13 @@ void UOrbitComponent::UpdateOrbit(FVector relative_position, FVector relative_ve
 }
 
 FVector UOrbitComponent::GetPosition(float Time) {
-	double angle = FMath::DegreesToRadians(Time);
-	double radius = angular_momentum / (central_body->mu + central_body->mu * eccentricity * FMath::Cos(angle));
+	// Current implmemntation evaluate time as degrees after periapsis
+	double Angle = FMath::DegreesToRadians(Time);
+	double Radius = AngularMomentum / (CentralBody->Mu + CentralBody->Mu * Eccentricity * FMath::Cos(Angle));
 
-	FVector result = periapsis_direction.RotateAngleAxisRad(angle, axis_of_rotation);
+	FVector Result = PeriapsisDirection.RotateAngleAxisRad(Angle, AxisOfRotation);
 
-	return result * radius;
+	return Result * Radius;
 }
 
 FVector UOrbitComponent::GetVelocity(float Time) {
@@ -135,8 +136,18 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 
 	// construct until midpoint
 	ClearSplinePoints(false);
+
+
+
 	// while point doesn't cross midpoint axis
 	//   add point
+	int TotalPoints = 0;
+	while (true) {
+		FVector PointLocation = GetPosition(TotalPoints); // 
+		FVector PointTangent;
+		FSplinePoint Point(TotalPoints, PointLocation, PointTangent, PointTangent);
+		break;
+	}
 
 	
 	// mirror into high half until apoapsis
@@ -163,10 +174,16 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 		AddPoint(NewPoint, false);
 	}
 
+	for (int i = 0; i < GetNumberOfSplineSegments(); ++i) {
+		
+	}
+
 	// call update spline once everything has updated to update the mesh
 	UpdateSpline();
 }
 
 void UOrbitComponent::OnVisibilityChanged() {
-	UpdateSplineWithOrbit();
+	if (IsVisible()) {
+		UpdateSplineWithOrbit();
+	}
 }

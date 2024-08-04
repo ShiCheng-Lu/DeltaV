@@ -7,6 +7,7 @@
 #include "Components/SphereComponent.h"
 
 #include "Common/JsonUtil.h"
+#include "Simulation/CelestialBody.h"
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
@@ -38,15 +39,18 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!PhysicsEnabled) {
+	if (!PhysicsEnabled || CentralBody == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("no grav"));
 		return;
 	}
 
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
-		FVector GravityDirection = Part->GetComponentLocation() - FVector(0, 0, 0);
+		FVector GravityDirection = Part->GetComponentLocation() - CentralBody->GetActorLocation();
+		double SquareDistance = GravityDirection.SquaredLength();
 		GravityDirection.Normalize();
-		Part->AddForce(GravityDirection * -30, "", true);
+		UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
+		Part->AddForce(GravityDirection * -CentralBody->Mu / SquareDistance * 100, NAME_None, true);
 	}
 }
 
@@ -166,7 +170,7 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 void ACraft::Throttle(float throttle) {
 	UPart* Engine = RootPart();
 	if (Engine) {
-		FVector thrust = FVector(0, 0, 50000 * throttle);
+		FVector thrust = FVector(0, 0, 700000 * throttle);
 		thrust = Engine->GetComponentRotation().RotateVector(thrust);
 		Engine->AddForce(thrust);
 	}
