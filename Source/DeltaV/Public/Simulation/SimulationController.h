@@ -32,6 +32,9 @@ public:
 
 	TObjectPtr<class ACelestialBody> earth;
 
+	int TimeWarp = 0;
+	TArray<float> TimeWarpMapping = { 0.1, 1, 2, 4, 8, 14, 20 };
+
 	UPROPERTY()
 	USimulationHUD* HUD;
 
@@ -57,4 +60,9 @@ public:
 	void GravChange(float value);
 
 	UControlStabilizer* ControlStabilizer;
+
+	void SetTimeWarp(int TimeWarpLevel);
+	void TimeWarpAdd();
+	void TimeWarpSub();
+	void TimeWarpReset();
 };

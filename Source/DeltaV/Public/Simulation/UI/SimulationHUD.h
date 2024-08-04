@@ -59,4 +59,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ButtonClicked(UCheckBox* Button);
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UProgressBar> TimeWarp;
 };

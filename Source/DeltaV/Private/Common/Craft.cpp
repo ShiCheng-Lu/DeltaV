@@ -49,7 +49,7 @@ void ACraft::Tick(float DeltaTime)
 		FVector GravityDirection = Part->GetComponentLocation() - CentralBody->GetActorLocation();
 		double SquareDistance = GravityDirection.SquaredLength();
 		GravityDirection.Normalize();
-		UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
+		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
 		Part->AddForce(GravityDirection * -CentralBody->Mu / SquareDistance * 100, NAME_None, true);
 	}
 }

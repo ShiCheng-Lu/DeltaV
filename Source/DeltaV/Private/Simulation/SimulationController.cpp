@@ -113,6 +113,10 @@ void ASimulationController::SetupInputComponent() {
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("ToggleMap", EKeys::M));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpAdd", EKeys::Period));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpSub", EKeys::Comma));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpReset", EKeys::Slash));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
 
@@ -126,6 +130,10 @@ void ASimulationController::SetupInputComponent() {
 
 	InputComponent->BindAction("Stage", EInputEvent::IE_Pressed, this, &ASimulationController::Stage);
 	InputComponent->BindAction("ToggleMap", EInputEvent::IE_Pressed, this, &ASimulationController::ToggleMap);
+
+	InputComponent->BindAction("TimeWarpAdd", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpAdd);
+	InputComponent->BindAction("TimeWarpSub", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpSub);
+	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset);
 }
 
 
@@ -190,6 +198,10 @@ void ASimulationController::GravChange(float value) {
 }
 
 void ASimulationController::ToggleMap() {
+
+	UE_LOG(LogTemp, Warning, TEXT("toggle map clicked"));
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0);
+	return;
 	/*
 	if (PlayerCameraManager->FreeCamDistance == 1000) {
 		PlayerCameraManager->FreeCamDistance = 100000000;
@@ -200,7 +212,7 @@ void ASimulationController::ToggleMap() {
 	}
 	*/
 	// Debug orbit;
-
+	/*
 	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->GetValue(), HUD->Velocity->GetValue());
 	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 
@@ -220,5 +232,25 @@ void ASimulationController::ToggleMap() {
 	}
 	// GetHUD()->Draw3DLine(array[0], array[35], FColor(230, 230, 0));
 	DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
-	DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);
+	DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);*/
+}
+
+void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
+	TimeWarp = TimeWarpLevel;
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeWarpMapping[TimeWarp]);
+	HUD->TimeWarp->SetPercent(float(TimeWarp) / 6);
+}
+
+void ASimulationController::TimeWarpAdd() {
+	if (TimeWarp < 6) {
+		SetTimeWarp(TimeWarp + 1);
+	}
+}
+void ASimulationController::TimeWarpSub() {
+	if (TimeWarp > 0) {
+		SetTimeWarp(TimeWarp - 1);
+	}
+}
+void ASimulationController::TimeWarpReset() {
+	SetTimeWarp(1);
 }
