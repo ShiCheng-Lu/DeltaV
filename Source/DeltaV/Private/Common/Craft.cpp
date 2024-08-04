@@ -36,7 +36,7 @@ void ACraft::BeginPlay()
 void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	return; // TEMP: no grav
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
 		FVector GravityDirection = Part->GetComponentLocation() - FVector(0, 0, 0);
