@@ -95,9 +95,8 @@ void ANavball::Tick(float DeltaTime)
 	DebugQuat(GetWorld(), Target->GetActorLocation(), rotation.ToQuat(), 300);
 	DebugQuat(GetWorld(), Target->GetActorLocation(), Target->GetActorQuat(), 500);
 	
-	FQuat rot = (FQuat(rotation).Inverse() * Target->GetActorQuat()).Inverse(); // rotation
-	Mesh->SetRelativeRotation(rot);
-	UE_LOG(LogTemp, Warning, TEXT("ROT: %s"), *rot.Rotator().ToString());
+	FQuat rot = (FQuat(rotation).Inverse() * Target->GetActorQuat()).Inverse();
+	Mesh->SetRelativeRotation(rot * FQuat(FVector(0, 1, 0), PI));
 }
 
 void ANavball::SetTarget(ACraft* Craft, FVector PlanetCenter) {
