@@ -91,9 +91,9 @@ void ANavball::Tick(float DeltaTime)
 	newZ.Normalize();
 
 	FMatrix rotation = FMatrix(newX, newY, newZ, FVector(0));
-	// DebugQuat(GetWorld(), Target->GetActorLocation(), FQuat(0), 300);
-	DebugQuat(GetWorld(), Target->GetActorLocation(), rotation.ToQuat(), 300);
-	DebugQuat(GetWorld(), Target->GetActorLocation(), Target->GetActorQuat(), 500);
+	
+	// DebugQuat(GetWorld(), Target->GetActorLocation(), rotation.ToQuat(), 300);
+	// DebugQuat(GetWorld(), Target->GetActorLocation(), Target->GetActorQuat(), 500);
 	
 	FQuat rot = (FQuat(rotation).Inverse() * Target->GetActorQuat()).Inverse();
 	Mesh->SetRelativeRotation(rot * FQuat(FVector(0, 1, 0), PI));

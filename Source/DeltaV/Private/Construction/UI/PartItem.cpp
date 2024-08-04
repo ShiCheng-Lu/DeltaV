@@ -65,6 +65,7 @@ void UPartItem::MainButtonClicked() {
 	}
 	if (!Controller) {
 		UE_LOG(LogTemp, Warning, TEXT("Controller not found"));
+		return;
 	}
 
 	Craft->Initialize(CraftJson);
@@ -74,4 +75,5 @@ void UPartItem::MainButtonClicked() {
 	}
 	Controller->Selected = Craft;
 	Controller->SelectedPart = Craft->RootPart();
+	Controller->PlaceDistance = 500;
 }

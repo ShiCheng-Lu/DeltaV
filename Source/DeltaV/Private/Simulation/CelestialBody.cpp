@@ -40,8 +40,6 @@ void ACelestialBody::BeginPlay()
 void ACelestialBody::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *GetActorLocation().ToString());
 }
 
 

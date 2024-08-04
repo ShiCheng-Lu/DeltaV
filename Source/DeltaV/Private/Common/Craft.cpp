@@ -22,6 +22,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Root);
 
 	BaseEyeHeight = 0;
+	PhysicsEnabled = false;
 
 	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
 }
@@ -36,6 +37,10 @@ void ACraft::BeginPlay()
 void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!PhysicsEnabled) {
+		return;
+	}
 
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
