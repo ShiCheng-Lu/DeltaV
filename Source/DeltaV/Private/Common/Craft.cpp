@@ -8,6 +8,7 @@
 
 #include "Common/JsonUtil.h"
 #include "Simulation/CelestialBody.h"
+#include "Simulation/OrbitComponent.h"
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
@@ -40,7 +41,7 @@ void ACraft::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (!PhysicsEnabled || CentralBody == nullptr) {
-		UE_LOG(LogTemp, Warning, TEXT("no grav"));
+		// UE_LOG(LogTemp, Warning, TEXT("no grav"));
 		return;
 	}
 
@@ -50,7 +51,7 @@ void ACraft::Tick(float DeltaTime)
 		double SquareDistance = GravityDirection.SquaredLength();
 		GravityDirection.Normalize();
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
-		Part->AddForce(GravityDirection * -CentralBody->Mu / SquareDistance * 100, NAME_None, true);
+		Part->AddForce(GravityDirection * -CentralBody->Mu / SquareDistance, NAME_None, true);
 	}
 }
 
@@ -169,16 +170,19 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 
 void ACraft::Throttle(float throttle) {
 	UPart* Engine = RootPart();
-	if (Engine) {
+	if (PhysicsEnabled && Engine) {
 		FVector thrust = FVector(0, 0, 700000 * throttle);
 		thrust = Engine->GetComponentRotation().RotateVector(thrust);
 		Engine->AddForce(thrust);
+
+		// update orbit
+		OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity(), );
 	}
 }
 
 void ACraft::Rotate(FRotator rotator, float strength) {
 	UPart* Engine = RootPart();
-	if (Engine && !rotator.IsZero()) {
+	if (PhysicsEnabled && Engine && !rotator.IsZero()) {
 		FVector rotation_axis = GetActorRotation().RotateVector(rotator.Quaternion().GetRotationAxis());
 
 		Engine->AddTorqueInDegrees(rotation_axis * strength);

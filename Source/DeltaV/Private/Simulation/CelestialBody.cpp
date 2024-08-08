@@ -31,7 +31,7 @@ void ACelestialBody::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Mu = Mesh->CalculateMass() * 6.6743E-11;
+	Mu = Mesh->CalculateMass() * 6.6743E-5; // G: 6.6743E-5 (cN)(cm^2)(kg^-2), Mu: (cN)(cm^2)(kg^-1) = (cm^3)(s^-2)
 }
 
 // Called every frame
@@ -47,10 +47,9 @@ void ACelestialBody::PostEditChangeProperty(FPropertyChangedEvent& PropertyChang
 
 	UE_LOG(LogTemp, Warning, TEXT("Changed: %s"), *PropertyChangedEvent.GetPropertyName().ToString());
 	if (PropertyChangedEvent.GetPropertyName() == "RelativeScale3D" || PropertyChangedEvent.GetPropertyName() == "Mesh") {
-		Radius = FMath::Max(Mesh->GetRelativeScale3D().X, 0);
+		Radius = FMath::Max(Mesh->GetRelativeScale3D().X, 0); // the sphere is 1m, so radius in meters is the scale
 		Mesh->SetRelativeScale3D(FVector(Radius));
 		Atmosphere->SetBottomRadius(Radius / 1000); // in km
 	}
-
 }
 #endif

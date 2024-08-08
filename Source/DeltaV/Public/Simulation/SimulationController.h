@@ -27,10 +27,10 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	TObjectPtr<class ACraft> craft;
+	TObjectPtr<class ACraft> Craft;
 	TObjectPtr<class UObjectComponent> CraftOrbit;
 
-	TObjectPtr<class ACelestialBody> earth;
+	TObjectPtr<class ACelestialBody> Earth;
 
 	int TimeWarp = 0;
 	TArray<float> TimeWarpMapping = { 0.1, 1, 2, 4, 8, 14, 20 };
@@ -65,4 +65,6 @@ public:
 	void TimeWarpAdd();
 	void TimeWarpSub();
 	void TimeWarpReset();
+
+	void Action(int Action);
 };

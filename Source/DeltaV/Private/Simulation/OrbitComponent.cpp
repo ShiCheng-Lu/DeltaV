@@ -23,6 +23,8 @@ UOrbitComponent::UOrbitComponent()
 	SetUsingAbsoluteLocation(true);
 	SetUsingAbsoluteRotation(true);
 	SetUsingAbsoluteScale(true);
+
+	SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 
@@ -45,18 +47,20 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 }
 
-void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector RelativeVelocity, TObjectPtr<ACelestialBody> CelestialBody) {
-	CentralBody = CelestialBody;
-
+void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector RelativeVelocity) {
 	FVector AngularMomentumVector = OrbitRelativeLocation.Cross(RelativeVelocity);
 	AxisOfRotation = AngularMomentumVector.GetSafeNormal();
-	AngularMomentum = AngularMomentumVector.SquaredLength();
+	AngularMomentum = AngularMomentumVector.SquaredLength(); // (cm)^2
 
-	double Energy = RelativeVelocity.SquaredLength() / 2 - CentralBody->Mu / OrbitRelativeLocation.Length();
-	Eccentricity = sqrt(1 + 2 * Energy * AngularMomentum / (CentralBody->Mu * CentralBody->Mu));
+	double Energy = RelativeVelocity.SquaredLength() / 2 - CentralBody->Mu / OrbitRelativeLocation.Length(); // (cm/s)^2 - (cm)^3(s^-2) / (cm) = (cm^2)(s^-2)
+	Eccentricity = sqrt(1 + 2 * Energy * AngularMomentum / (CentralBody->Mu * CentralBody->Mu)); // (cm^2)(s^-2)(cm)^2 / (cm)^3(s^-2)(cm)^3(s^-2) = 1
+
 
 	// find the periapsis point
 	double Angle = FMath::Acos((AngularMomentum / (CentralBody->Mu * OrbitRelativeLocation.Length()) - 1) / Eccentricity);
+	if (RelativeVelocity.ProjectOnTo(OrbitRelativeLocation).GetSafeNormal().Equals(OrbitRelativeLocation.GetSafeNormal())) {
+		Angle *= -1;
+	}
 
 	PeriapsisDirection = OrbitRelativeLocation.RotateAngleAxisRad(Angle, AxisOfRotation);
 	PeriapsisDirection.Normalize();
@@ -101,7 +105,7 @@ void UOrbitComponent::UpdateSpline() {
 		SplineComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		SplineComponent->SetStaticMesh(SplineMesh);
 		SplineComponent->SetForwardAxis(ESplineMeshAxis::Z);
-		SplineComponent->SetupAttachment(this);
+		// SplineComponent->SetupAttachment(this);
 		SplineComponent->RegisterComponent();
 		Spline.Add(SplineComponent);
 	}
@@ -123,6 +127,14 @@ void UOrbitComponent::UpdateSpline() {
 	}
 }
 
+double UOrbitComponent::Periapsis() {
+	return AngularMomentum / (CentralBody->Mu + CentralBody->Mu * Eccentricity);
+}
+
+double UOrbitComponent::Apoapsis() {
+	return AngularMomentum / (CentralBody->Mu - CentralBody->Mu * Eccentricity);
+}
+
 void UOrbitComponent::UpdateSplineWithOrbit() {
 	
 	FVector Periapsis;
@@ -137,18 +149,21 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 	// construct until midpoint
 	ClearSplinePoints(false);
 
-
-
 	// while point doesn't cross midpoint axis
 	//   add point
 	int TotalPoints = 0;
-	while (true) {
-		FVector PointLocation = GetPosition(TotalPoints); // 
-		FVector PointTangent;
-		FSplinePoint Point(TotalPoints, PointLocation, PointTangent, PointTangent);
-		break;
+	for (int i = 0; i < 36; ++i) {
+		FVector PointLocation = GetPosition(TotalPoints * 10); // 
+		if (PointLocation.X < 0) {
+			break;
+		}
+		FVector PointTangent = -PointLocation.Cross(FVector(0, 0, 1)); // TODO: get real tangent from velocity
+		FSplinePoint NewPoint(TotalPoints, PointLocation, PointTangent, PointTangent);
+		AddPoint(NewPoint, false);
+		TotalPoints += 1;
 	}
 
+	/*
 	
 	// mirror into high half until apoapsis
 	for (int i = GetNumberOfSplineSegments(); i > 0; --i) {
@@ -173,6 +188,7 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 		);
 		AddPoint(NewPoint, false);
 	}
+	*/
 
 	for (int i = 0; i < GetNumberOfSplineSegments(); ++i) {
 		

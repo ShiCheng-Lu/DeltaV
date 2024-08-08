@@ -34,9 +34,9 @@ public:
 	double angle_to_parent;
 
 	TObjectPtr<ACelestialBody> parent;
-	double Mass;
-	double Mu; // gravitational parameter = Mass * G
-	double Radius;
+	double Mass; // kg
+	double Mu; // (cm^3)(s^-2) gravitational parameter = Mass * G
+	double Radius; // m
 
 	// condition
 	double radius_of_influence;

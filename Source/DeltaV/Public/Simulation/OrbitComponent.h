@@ -25,16 +25,16 @@ public:
 
 	double Mass;
 
-	double AngularMomentum;
+	double AngularMomentum; // (cm)^2
 	FVector AxisOfRotation;
-	double Eccentricity;
+	double Eccentricity; // unitless
 	FVector PeriapsisDirection;
 
 	double OrbitDuration;
 	double TimeAtPeriapsis;
 	TObjectPtr<class ACelestialBody> CentralBody;
 
-	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity, TObjectPtr<ACelestialBody> CelestialBody);
+	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity);
 
 	FVector GetPosition(float Time);
 
@@ -49,4 +49,8 @@ public:
 	virtual void UpdateSpline() override;
 
 	virtual void OnVisibilityChanged() override;
+
+	double Periapsis();
+
+	double Apoapsis();
 };

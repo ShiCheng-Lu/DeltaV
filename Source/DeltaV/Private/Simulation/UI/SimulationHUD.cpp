@@ -8,6 +8,7 @@
 #include "Components/Button.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/CheckBox.h"
+#include "Components/TextBlock.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 
@@ -44,7 +45,9 @@ void USimulationHUD::NativeOnInitialized() {
 }
 
 void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
-	
+	// Info->SetText(FText::Format(FTextFormat::FromString("Periapsis: %.2f\nApoapsis: %.2f"), ));
+
+
 }
 
 void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const {

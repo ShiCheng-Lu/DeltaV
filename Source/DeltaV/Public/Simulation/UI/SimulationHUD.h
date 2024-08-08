@@ -62,4 +62,7 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UProgressBar> TimeWarp;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UTextBlock> Info;
 };

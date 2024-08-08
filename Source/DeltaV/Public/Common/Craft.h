@@ -26,6 +26,8 @@ public:
 
 	TObjectPtr<class ACelestialBody> CentralBody;
 
+	TObjectPtr<class UOrbitComponent> OrbitComponent;
+
 public:
 	// Sets default values for this pawn's properties
 	ACraft(const FObjectInitializer& ObjectInitializer);

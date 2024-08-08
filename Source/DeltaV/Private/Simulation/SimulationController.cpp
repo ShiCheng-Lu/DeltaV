@@ -36,7 +36,7 @@ void ASimulationController::BeginPlay() {
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACelestialBody::StaticClass(), celestial_bodies);
 
 	if (celestial_bodies.Num() > 0) {
-		earth = (ACelestialBody*)celestial_bodies[0];
+		Earth = (ACelestialBody*)celestial_bodies[0];
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("No celestial body"));
@@ -53,28 +53,28 @@ void ASimulationController::BeginPlay() {
 		UE_LOG(LogTemp, Warning, TEXT("No craft, using default"));
 	}
 
-	craft = GetWorld()->SpawnActor<ACraft>();
-	craft->SetActorRotation(FRotator(90, 0, 0));
-	craft->Initialize(JsonUtil::ReadFile(Path));
+	Craft = GetWorld()->SpawnActor<ACraft>();
+	Craft->SetActorRotation(FRotator(90, 0, 0));
+	Craft->Initialize(JsonUtil::ReadFile(Path));
 
 	FVector origin, extent;
-	craft->GetActorBounds(true, origin, extent);
-	craft->SetActorLocation(FVector(-(earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0));
-	craft->SetActorRotation(FRotator(180, 0, 0));
-	craft->SetPhysicsEnabled(true);
+	Craft->GetActorBounds(true, origin, extent);
+	Craft->SetActorLocation(FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0));
+	Craft->SetActorRotation(FRotator(180, 0, 0));
+	Craft->SetPhysicsEnabled(true);
 
-	Possess(craft);
+	Possess(Craft);
 	SetControlRotation(FRotator(0));
-	craft->CentralBody = earth;
+	Craft->CentralBody = Earth;
 
 	PlayerCameraManager->FreeCamDistance = 1000;
 
 	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
 
-	HUD->SetNavballTarget(craft, FVector(0, 0, 0));
+	HUD->SetNavballTarget(Craft, FVector(0, 0, 0));
 
-	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *craft->GetActorLocation().ToString(), earth->GetActorScale3D().Z);
+	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *Craft->GetActorLocation().ToString(), Earth->GetActorScale3D().Z);
 
 	
 	ControlStabilizer = NewObject<UControlStabilizer>(this); // CreateDefaultSubobject<UControlStabilizer>("Stabilizer");
@@ -117,6 +117,14 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpSub", EKeys::Comma));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpReset", EKeys::Slash));
 
+
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action1", EKeys::One));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action2", EKeys::Two));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action3", EKeys::Three));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action4", EKeys::Four));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action5", EKeys::Five));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action6", EKeys::Six));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
 
@@ -134,11 +142,19 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAction("TimeWarpAdd", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpAdd);
 	InputComponent->BindAction("TimeWarpSub", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpSub);
 	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset);
+
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action1", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 1);
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action2", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 2);
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action3", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 3);
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action4", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 4);
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action5", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 5);
+	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action6", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 6);
+
 }
 
 
 void ASimulationController::Throttle(float value) {
-	if (value != 0 && craft) {
+	if (value != 0 && Craft) {
 		ThrottleValue = FMath::Clamp(ThrottleValue + value, 0, 1);
 		HUD->Throttle->SetPercent(ThrottleValue);
 	}
@@ -146,37 +162,37 @@ void ASimulationController::Throttle(float value) {
 
 void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
-	craft->Throttle(ThrottleValue);
+	Craft->Throttle(ThrottleValue);
 
 	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
 
-	DrawDebugDirectionalArrow(GetWorld(), craft->GetActorLocation(), craft->GetActorLocation() + craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
+	DrawDebugDirectionalArrow(GetWorld(), Craft->GetActorLocation(), Craft->GetActorLocation() + Craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
 
-	DrawDebugSphere(GetWorld(), FVector(-(earth->Radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
-	DrawDebugDirectionalArrow(GetWorld(), FVector(-(earth->Radius * 100 + 400), 0, 0), FVector(-(earth->Radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
+	DrawDebugSphere(GetWorld(), FVector(-(Earth->Radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
+	DrawDebugDirectionalArrow(GetWorld(), FVector(-(Earth->Radius * 100 + 400), 0, 0), FVector(-(Earth->Radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
 }
 
 void ASimulationController::Zoom(float value) {
-	if (value != 0 && GetPawn() == craft) {
+	if (value != 0 && GetPawn() == Craft) {
 		PlayerCameraManager->FreeCamDistance *= (1 - value);
 	}
 }
 
 void ASimulationController::Pitch(float value) {
-	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(45, 0, 0), 100000000 * value);
+	if (value != 0 && GetPawn() == Craft) {
+		Craft->Rotate(FRotator(45, 0, 0), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Roll(float value) {
-	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(0, 0, 45), 100000000 * value);
+	if (value != 0 && GetPawn() == Craft) {
+		Craft->Rotate(FRotator(0, 0, 45), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Yaw(float value) {
-	if (value != 0 && GetPawn() == craft) {
-		craft->Rotate(FRotator(0, 45, 0), 100000000 * value);
+	if (value != 0 && GetPawn() == Craft) {
+		Craft->Rotate(FRotator(0, 45, 0), 100000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
@@ -198,10 +214,6 @@ void ASimulationController::GravChange(float value) {
 }
 
 void ASimulationController::ToggleMap() {
-
-	UE_LOG(LogTemp, Warning, TEXT("toggle map clicked"));
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0);
-	return;
 	/*
 	if (PlayerCameraManager->FreeCamDistance == 1000) {
 		PlayerCameraManager->FreeCamDistance = 100000000;
@@ -212,14 +224,25 @@ void ASimulationController::ToggleMap() {
 	}
 	*/
 	// Debug orbit;
-	/*
-	UE_LOG(LogTemp, Warning, TEXT("values %f %f"), HUD->Gravity->GetValue(), HUD->Velocity->GetValue());
+	UE_LOG(LogTemp, Warning, TEXT("grav, vel - %f, %f"), HUD->Gravity->GetValue(), HUD->Velocity->GetValue());
+
+	Craft->SetPhysicsEnabled(false);
+	Craft->SetActorLocation(FVector(-(Earth->Radius * 100 + 400), 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
+	
+	UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
+
+	FVector Velocity = FVector(0, HUD->Velocity->GetValue(), 0);
+	
+	for (auto& PartKVP : Craft->Parts) {
+		auto& Part = PartKVP.Value;
+		Part->ComponentVelocity = Velocity;
+	}
+	Craft->GetRootComponent()->ComponentVelocity = Velocity;
+	
+	
 	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 
-	ACelestialBody* body = NewObject<ACelestialBody>(this);
-	body->Mu = HUD->Gravity->GetValue();
-
-	orbit->UpdateOrbit(FVector(100, 0, 0), FVector(20, HUD->Velocity->GetValue(), 40), body);
+	orbit->UpdateOrbit(Craft->GetActorLocation(), Velocity, Earth);
 	
 	TArray<FVector> array;
 	for (int i = 0; i < 360; i++) {
@@ -231,8 +254,8 @@ void ASimulationController::ToggleMap() {
 		// UE_LOG(LogTemp, Warning, TEXT("p %d: %s"), i, *array[i].ToString());
 	}
 	// GetHUD()->Draw3DLine(array[0], array[35], FColor(230, 230, 0));
-	DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
-	DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);*/
+	// DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
+	// DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);
 }
 
 void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
@@ -253,4 +276,44 @@ void ASimulationController::TimeWarpSub() {
 }
 void ASimulationController::TimeWarpReset() {
 	SetTimeWarp(1);
+}
+
+void ASimulationController::Action(int Action) {
+	switch (Action)
+	{
+	case 1:
+		Craft->SetPhysicsEnabled(false);
+		break;
+	case 2:
+		Craft->SetPhysicsEnabled(true);
+		break;
+	case 3:
+		Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
+		break;
+	case 4:
+		break;
+	case 5:
+	{
+		UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
+
+		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity(), Earth);
+
+		TArray<FVector> Array;
+		for (int i = 0; i < 360; i++) {
+			Array.Add(orbit->GetPosition(i));
+		}
+
+		for (int i = 0; i < 359; i++) {
+			DrawDebugDirectionalArrow(GetWorld(), Array[i], Array[i + 1], 20, FColor(200, 0, 200), true, -1, 0, 2);
+		}
+	}
+		break;
+	case 6:
+		UE_LOG(LogTemp, Warning, TEXT("craft loc %s, vel %s (%f)"), *Craft->GetActorLocation().ToString(), *Craft->GetVelocity().ToString(), Craft->GetVelocity().Length());
+		break;
+	default:
+		break;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("action %d"), Action);
 }

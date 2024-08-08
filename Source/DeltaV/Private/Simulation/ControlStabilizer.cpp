@@ -35,7 +35,7 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (Controller->craft == nullptr) {
+	if (Controller->Craft == nullptr) {
 		return;
 	}
 
@@ -45,8 +45,8 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		}
 		// try to stabilize craft
 		// Controller->craft->Rotate();
-		FQuat target = Controller->craft->GetActorRotation().Quaternion();
-		FVector WorldAngularVelocity = Controller->craft->GetAngularVelocity();
+		FQuat target = Controller->Craft->GetActorRotation().Quaternion();
+		FVector WorldAngularVelocity = Controller->Craft->GetAngularVelocity();
 		// rotate velocity into relative to craft pitch/yaw/roll
 		FVector LocalAngularVelocity = target.Inverse().RotateVector(WorldAngularVelocity);
 
@@ -70,7 +70,7 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 		// UE_LOG(LogTemp, Warning, TEXT("Target: %s, V: %s,  R: %s"),  *TargetOrientation.ToString(), *LocalAngularVelocity.ToString(), *Rotation.ToString());
 
-		Controller->craft->Rotate(Rotation, 50000000);
+		Controller->Craft->Rotate(Rotation, 50000000);
 	}
 	else { // update target orientation
 		switch (Mode)
@@ -78,7 +78,7 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		case EStabilizationMode::NONE:
 			break;
 		case EStabilizationMode::HOLD_ATTITUDE:
-			TargetOrientation = Controller->craft->GetActorRotation().Quaternion();
+			TargetOrientation = Controller->Craft->GetActorRotation().Quaternion();
 			break;
 		case EStabilizationMode::MANEUVER:
 			break;
