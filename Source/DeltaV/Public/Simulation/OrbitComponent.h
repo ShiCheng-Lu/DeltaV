@@ -50,7 +50,7 @@ public:
 
 	virtual void OnVisibilityChanged() override;
 
-	double Periapsis();
+	double Periapsis(); // cm
 
-	double Apoapsis();
+	double Apoapsis(); // cm
 };

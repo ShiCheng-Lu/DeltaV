@@ -67,4 +67,6 @@ public:
 	void TimeWarpReset();
 
 	void Action(int Action);
+
+	AStaticMeshActor* TestActor;
 };

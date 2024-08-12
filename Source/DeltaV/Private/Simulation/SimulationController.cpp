@@ -65,7 +65,7 @@ void ASimulationController::BeginPlay() {
 
 	Possess(Craft);
 	SetControlRotation(FRotator(0));
-	Craft->CentralBody = Earth;
+	Craft->OrbitComponent->CentralBody = Earth;
 
 	PlayerCameraManager->FreeCamDistance = 1000;
 
@@ -165,11 +165,6 @@ void ASimulationController::Tick(float DeltaSeconds) {
 	Craft->Throttle(ThrottleValue);
 
 	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
-
-	DrawDebugDirectionalArrow(GetWorld(), Craft->GetActorLocation(), Craft->GetActorLocation() + Craft->GetActorRotation().Vector() * 10, 2, FColor(255, 0, 0));
-
-	DrawDebugSphere(GetWorld(), FVector(-(Earth->Radius * 100 + 400), 0, 0), 20, 10, FColor(0, 255, 0));
-	DrawDebugDirectionalArrow(GetWorld(), FVector(-(Earth->Radius * 100 + 400), 0, 0), FVector(-(Earth->Radius * 100 + 400), 0, 100), 2, FColor(0, 255, 0));
 }
 
 void ASimulationController::Zoom(float value) {
@@ -223,39 +218,6 @@ void ASimulationController::ToggleMap() {
 		return;
 	}
 	*/
-	// Debug orbit;
-	UE_LOG(LogTemp, Warning, TEXT("grav, vel - %f, %f"), HUD->Gravity->GetValue(), HUD->Velocity->GetValue());
-
-	Craft->SetPhysicsEnabled(false);
-	Craft->SetActorLocation(FVector(-(Earth->Radius * 100 + 400), 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
-	
-	UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
-
-	FVector Velocity = FVector(0, HUD->Velocity->GetValue(), 0);
-	
-	for (auto& PartKVP : Craft->Parts) {
-		auto& Part = PartKVP.Value;
-		Part->ComponentVelocity = Velocity;
-	}
-	Craft->GetRootComponent()->ComponentVelocity = Velocity;
-	
-	
-	UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
-
-	orbit->UpdateOrbit(Craft->GetActorLocation(), Velocity, Earth);
-	
-	TArray<FVector> array;
-	for (int i = 0; i < 360; i++) {
-		array.Add(orbit->GetPosition(i));
-	}
-
-	for (int i = 0; i < 359; i++) {
-		DrawDebugLine(GetWorld(), array[i], array[i + 1], FColor(200, 0, 200), false, 5, 0, 2);
-		// UE_LOG(LogTemp, Warning, TEXT("p %d: %s"), i, *array[i].ToString());
-	}
-	// GetHUD()->Draw3DLine(array[0], array[35], FColor(230, 230, 0));
-	// DrawDebugSphere(GetWorld(), FVector(0, 0, 0), 10, 40, FColor(0, 250, 0), false, 5, 0, 0);
-	// DrawDebugSphere(GetWorld(), FVector(100, 0, 0), 1, 40, FColor(0, 250, 0), false, 5, 0, 0);
 }
 
 void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
@@ -291,12 +253,18 @@ void ASimulationController::Action(int Action) {
 		Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
 		break;
 	case 4:
+	{
+		if (Craft->OrbitComponent->CentralBody == nullptr) {
+			Craft->OrbitComponent->CentralBody = Earth;
+			UE_LOG(LogTemp, Warning, TEXT("Craft orbit didn't have a central body"))
+		}
+	}
 		break;
 	case 5:
 	{
 		UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
-
-		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity(), Earth);
+		orbit->CentralBody = Earth;
+		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity());
 
 		TArray<FVector> Array;
 		for (int i = 0; i < 360; i++) {
@@ -309,7 +277,7 @@ void ASimulationController::Action(int Action) {
 	}
 		break;
 	case 6:
-		UE_LOG(LogTemp, Warning, TEXT("craft loc %s, vel %s (%f)"), *Craft->GetActorLocation().ToString(), *Craft->GetVelocity().ToString(), Craft->GetVelocity().Length());
+		UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
 		break;
 	default:
 		break;

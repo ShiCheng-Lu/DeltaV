@@ -16,6 +16,7 @@
 #include "Simulation/UI/Navball.h"
 #include "Simulation/SimulationController.h"
 #include "Simulation/ControlStabilizer.h"
+#include "Simulation/OrbitComponent.h"
 
 USimulationHUD::USimulationHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -45,9 +46,15 @@ void USimulationHUD::NativeOnInitialized() {
 }
 
 void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
-	// Info->SetText(FText::Format(FTextFormat::FromString("Periapsis: %.2f\nApoapsis: %.2f"), ));
+	if (Controller == nullptr || Controller->Craft == nullptr) {
+		return;
+	}
 
-
+	Info->SetText(FText::Format(FTextFormat::FromString("Periapsis: {0}\nApoapsis: {1}\nAltitude: {2}\nVelocity: {3}"), 
+		Controller->Craft->OrbitComponent->Periapsis() * 0.01,
+		Controller->Craft->OrbitComponent->Apoapsis() * 0.01,
+		Controller->Craft->GetActorLocation().Length() * 0.01,
+		Controller->Craft->GetVelocity().Length() * 0.01));
 }
 
 void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const {

@@ -34,6 +34,9 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
 	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
 	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
+
+	SetLinearDamping(0);
+	SetAngularDamping(0);
 }
 
 // Sets default values

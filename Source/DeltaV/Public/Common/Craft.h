@@ -24,8 +24,6 @@ public:
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 
-	TObjectPtr<class ACelestialBody> CentralBody;
-
 	TObjectPtr<class UOrbitComponent> OrbitComponent;
 
 public:

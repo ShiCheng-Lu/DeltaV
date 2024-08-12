@@ -48,6 +48,10 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 }
 
 void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector RelativeVelocity) {
+	if (CentralBody == nullptr) {
+		return;
+	}
+
 	FVector AngularMomentumVector = OrbitRelativeLocation.Cross(RelativeVelocity);
 	AxisOfRotation = AngularMomentumVector.GetSafeNormal();
 	AngularMomentum = AngularMomentumVector.SquaredLength(); // (cm)^2
@@ -65,7 +69,7 @@ void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector Relativ
 	PeriapsisDirection = OrbitRelativeLocation.RotateAngleAxisRad(Angle, AxisOfRotation);
 	PeriapsisDirection.Normalize();
 
-	UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), AngularMomentum, Eccentricity, Angle);
+	// UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), AngularMomentum, Eccentricity, Angle);
 
 	if (IsVisible()) {
 		UpdateSplineWithOrbit();
@@ -89,7 +93,7 @@ FVector UOrbitComponent::GetVelocity(float Time) {
 void UOrbitComponent::UpdateSpline() {
 	Super::UpdateSpline();
 
-	UE_LOG(LogTemp, Warning, TEXT("Spline updated"));
+	// UE_LOG(LogTemp, Warning, TEXT("Spline updated"));
 	
 	// update spline meshes
 	
@@ -128,10 +132,16 @@ void UOrbitComponent::UpdateSpline() {
 }
 
 double UOrbitComponent::Periapsis() {
+	if (CentralBody == nullptr) {
+		return 0;
+	}
 	return AngularMomentum / (CentralBody->Mu + CentralBody->Mu * Eccentricity);
 }
 
 double UOrbitComponent::Apoapsis() {
+	if (CentralBody == nullptr) {
+		return 0;
+	}
 	return AngularMomentum / (CentralBody->Mu - CentralBody->Mu * Eccentricity);
 }
 

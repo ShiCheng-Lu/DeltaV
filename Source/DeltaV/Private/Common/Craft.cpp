@@ -21,12 +21,23 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = true;
 
 	USphereComponent* Root = CreateDefaultSubobject<USphereComponent>("Root");
+	
+	Root->SetLinearDamping(0);
+	Root->SetAngularDamping(0);
+	Root->SetMassOverrideInKg(NAME_None, 0);
+	Root->SetMassScale(NAME_None, 0);
+	Root->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	Root->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+
+	UE_LOG(LogTemp, Warning, TEXT("Sphere root mass %f"), Root->CalculateMass());
 	SetRootComponent(Root);
 
 	BaseEyeHeight = 0;
 	PhysicsEnabled = false;
 
 	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
+
+	OrbitComponent = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
 }
 
 // Called when the game starts or when spawned
@@ -40,19 +51,24 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!PhysicsEnabled || CentralBody == nullptr) {
+	if (!PhysicsEnabled || OrbitComponent->CentralBody == nullptr) {
 		// UE_LOG(LogTemp, Warning, TEXT("no grav"));
 		return;
 	}
 
+	// Simple gravity force
+	FVector GravityDirection = GetActorLocation() - OrbitComponent->CentralBody->GetActorLocation();
+	double SquareDistance = GravityDirection.SquaredLength();
+	GravityDirection.Normalize();
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
-		FVector GravityDirection = Part->GetComponentLocation() - CentralBody->GetActorLocation();
-		double SquareDistance = GravityDirection.SquaredLength();
-		GravityDirection.Normalize();
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
-		Part->AddForce(GravityDirection * -CentralBody->Mu / SquareDistance, NAME_None, true);
+		Part->AddForce(GravityDirection * -OrbitComponent->CentralBody->Mu / SquareDistance, NAME_None, true);
 	}
+	Cast<USphereComponent>(RootComponent)->AddForce(GravityDirection * -OrbitComponent->CentralBody->Mu / SquareDistance, NAME_None, true);
+	
+	// calculate orbit
+	OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
 }
 
 // Called to bind functionality to input
@@ -176,7 +192,7 @@ void ACraft::Throttle(float throttle) {
 		Engine->AddForce(thrust);
 
 		// update orbit
-		OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity(), );
+		OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
 	}
 }
 
