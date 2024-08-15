@@ -81,6 +81,7 @@ void UPart::SetParent(UPart* NewParent) {
 		Physics->SetConstrainedComponents(this, "", Parent, "");
 	}
 	else {
+		UE_LOG(LogTemp, Warning, TEXT("Suppose to break parent"));
 		Physics->BreakConstraint();
 	}
 }

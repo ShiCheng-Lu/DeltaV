@@ -59,7 +59,6 @@ void AConstructionCraft::AttachPart(AConstructionCraft* SourceCraft, UPart* Atta
 
 void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCraft) {
 	Super::DetachPart(DetachPart, NewCraft);
-
 	
 	auto AttachmentRule2 = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 	for (auto& PartKVP : NewCraft->Parts) {

@@ -212,8 +212,10 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 	NewCraft->SetActorLocation(Part->GetComponentLocation());
 
 	TransferPart(Part, this, NewCraft);
-	
+
 	Part->SetParent(nullptr);
+
+	NewCraft->PhysicsEnabled = PhysicsEnabled;
 }
 
 void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
@@ -308,6 +310,7 @@ TArray<ACraft*> ACraft::StageCraft() {
 	TArray<ACraft*> Detached;
 	for (auto& Part : Stages[0]) {
 		if (Part->Type == "decoupler") {
+			UE_LOG(LogTemp, Warning, TEXT("decoupler here"));
 			ACraft* Craft = NewObject<ACraft>();
 			Detached.Add(Craft);
 			DetachPart(Part, Craft);

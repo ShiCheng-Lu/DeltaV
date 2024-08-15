@@ -192,11 +192,10 @@ void ASimulationController::Yaw(float value) {
 	}
 }
 void ASimulationController::Stage() {
-	auto NewCraft = GetWorld()->SpawnActor<ACraft>();
-	// craft->DetachPart(, NewCraft);
+	if (GetPawn() == Craft) {
+		Craft->StageCraft();
+	}
 }
-
-
 
 void ASimulationController::VelChange(float value) {
 	vel = value;
