@@ -4,6 +4,7 @@
 #include "Construction/ConstructionCraft.h"
 
 #include "Common/JsonUtil.h"
+#include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 
 AConstructionCraft::AConstructionCraft(const FObjectInitializer& ObjectInitializer)
@@ -12,21 +13,22 @@ AConstructionCraft::AConstructionCraft(const FObjectInitializer& ObjectInitializ
 
 }
 
-void AConstructionCraft::Initialize(TSharedPtr<FJsonObject> CraftJson) {
-	Super::Initialize(CraftJson);
+void AConstructionCraft::FromJson(TSharedPtr<FJsonObject> CraftJson) {
+	Super::FromJson(CraftJson);
 
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
 
-		if (Part != RootPart()) {
-			Part->AttachToComponent(RootPart(), FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		if (Part != RootPart) {
+			Part->AttachToComponent(RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
 		}
 
 		Part->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Part->SetSimulatePhysics(false);
 
-		for (auto& node : Part->definition->GetArrayField(TEXT("attachment"))) {
-			auto location = JsonUtil::Vector(node->AsObject(), "location");
+		TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
+		for (auto& Node : PartDefinition->GetArrayField(TEXT("attachment"))) {
+			auto location = JsonUtil::Vector(Node->AsObject(), "location");
 
 			auto attachment_node = NewObject<UAttachmentNode>(Part);
 			attachment_node->SetRelativeLocation(location);
@@ -51,7 +53,7 @@ void AConstructionCraft::AttachPart(AConstructionCraft* SourceCraft, UPart* Atta
 	Super::AttachPart(SourceCraft, AttachToPart);
 	
 	for (auto& Part : SourceParts) {
-		Part->AttachToComponent(RootPart(), FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		Part->AttachToComponent(RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
 	}
 }
 

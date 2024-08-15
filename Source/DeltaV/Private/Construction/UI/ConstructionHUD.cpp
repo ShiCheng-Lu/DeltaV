@@ -37,9 +37,10 @@ void UConstructionHUD::NativeOnInitialized() {
 	CraftName->SetText(FText::FromString("Hello"));
 
 	// part list
-
-	UPartItem* partItem = CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cone");
-	PartsList->AddChildToUniformGrid(partItem, 0, 0);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cone"), 0, 0);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cylinder"), 0, 1);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "decoupler"), 1, 0);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "engine"), 1, 1);
 }
 
 void UConstructionHUD::LaunchButtonClicked() {

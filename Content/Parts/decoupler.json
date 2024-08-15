@@ -3,10 +3,10 @@
   "mesh": "/Game/Shapes/Decoupler.Decoupler",
   "attachment": [
     {
-      "location": [ 0, 0, 10 ]
+      "location": [ 0, 0, 5 ]
     },
     {
-      "location": [ 0, 0, -10 ]
+      "location": [ 0, 0, -5 ]
     }
   ],
   "fields": [
@@ -28,5 +28,23 @@
       "slider_min": 1,
       "slider_max": 4
     }
-  ]
+  ],
+  "craft": {
+    "name": "decoupler",
+    "location": [ 0, 0, 0 ],
+    "rotation": [ 0, 0, 0, 1 ],
+    "structure": {
+      "decoupler": {}
+    },
+    "parts": {
+      "decoupler": {
+        "type": "decoupler",
+        "location": [ 0, 0, 0 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1
+      }
+    },
+    "stages": [[ "decoupler" ]]
+  }
 }

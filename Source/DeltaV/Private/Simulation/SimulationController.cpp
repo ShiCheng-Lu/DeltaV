@@ -55,7 +55,7 @@ void ASimulationController::BeginPlay() {
 
 	Craft = GetWorld()->SpawnActor<ACraft>();
 	Craft->SetActorRotation(FRotator(90, 0, 0));
-	Craft->Initialize(JsonUtil::ReadFile(Path));
+	Craft->FromJson(JsonUtil::ReadFile(Path));
 
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);

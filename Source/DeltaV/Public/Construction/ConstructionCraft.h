@@ -17,7 +17,7 @@ class DELTAV_API AConstructionCraft : public ACraft
 public:
 	AConstructionCraft(const FObjectInitializer& ObjectInitializer);
 
-	void Initialize(TSharedPtr<FJsonObject> CraftJson);
+	void FromJson(TSharedPtr<FJsonObject> CraftJson);
 
 	void SetAttachmentNodeVisibility(bool visibility);
 

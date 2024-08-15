@@ -30,6 +30,7 @@ protected:
 public:
 	AConstructionController* Controller;
 	FString PartName;
+	TSharedPtr<FJsonObject> PartJson;
 
 	inline static TSubclassOf<UUserWidget> BlueprintClass;
 
@@ -44,4 +45,5 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UImage* Thumbnail;
+
 };

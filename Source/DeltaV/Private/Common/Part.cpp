@@ -37,6 +37,8 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 
 	SetLinearDamping(0);
 	SetAngularDamping(0);
+
+
 }
 
 // Sets default values
@@ -48,20 +50,7 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	
 
 	// set locaiton and scale
-	SetRelativeLocation(JsonUtil::Vector(Json, "location"));
-	SetRelativeScale3D(JsonUtil::Vector(Json, "scale"));
-
-	FString DefinitionName = FPaths::Combine(FPaths::ProjectContentDir(), "Parts", Json->GetStringField(TEXT("type")) + ".json");
-	definition = JsonUtil::ReadFile(DefinitionName);
-	FString MeshPath = definition->GetStringField(TEXT("mesh"));
-
-	UStaticMesh* Mesh = UAssetLibrary::LoadAsset<UStaticMesh>(*MeshPath);
-	if (Mesh != nullptr) {
-		SetStaticMesh(Mesh);
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("failed to load mesh for: %s"), *Id);
-	}
+	FromJson(InJson);
 	
 	RegisterComponent();
 	Physics->RegisterComponent();
@@ -74,6 +63,11 @@ void UPart::SetAttachmentNodeVisibility(bool visibility) {
 }
 
 void UPart::SetParent(UPart* NewParent) {
+	if (NewParent == this) {
+		UE_LOG(LogTemp, Warning, TEXT("Parenting self, not allowed"));
+		return;
+	}
+
 	if (Parent != nullptr) {
 		Parent->Children.Remove(this);
 		Parent->Structure->RemoveField(Id);
@@ -104,16 +98,27 @@ void UPart::SetSimulatePhysics(bool bSimulate) {
 
 
 void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
-	type = InJson->GetStringField(TEXT("type"));
+	Type = InJson->GetStringField(TEXT("type"));
 
 	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
 	SetRelativeRotation(JsonUtil::Quat(InJson, "rotation"));
 	SetRelativeScale3D(JsonUtil::Vector(InJson, "scale"));
+
+	FString MeshPath = UAssetLibrary::PartDefinition(Type)->GetStringField(TEXT("mesh"));
+
+	UStaticMesh* Mesh = UAssetLibrary::LoadAsset<UStaticMesh>(*MeshPath);
+	if (Mesh != nullptr) {
+		SetStaticMesh(Mesh);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("failed to load mesh for: %s"), *Id);
+	}
 }
+
 TSharedPtr<FJsonObject> UPart::ToJson() {
 	TSharedPtr<FJsonObject> OutJson = MakeShareable(new FJsonObject());
 
-	OutJson->SetStringField(TEXT("type"), type);
+	OutJson->SetStringField(TEXT("type"), Type);
 	JsonUtil::Vector(OutJson, "location", GetRelativeLocation());
 	JsonUtil::Quat(OutJson, "rotation", GetRelativeRotation().Quaternion());
 	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());

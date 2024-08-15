@@ -25,5 +25,23 @@
       "slider_min": 1,
       "slider_max": 4
     }
-  ]
+  ],
+  "craft": {
+    "name": "engine",
+    "location": [ 0, 0, 0 ],
+    "rotation": [ 0, 0, 0, 1 ],
+    "structure": {
+      "engine": {}
+    },
+    "parts": {
+      "engine": {
+        "type": "engine",
+        "location": [ 0, 0, 0 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1
+      }
+    },
+    "stages": []
+  }
 }

@@ -11,6 +11,7 @@
 
 #include "Common/Part.h"
 #include "Common/JsonUtil.h"
+#include "Common/AssetLibrary.h"
 #include "Construction/ConstructionController.h"
 #include "Construction/ConstructionCraft.h"
 
@@ -31,6 +32,8 @@ UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer)
 	// Mesh.Succeeded();
 
 	// USceneCaptureComponent2D* Camera = CreateDefaultSubobject<USceneCaptureComponent2D>("Camera");
+
+	PartJson = UAssetLibrary::PartDefinition(PartName);
 }
 
 void UPartItem::NativeOnInitialized() {
@@ -54,10 +57,8 @@ void UPartItem::MainButtonClicked() {
 	// generate an ID for the part
 	FString PartId = PartName; // TODO: id needs to be unique Controller->GetUniquePartId(PartName);
 	// set part at root part of the new craft, and add the part description
-	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/single_part.json", {
-		{ "part_id", PartId },
-		{ "part_type", PartName }
-	});
+	TSharedPtr<FJsonObject> CraftJson = MakeShareable(new FJsonObject());
+	FJsonObject::Duplicate(PartJson->GetObjectField(TEXT("craft")), CraftJson);
 
 	if (!CraftJson.IsValid()) {
 		UE_LOG(LogTemp, Warning, TEXT("CraftJson was invalid"));
@@ -68,12 +69,16 @@ void UPartItem::MainButtonClicked() {
 		return;
 	}
 
-	Craft->Initialize(CraftJson);
+	Craft->FromJson(CraftJson);
+
+
+	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->Stages.Num());
+
 
 	if (!Controller->Craft) {
 		Controller->Craft = Craft;
 	}
 	Controller->Selected = Craft;
-	Controller->SelectedPart = Craft->RootPart();
+	Controller->SelectedPart = Craft->RootPart;
 	Controller->PlaceDistance = 500;
 }

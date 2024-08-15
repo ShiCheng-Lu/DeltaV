@@ -57,5 +57,5 @@ public:
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 
-	FString type;
+	FString Type;
 };

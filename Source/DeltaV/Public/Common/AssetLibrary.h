@@ -56,4 +56,6 @@ public:
 
 	template <typename T>
 	static T* LoadAsset(const ANSICHAR* Path) { return LoadAsset<T>(FAnsiStringView(Path)); }
+
+	static TSharedPtr<FJsonObject> PartDefinition(FString PartName);
 };

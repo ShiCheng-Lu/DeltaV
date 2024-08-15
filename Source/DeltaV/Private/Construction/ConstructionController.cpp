@@ -181,7 +181,7 @@ void AConstructionController::HandleClick(FKey Key) {
 
 					Selected = Cast<AConstructionCraft>(SelectedPart->GetOwner());
 
-					if (Selected->RootPart() != SelectedPart) {
+					if (Selected->RootPart != SelectedPart) {
 						FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
 						SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 						auto NewCraft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
@@ -234,12 +234,12 @@ void AConstructionController::Save() {
 	if (!Craft) {
 		return;
 	}
-	JsonUtil::WriteFile(FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json"), Craft->Json);
+	JsonUtil::WriteFile(FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json"), Craft->ToJson());
 }
 
 void AConstructionController::Load() {
 	Craft = GetWorld()->SpawnActor<AConstructionCraft>();
-	Craft->Initialize(JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/ship.json"));
+	Craft->FromJson(JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/ship.json"));
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {

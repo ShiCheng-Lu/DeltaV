@@ -28,5 +28,23 @@
       "slider_min": 1,
       "slider_max": 4
     }
-  ]
+  ],
+  "craft": {
+    "name": "cylinder",
+    "location": [ 0, 0, 0 ],
+    "rotation": [ 0, 0, 0, 1 ],
+    "structure": {
+      "cylinder": {}
+    },
+    "parts": {
+      "cylinder": {
+        "type": "cylinder",
+        "location": [ 0, 0, 0 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1
+      }
+    },
+    "stages": []
+  }
 }

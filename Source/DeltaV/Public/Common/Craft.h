@@ -19,12 +19,19 @@ public:
 	TSharedPtr<FJsonObject> Json;
 	TMap<FString, UPart*> Parts;
 	bool PhysicsEnabled;
-	TArray<TSharedPtr<FJsonValue>> Stages;
+	// TArray<TSharedPtr<FJsonValue>> Stages;
+
+	TObjectPtr<class UOrbitComponent> OrbitComponent;
+
+	TSet<UPart*> ActiveEngines;
+	TSet<UPart*> ActiveFuelTanks;
+
+	TArray<TArray<UPart*>> Stages;
+
+	UPart* RootPart;
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
-
-	TObjectPtr<class UOrbitComponent> OrbitComponent;
 
 public:
 	// Sets default values for this pawn's properties
@@ -40,10 +47,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void Initialize(TSharedPtr<FJsonObject> CraftJson);
-
-	UPart* RootPart();
 
 	void AddPart(UPart* Part);
 
@@ -64,7 +67,7 @@ public:
 
 	void SetPhysicsEnabled(bool enabled);
 
-	TArray<ACraft*> Stage();
+	TArray<ACraft*> StageCraft();
 
 	FVector GetAngularVelocity();
 };
