@@ -19,7 +19,7 @@ public:
 	TSharedPtr<FJsonObject> Json;
 	TMap<FString, UPart*> Parts;
 	bool PhysicsEnabled;
-	// TArray<TSharedPtr<FJsonValue>> Stages;
+	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
 	TObjectPtr<class UOrbitComponent> OrbitComponent;
 

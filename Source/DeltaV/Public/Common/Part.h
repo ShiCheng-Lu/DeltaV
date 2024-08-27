@@ -20,9 +20,9 @@ class UPart : public UStaticMeshComponent
 public:
 	virtual void SetSimulatePhysics(bool bSimulate) override;
 
+	// we don't need these 3
 	TSharedPtr<FJsonObject> Json;
 	TSharedPtr<FJsonObject> Structure;
-
 	TSharedPtr<FJsonObject> definition;
 
 	FString Id;
@@ -33,6 +33,8 @@ public:
 
 	UPhysicsConstraintComponent* Physics;
 	
+	TObjectPtr<class UActorComponent> Component;
+
 	UPart(const FObjectInitializer &ObjectInitializer);
 
 	void Initialize(FString Id, TSharedPtr<FJsonObject> Structure, TSharedPtr<FJsonObject> Json);
@@ -58,4 +60,9 @@ public:
 	TSharedPtr<FJsonObject> ToJson();
 
 	FString Type;
+
+	template<class T>
+	TObjectPtr<T> GetComponent() {
+		return Cast<T>(Component);
+	}
 };

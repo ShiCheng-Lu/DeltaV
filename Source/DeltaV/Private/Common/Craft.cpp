@@ -9,6 +9,7 @@
 #include "Common/JsonUtil.h"
 #include "Simulation/CelestialBody.h"
 #include "Simulation/OrbitComponent.h"
+#include "Common/FuelComponent.h"
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
@@ -150,6 +151,10 @@ void ACraft::Tick(float DeltaTime)
 	
 	// calculate orbit
 	OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
+
+	// Engine
+	// use DeltaTime and AddImpulse, because we want to calculate fuel drain correctly, so the force must be applied based on the last frame
+
 }
 
 // Called to bind functionality to input
@@ -212,6 +217,7 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 	NewCraft->SetActorLocation(Part->GetComponentLocation());
 
 	TransferPart(Part, this, NewCraft);
+	NewCraft->RootPart = Part;
 
 	Part->SetParent(nullptr);
 
@@ -221,6 +227,7 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 	if (!SourceCraft->RootPart) {
 		UE_LOG(LogTemp, Warning, TEXT("Source craft has no root part!"));
+		return;
 	}
 
 	// avoid name collisions
@@ -256,15 +263,30 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 }
 
 void ACraft::Throttle(float throttle) {
-	UPart* Engine = RootPart;
-	if (PhysicsEnabled && Engine) {
-		FVector thrust = FVector(0, 0, 700000 * throttle);
-		thrust = Engine->GetComponentRotation().RotateVector(thrust);
-		Engine->AddForce(thrust);
-
-		// update orbit
-		OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
+	if (!PhysicsEnabled) {
+		return;
 	}
+
+	double FuelDrain = 0;
+	for (auto& Engine : ActiveEngines) {
+		// FuelDrain += Engine.FuelDrain;
+	}
+
+	TMap<FuelType, double> FuelTotal;
+	for (auto& FuelTank : ActiveFuelTanks) {
+		
+		// FuelTotal += FuelTank.Fuel;
+	}
+
+	double ThrustPercent = FMath::Min(FuelTotal.FindChecked(FuelType::LiquidFuel) / FuelDrain, throttle);
+
+
+	FVector thrust = FVector(0, 0, 700000 * throttle);
+	thrust = RootPart->GetComponentRotation().RotateVector(thrust);
+	RootPart->AddForce(thrust);
+
+	// update orbit
+	OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
 }
 
 void ACraft::Rotate(FRotator rotator, float strength) {
@@ -310,16 +332,15 @@ TArray<ACraft*> ACraft::StageCraft() {
 	TArray<ACraft*> Detached;
 	for (auto& Part : Stages[0]) {
 		if (Part->Type == "decoupler") {
-			UE_LOG(LogTemp, Warning, TEXT("decoupler here"));
 			ACraft* Craft = NewObject<ACraft>();
 			Detached.Add(Craft);
 			DetachPart(Part, Craft);
 		}
 		else if (Part->Type == "engine") {
-
+			ActiveEngines.Add(Part);
 		}
 		else if (Part->Type == "fuel_tank") {
-
+			ActiveFuelTanks.Add(Part);
 		}
 	}
 	Stages.RemoveAt(0);

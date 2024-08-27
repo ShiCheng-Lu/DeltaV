@@ -10,6 +10,7 @@
 #include "Components/CheckBox.h"
 #include "Components/TextBlock.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/ProgressBar.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 #include "Common/Craft.h"
@@ -149,3 +150,5 @@ void USimulationHUD::ButtonClicked(UCheckBox* Checkbox) {
 
 	}
 }
+
+

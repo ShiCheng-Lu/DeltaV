@@ -14,6 +14,7 @@
 
 #include "DynamicMeshActor.h"
 #include "Components/DynamicMeshComponent.h"
+#include "Components/TextBlock.h"
 
 AConstructionController::AConstructionController() {
 
@@ -23,6 +24,9 @@ AConstructionController::AConstructionController() {
 	ClickEventKeys.Add(EKeys::RightMouseButton);
 
 	Selected = nullptr;
+	Craft = nullptr;
+
+	Symmetry = 1;
 }
 
 void AConstructionController::BeginPlay() {
@@ -55,6 +59,16 @@ void AConstructionController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("RightClick", EKeys::RightMouseButton));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("MiddleClick", EKeys::MiddleMouseButton));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Undo", EKeys::Z, false, true));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Redo", EKeys::Y, false, true));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Redo", EKeys::Z, true, true));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Cut", EKeys::X, false, true));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Copy", EKeys::C, false, true));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Paste", EKeys::V, false, true));
+
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetryAdd", EKeys::X, false));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetrySub", EKeys::X, true));
+
 	InputComponent->BindAxis("LookX", this, &AConstructionController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &AConstructionController::AddPitchInput);
 
@@ -73,6 +87,9 @@ void AConstructionController::SetupInputComponent() {
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
 	InputComponent->BindAction("DebugAction", IE_Pressed, this, &AConstructionController::DebugAction);
+
+	InputComponent->BindAction("SymmetryAdd", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetryAdd);
+	InputComponent->BindAction("SymmetrySub", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetrySub);
 }
 
 void AConstructionController::DebugAction() {
@@ -102,23 +119,23 @@ void AConstructionController::DebugAction() {
 	//DynamicMesh->SetMeshGenerator(ShapeEditor);
 	ShapeEditor->Generate(Mesh);
 	DynamicMesh->SetMesh(Mesh);
-	
 }
 
-UPart* AConstructionController::PlaceHeldPart() {
+std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 	if (Craft == nullptr || SelectedPart == nullptr || Selected == nullptr) {
-		return nullptr;
+		return { nullptr, false };
 	}
 
 	FVector location;
 	FVector direction;
 	if (!DeprojectMousePositionToWorld(location, direction)) {
-		return nullptr;
+		return { nullptr, false };
 	}
 
 	FVector part_location = location + direction * PlaceDistance;
 	UPart* AttachTo = nullptr;
 
+	// node attachment
 	for (auto& node : SelectedPart->AttachmentNodes) {
 		TArray<FHitResult> hit_results;
 		FVector start = location;
@@ -126,21 +143,21 @@ UPart* AConstructionController::PlaceHeldPart() {
 
 		GetWorld()->LineTraceMultiByObjectType(hit_results, start, end, FCollisionObjectQueryParams::AllObjects);
 
-		for (auto& hit_result : hit_results) {
-			UAttachmentNode* component = Cast<UAttachmentNode>(hit_result.GetComponent());
-			if (component == nullptr) {
+		for (auto& HitResult : hit_results) {
+			UAttachmentNode* component = Cast<UAttachmentNode>(HitResult.GetComponent());
+			if (component == nullptr || HitResult.GetActor() == Selected) {
 				continue;
 			}
 
 			// don't check for the closer attachment node for now
 			AttachTo = Cast<UPart>(component->GetOuter());
 			// Actor filter don't work for some reason, maybe to do with changing component ownership with .Rename()
-			if (AttachTo && component->GetOwner() != Selected) {
+			if (AttachTo) {
 				part_location = AttachTo->GetComponentLocation() + component->GetRelativeLocation() - node->GetRelativeLocation();
 
 				Selected->SetActorLocationAndRotation(part_location, FQuat::Identity);
 
-				return AttachTo;
+				return { AttachTo, false };
 			}
 			else {
 				AttachTo = nullptr;
@@ -148,9 +165,27 @@ UPart* AConstructionController::PlaceHeldPart() {
 		}
 	}
 
+	// side attachment
+	if (AttachTo == nullptr) {
+		TArray<FHitResult> HitResults;
+		FVector Start = location;
+		FVector End = Start + direction * PlaceDistance;
+
+		GetWorld()->LineTraceMultiByObjectType(HitResults, Start, End, FCollisionObjectQueryParams::AllObjects);
+
+		for (auto& HitResult : HitResults) {
+			UPart* Part = Cast<UPart>(HitResult.GetComponent());
+			if (Part == nullptr || Part == SelectedPart || HitResult.GetActor() == Selected) {
+				continue;
+			}
+			AttachTo = Part;
+			part_location = HitResult.Location;
+		}
+	}
+
 	Selected->SetActorLocationAndRotation(part_location, FQuat::Identity);
 
-	return AttachTo;
+	return { AttachTo, true };
 }
 
 void AConstructionController::HandleClick(FKey Key) {
@@ -158,7 +193,8 @@ void AConstructionController::HandleClick(FKey Key) {
 		if (Key == EKeys::LeftMouseButton) {
 			if (Selected != nullptr) {
 				// Place
-				UPart* AttachToPart = PlaceHeldPart();
+				auto [ AttachToPart, SideAttachment ] = UpdateHeldPart();
+				
 				if (AttachToPart != nullptr) {
 					Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
 					Craft->AttachPart(Selected, AttachToPart);
@@ -250,7 +286,7 @@ void AConstructionController::PlayerTick(float DeltaTime) {
 	switch (ConstructionMode)
 	{
 	case AConstructionController::EditMode:
-		PlaceHeldPart();
+		UpdateHeldPart();
 		break;
 	case AConstructionController::RotateMode:
 		break;
@@ -264,5 +300,25 @@ void AConstructionController::PlayerTick(float DeltaTime) {
 void AConstructionController::Throttle(float Val) {
 	if (Val != 0 && Craft != nullptr) {
 		Craft->Throttle(Val);
+	}
+}
+
+void AConstructionController::SymmetryAdd() {
+	Symmetry += 1;
+	if (Symmetry) {
+		HUD->SymmetryText->SetText(FText::Format(FTextFormat::FromString("{0}"), Symmetry));
+	}
+	else {
+		HUD->SymmetryText->SetText(FText::FromString("M"));
+	}
+}
+
+void AConstructionController::SymmetrySub() {
+	Symmetry = FMath::Max(0, Symmetry - 1);
+	if (Symmetry) {
+		HUD->SymmetryText->SetText(FText::Format(FTextFormat::FromString("{0}"), Symmetry));
+	}
+	else {
+		HUD->SymmetryText->SetText(FText::FromString("M"));
 	}
 }

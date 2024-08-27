@@ -41,4 +41,7 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UUniformGridPanel* PartsList;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UTextBlock* SymmetryText;
 };
