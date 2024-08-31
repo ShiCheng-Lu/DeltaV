@@ -24,4 +24,6 @@ public:
 	void AttachPart(AConstructionCraft* SourceCraft, UPart* AttachToPart);
 
 	void DetachPart(UPart* Part, AConstructionCraft* NewCraft);
+
+	AConstructionCraft* Clone();
 };

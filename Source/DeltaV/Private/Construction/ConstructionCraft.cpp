@@ -68,3 +68,12 @@ void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCr
 		UE_LOG(LogTemp, Warning, TEXT("Detached part %s"), *PartKVP.Key);
 	}
 }
+
+AConstructionCraft* AConstructionCraft::Clone() {
+	TSharedPtr<FJsonObject> Json = ToJson();
+	FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
+	SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AConstructionCraft* NewCraft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
+	NewCraft->FromJson(Json);
+	return NewCraft;
+}

@@ -78,6 +78,12 @@ void UPartItem::MainButtonClicked() {
 	if (!Controller->Craft) {
 		Controller->Craft = Craft;
 	}
+	if (Controller->Selected) {
+		if (Controller->Selected == Controller->Craft) {
+			Controller->Craft = Craft;
+		}
+		Controller->Selected->Destroy();
+	}
 	Controller->Selected = Craft;
 	Controller->SelectedPart = Craft->RootPart;
 	Controller->PlaceDistance = 500;

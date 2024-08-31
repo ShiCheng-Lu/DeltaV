@@ -69,10 +69,6 @@ void AConstructionPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis("MoveForwardBackward", this, &AConstructionPawn::MoveForward);
 	PlayerInputComponent->BindAxis("MoveLeftRight", this, &AConstructionPawn::MoveRight);
 	PlayerInputComponent->BindAxis("MoveUpDown", this, &AConstructionPawn::MoveUp);
-	PlayerInputComponent->BindAxis("ZoomIn", this, &AConstructionPawn::ZoomIn);
-
-	// PlayerInputComponent->BindAxis("TurnRate", this, &AConstructionPawn::TurnAtRate);
-	// PlayerInputComponent->BindAxis("LookUpRate", this, &AConstructionPawn::LookUpAtRate);
 
 	UE_LOG(LogTemp, Warning, TEXT("PlayerInput Setup"));
 
@@ -113,21 +109,6 @@ void AConstructionPawn::MoveUp(float Val)
 	if (Val != 0.f)
 	{
 		AddMovementInput(FVector::UpVector, Val);
-	}
-}
-
-void AConstructionPawn::ZoomIn(float Val) {
-	if (Val != 0.f) {
-		if (Controller)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Zoom in %f"), Val);
-			FRotator const ControlSpaceRot = Controller->GetControlRotation();
-
-			FVector NewLocation = GetActorLocation();
-			NewLocation += FRotationMatrix(ControlSpaceRot).GetScaledAxis(EAxis::X) * Val;
-			SetActorLocation(NewLocation);
-			((AConstructionController*)Controller)->PlaceDistance -= Val;
-		}
 	}
 }
 

@@ -42,8 +42,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	OrbitComponent = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
 }
 
-void ACraft::FromJson(TSharedPtr<FJsonObject> InJson) {
-	Json = InJson;
+void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	// structure + parts
 
 	TArray<TPair<UPart*, TSharedPtr<FJsonObject>>> PartStructures = { { nullptr, Json->GetObjectField(TEXT("structure")) } };
@@ -122,6 +121,16 @@ TSharedPtr<FJsonObject> ACraft::ToJson() {
 	return ResJson;
 }
 
+ACraft* ACraft::Clone() {
+	// TODO: make this implementation direct? maybe
+	TSharedPtr<FJsonObject> Json = ToJson();
+	FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
+	SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ACraft* NewCraft = GetWorld()->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
+	NewCraft->FromJson(Json);
+	return NewCraft;
+}
+
 // Called when the game starts or when spawned
 void ACraft::BeginPlay()
 {
@@ -171,7 +180,7 @@ void ACraft::SetAttachmentNodeVisibility(bool visibility) {
 
 void ACraft::AddPart(UPart* Part) {
 	Parts.Add(Part->Id, Part);
-	Json->GetObjectField(TEXT("parts"))->SetObjectField(Part->Id, Part->Json);
+	// Json->GetObjectField(TEXT("parts"))->SetObjectField(Part->Id, Part->Json);
 	// change ownership
 	Part->Rename(*Part->Id, this);
 }
@@ -182,7 +191,7 @@ void ACraft::RemovePart(UPart* Part) {
 	ActiveEngines.Remove(Part);
 	ActiveFuelTanks.Remove(Part);
 
-	Json->GetObjectField(TEXT("parts"))->RemoveField(Part->Id);
+	// Json->GetObjectField(TEXT("parts"))->RemoveField(Part->Id);
 }
 
 // transfer ownership of part and any children to another craft
@@ -211,8 +220,8 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 	}
 	
 	NewCraft->FromJson(CraftJson);
-	NewCraft->Json->SetStringField(L"name", "sub craft");
-	NewCraft->Json->GetObjectField(L"structure")->SetObjectField(Part->Id, Part->Structure);
+	// NewCraft->Json->SetStringField(L"name", "sub craft");
+	// NewCraft->Json->GetObjectField(L"structure")->SetObjectField(Part->Id, Part->Structure);
 
 	NewCraft->SetActorLocation(Part->GetComponentLocation());
 

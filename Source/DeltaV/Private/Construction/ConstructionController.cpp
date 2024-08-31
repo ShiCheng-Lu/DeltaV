@@ -8,9 +8,11 @@
 #include "Common/JsonUtil.h"
 #include "Common/Part.h"
 #include "Common/AttachmentNode.h"
+#include "Common/CameraManager.h"
 #include "Construction/ConstructionCraft.h"
 #include "Construction/UI/ConstructionHUD.h"
 #include "Construction/PartShapeEditor.h"
+#include "Construction/ConstructionPawn.h"
 
 #include "DynamicMeshActor.h"
 #include "Components/DynamicMeshComponent.h"
@@ -27,12 +29,18 @@ AConstructionController::AConstructionController() {
 	Craft = nullptr;
 
 	Symmetry = 1;
+
+	PlayerCameraManagerClass = ACameraManager::StaticClass();
 }
 
 void AConstructionController::BeginPlay() {
 	Super::BeginPlay();
+	
 	SetShowMouseCursor(true);
-	SetInputMode(FInputModeGameAndUI());
+
+	FInputModeGameAndUI InputMode = FInputModeGameAndUI();
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
 
 	HUD = CreateWidget<UConstructionHUD>(this, UConstructionHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
@@ -40,6 +48,8 @@ void AConstructionController::BeginPlay() {
 
 void AConstructionController::SetupInputComponent() {
 	Super::SetupInputComponent();
+
+	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::W, 1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::S, -1.f));
@@ -53,7 +63,7 @@ void AConstructionController::SetupInputComponent() {
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("ZoomIn", EKeys::MouseWheelAxis, 100.f));
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("LeftClick", EKeys::LeftMouseButton));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("RightClick", EKeys::RightMouseButton));
@@ -69,6 +79,22 @@ void AConstructionController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetryAdd", EKeys::X, false));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetrySub", EKeys::X, true));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("RightMouseButton", EKeys::RightMouseButton));
+
+	// Rotate part actions
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+X", EKeys::W));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-X", EKeys::S));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Y", EKeys::A));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Y", EKeys::D));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Z", EKeys::Q));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Z", EKeys::E));
+
+
+	InputComponent->BindAxis("CameraZoom", this, &AConstructionController::Zoom);
+
+	InputComponent->BindAction("RightMouseButton", EInputEvent::IE_Pressed, this, &AConstructionController::EnableMovement);
+	InputComponent->BindAction("RightMouseButton", EInputEvent::IE_Released, this, &AConstructionController::DisableMovement);
+
 	InputComponent->BindAxis("LookX", this, &AConstructionController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &AConstructionController::AddPitchInput);
 
@@ -76,9 +102,12 @@ void AConstructionController::SetupInputComponent() {
 	InputComponent->BindAction("RightClick", IE_Pressed, this, &AConstructionController::HandleClick);
 	InputComponent->BindAction("MiddleClick", IE_Pressed, this, &AConstructionController::HandleClick);
 
+	InputComponent->BindAction("SymmetryAdd", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetryAdd);
+	InputComponent->BindAction("SymmetrySub", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetrySub);
+
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Save", EKeys::M));
-	InputComponent->BindAction("Save", IE_Pressed, this, &AConstructionController::Save);
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Load", EKeys::N));
+	InputComponent->BindAction("Save", IE_Pressed, this, &AConstructionController::Save);
 	InputComponent->BindAction("Load", IE_Pressed, this, &AConstructionController::Load);
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::I, 0.1f));
@@ -87,10 +116,39 @@ void AConstructionController::SetupInputComponent() {
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
 	InputComponent->BindAction("DebugAction", IE_Pressed, this, &AConstructionController::DebugAction);
+	
+	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
-	InputComponent->BindAction("SymmetryAdd", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetryAdd);
-	InputComponent->BindAction("SymmetrySub", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetrySub);
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(90, 0, 0));
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(-90, 0, 0));
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 90, 0));
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, -90, 0));
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, 90));
+	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, -90));
 }
+
+void AConstructionController::EnableMovement() {
+	GetPawn()->EnableInput(this);
+}
+
+void AConstructionController::DisableMovement() {
+	GetPawn()->DisableInput(this);
+}
+
+
+void AConstructionController::Zoom(float value) {
+	if (value != 0) {
+		PlayerCameraManager->FreeCamDistance *= (1 - value);
+	}
+}
+
+void AConstructionController::RotatePart(FRotator Rotation) {
+	if (Selected) {
+		UE_LOG(LogTemp, Warning, TEXT("Rotated %s"), *Rotation.ToString());
+		Selected->SetActorRotation(Rotation.Quaternion() * Selected->GetActorQuat());
+	}
+}
+
 
 void AConstructionController::DebugAction() {
 	UPartShapeEditor* ShapeEditor = NewObject<UPartShapeEditor>();
@@ -132,6 +190,10 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 		return { nullptr, false };
 	}
 
+	FVector CameraLocation;
+	FRotator CameraRot;
+	PlayerCameraManager->GetCameraViewPoint(location, CameraRot);
+
 	FVector part_location = location + direction * PlaceDistance;
 	UPart* AttachTo = nullptr;
 
@@ -155,7 +217,7 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 			if (AttachTo) {
 				part_location = AttachTo->GetComponentLocation() + component->GetRelativeLocation() - node->GetRelativeLocation();
 
-				Selected->SetActorLocationAndRotation(part_location, FQuat::Identity);
+				Selected->SetActorLocation(part_location);
 
 				return { AttachTo, false };
 			}
@@ -183,7 +245,7 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 		}
 	}
 
-	Selected->SetActorLocationAndRotation(part_location, FQuat::Identity);
+	Selected->SetActorLocation(part_location);
 
 	return { AttachTo, true };
 }
@@ -195,12 +257,38 @@ void AConstructionController::HandleClick(FKey Key) {
 				// Place
 				auto [ AttachToPart, SideAttachment ] = UpdateHeldPart();
 				
-				if (AttachToPart != nullptr) {
+				// Craft->SetAttachmentNodeVisibility(true);
+				if (AttachToPart == nullptr) {
+					Selected = nullptr;
+					return;
+				}
+				//if (AttachToPart->SymmetryGroup) {
+
+				// }
+
+				if (SideAttachment && Symmetry == 0) {
+					// mirror attachment, TODO: implement
 					Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
 					Craft->AttachPart(Selected, AttachToPart);
 				}
+				else {
+					FVector Center = AttachToPart->GetComponentLocation();
+					FVector Offset = SelectedPart->GetComponentLocation() - Center;
+					// rotational symmetry attachment, place at location and additional positions
+					for (int i = 1; i < Symmetry; ++i) {
+						FQuat RotationQuat = FQuat(FVector(0, 0, 1), 2 * PI * i / Symmetry);
+						FVector NewOffset = RotationQuat.RotateVector(Offset);
+						FQuat NewRotation = RotationQuat * SelectedPart->GetComponentQuat();
+
+						// clone by converting to json and spawning another instance from json
+						AConstructionCraft* NewCraft = Selected->Clone();
+						NewCraft->SetActorLocationAndRotation(Center + NewOffset, NewRotation);
+						Craft->AttachPart(NewCraft, AttachToPart);
+					}
+					// place base 
+					Craft->AttachPart(Selected, AttachToPart);
+				}
 				Selected = nullptr;
-				// Craft->SetAttachmentNodeVisibility(true);
 			}
 			else {
 				// Select
@@ -211,8 +299,10 @@ void AConstructionController::HandleClick(FKey Key) {
 						return;
 					}
 
-					FVector ActorLocation = SelectedPart->GetRelativeLocation();
-					FVector PawnLocation = GetPawn()->GetActorLocation();
+					FVector ActorLocation = SelectedPart->GetComponentLocation();
+					FVector PawnLocation;
+					FRotator Rot;
+					PlayerCameraManager->GetCameraViewPoint(PawnLocation, Rot);
 					PlaceDistance = FVector::Distance(ActorLocation, PawnLocation);
 
 					Selected = Cast<AConstructionCraft>(SelectedPart->GetOwner());

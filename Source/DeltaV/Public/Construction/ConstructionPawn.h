@@ -29,7 +29,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
 public:
 	// Begin Pawn overrides
 	virtual UPawnMovementComponent* GetMovementComponent() const override;
@@ -56,9 +55,6 @@ public:
 	 */
 	virtual void MoveUp(float Val);
 
-
-	virtual void ZoomIn(float Val);
-
 	/**
 	 * Called via input to turn at a given rate.
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
@@ -83,5 +79,4 @@ protected:
 	TObjectPtr<UPawnMovementComponent> MovementComponent;
 	TObjectPtr<USphereComponent> CollisionComponent;
 	UStaticMeshComponent* StaticMesh;
-
 };

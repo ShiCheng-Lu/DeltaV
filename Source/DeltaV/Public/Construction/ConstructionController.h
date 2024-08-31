@@ -78,4 +78,11 @@ public:
 
 	void SymmetryAdd();
 	void SymmetrySub();
+
+	void EnableMovement();
+	void DisableMovement();
+
+	void Zoom(float value);
+
+	void RotatePart(FRotator Rotation);
 };

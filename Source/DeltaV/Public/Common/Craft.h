@@ -16,7 +16,7 @@ class DELTAV_API ACraft : public APawn
 	GENERATED_BODY()
 
 public:
-	TSharedPtr<FJsonObject> Json;
+	// TSharedPtr<FJsonObject> Json;
 	TMap<FString, UPart*> Parts;
 	bool PhysicsEnabled;
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
@@ -32,6 +32,7 @@ public:
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
+	ACraft* Clone();
 
 public:
 	// Sets default values for this pawn's properties

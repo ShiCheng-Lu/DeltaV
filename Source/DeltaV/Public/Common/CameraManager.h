@@ -15,9 +15,13 @@ class DELTAV_API ACameraManager : public APlayerCameraManager
 	GENERATED_BODY()
 
 public:
+	struct FMinimalViewInfo CameraView;
+
 	ACameraManager(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetCameraViewPoint(FVector& OutCamLoc, FRotator& OutCamRot) const override;
 
 	FRotator BaseRotation;
+
+	static void SetupInput(UPlayerInput* PlayerInput, UInputComponent* InputComponent);
 };
