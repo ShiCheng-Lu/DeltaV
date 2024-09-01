@@ -9,7 +9,7 @@
 #include "Common/JsonUtil.h"
 #include "Simulation/CelestialBody.h"
 #include "Simulation/OrbitComponent.h"
-#include "Common/FuelComponent.h"
+#include "Common/Craft/FuelComponent.h"
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);

@@ -13,4 +13,5 @@
 .vscode
 *.code-workspace
 
-**/*.blend1 // blender backup
+# blender backup
+*.blend1

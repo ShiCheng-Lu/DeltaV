@@ -51,3 +51,12 @@ void UConstructionHUD::LaunchButtonClicked() {
 
 	UGameplayStatics::OpenLevel(GetWorld(), "Simulation");
 }
+
+void UConstructionHUD::ClearPart() {
+	if (Controller->Craft == Controller->Selected) {
+		Controller->Craft = nullptr;
+	}
+	if (Controller->Selected) {
+		Controller->Selected->Destroy();
+	}
+}

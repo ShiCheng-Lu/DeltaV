@@ -44,4 +44,7 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* SymmetryText;
+
+	UFUNCTION(BlueprintCallable)
+	void ClearPart();
 };

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Common/FuelComponent.h"
+#include "Common/Craft/FuelComponent.h"
 
 FuelState::FuelState() : TMap<FuelType, double>({
 	{ FuelType::LiquidFuel, 0 },
