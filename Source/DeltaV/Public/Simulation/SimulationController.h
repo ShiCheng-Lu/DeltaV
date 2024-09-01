@@ -37,7 +37,7 @@ public:
 	TObjectPtr<class ACelestialBody> Earth;
 
 	int TimeWarp = 0;
-	TArray<float> TimeWarpMapping = { 0.1, 1, 2, 4, 8, 14, 20 };
+	TArray<float> TimeWarpMapping = { 0, 1, 2, 4, 8, 14, 20 };
 
 	UPROPERTY()
 	USimulationHUD* HUD;

@@ -23,12 +23,13 @@
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
+	PrimaryActorTick.bTickEvenWhenPaused = true;
+	bShouldPerformFullTickWhenPaused = true;
 }
 
 void ASimulationController::BeginPlay() {
 	SetShowMouseCursor(true);
-	SetInputMode(FInputModeGameAndUI());
+	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
 	// get references to the celestial bodies placed in the world
 	TArray<AActor*> celestial_bodies;
@@ -67,6 +68,7 @@ void ASimulationController::BeginPlay() {
 	Craft->OrbitComponent->CentralBody = Earth;
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
+	PlayerCameraManager->PrimaryActorTick.bTickEvenWhenPaused = true;
 
 	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
@@ -80,6 +82,7 @@ void ASimulationController::BeginPlay() {
 	ControlStabilizer->Controller = this;
 
 	ControlStabilizer->RegisterComponent();
+
 }
 
 
@@ -105,7 +108,6 @@ void ASimulationController::UpdateRotation(float DeltaTime)
 		P->FaceRotation(Rotation, DeltaTime);
 	}
 }
-
 
 void ASimulationController::SetupInputComponent() {
 	Super::SetupInputComponent();
@@ -149,8 +151,8 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action5", EKeys::Five));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action6", EKeys::Six));
 
-	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput);
-	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput);
+	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput).bExecuteWhenPaused = true;
+	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput).bExecuteWhenPaused = true;
 
 	InputComponent->BindAxis("Throttle", this, &ASimulationController::Throttle);
 
@@ -163,9 +165,9 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAction("Stage", EInputEvent::IE_Pressed, this, &ASimulationController::Stage);
 	InputComponent->BindAction("ToggleMap", EInputEvent::IE_Pressed, this, &ASimulationController::ToggleMap);
 
-	InputComponent->BindAction("TimeWarpAdd", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpAdd);
-	InputComponent->BindAction("TimeWarpSub", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpSub);
-	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset);
+	InputComponent->BindAction("TimeWarpAdd", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpAdd).bExecuteWhenPaused = true;
+	InputComponent->BindAction("TimeWarpSub", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpSub).bExecuteWhenPaused = true;
+	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset).bExecuteWhenPaused = true;
 
 	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action1", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 1);
 	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action2", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 2);
@@ -187,7 +189,6 @@ void ASimulationController::Throttle(float value) {
 void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	Craft->Throttle(ThrottleValue);
-
 	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
 }
 
@@ -244,14 +245,16 @@ void ASimulationController::ToggleMap() {
 }
 
 void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
-	/* pausing game? figure out event on pause
+	 /* pausing game ? figure out event on pause
 	if (TimeWarpLevel == 0 && !IsPaused()) {
 		SetPause(true);
+		// SetActorTickEnabled(true);
+		// PlayerCameraManager->SetActorTickEnabled(true);
 	}
 	if (TimeWarpLevel != 0 && IsPaused()) {
 		SetPause(false);
 	}
-	*/
+	// */
 
 	TimeWarp = TimeWarpLevel;
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeWarpMapping[TimeWarp]);

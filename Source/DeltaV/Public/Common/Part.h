@@ -43,11 +43,8 @@ public:
 
 	void SetParent(UPart* Part);
 
-
-
 	/*
 	Json serialization
-
 	{
 	  "type": <part type>,
 	  "location": [x, y, z],

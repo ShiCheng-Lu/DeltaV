@@ -38,8 +38,6 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 
 	SetLinearDamping(0);
 	SetAngularDamping(0);
-
-
 }
 
 // Sets default values
