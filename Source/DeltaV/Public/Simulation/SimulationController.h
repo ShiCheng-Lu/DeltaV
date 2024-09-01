@@ -70,7 +70,7 @@ public:
 	void TimeWarpSub();
 	void TimeWarpReset();
 
-	void Action(int Action);
+	void Action(FKey Key);
 
 	AStaticMeshActor* TestActor;
 };

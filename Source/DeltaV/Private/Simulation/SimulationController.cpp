@@ -23,8 +23,6 @@
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	PrimaryActorTick.bTickEvenWhenPaused = true;
-	bShouldPerformFullTickWhenPaused = true;
 }
 
 void ASimulationController::BeginPlay() {
@@ -68,7 +66,6 @@ void ASimulationController::BeginPlay() {
 	Craft->OrbitComponent->CentralBody = Earth;
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
-	PlayerCameraManager->PrimaryActorTick.bTickEvenWhenPaused = true;
 
 	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
@@ -144,19 +141,19 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("TimeWarpReset", EKeys::Slash));
 
 
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action1", EKeys::One));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action2", EKeys::Two));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action3", EKeys::Three));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action4", EKeys::Four));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action5", EKeys::Five));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action6", EKeys::Six));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::One));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Two));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Three));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Four));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Five));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Six));
 
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput).bExecuteWhenPaused = true;
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput).bExecuteWhenPaused = true;
 
 	InputComponent->BindAxis("Throttle", this, &ASimulationController::Throttle);
 
-	InputComponent->BindAxis("CameraZoom", this, &ASimulationController::Zoom);
+	InputComponent->BindAxis("CameraZoom", this, &ASimulationController::Zoom).bExecuteWhenPaused = true;
 
 	InputComponent->BindAxis("Pitch", this, &ASimulationController::Pitch);
 	InputComponent->BindAxis("Roll", this, &ASimulationController::Roll);
@@ -169,15 +166,8 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAction("TimeWarpSub", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpSub).bExecuteWhenPaused = true;
 	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset).bExecuteWhenPaused = true;
 
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action1", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 1);
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action2", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 2);
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action3", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 3);
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action4", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 4);
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action5", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 5);
-	InputComponent->BindAction<TDelegate<void(int)>, ASimulationController>("Action6", EInputEvent::IE_Pressed, this, &ASimulationController::Action, 6);
-
+	InputComponent->BindAction("Action", IE_Pressed, this, &ASimulationController::Action);
 }
-
 
 void ASimulationController::Throttle(float value) {
 	if (value != 0 && Craft) {
@@ -245,17 +235,6 @@ void ASimulationController::ToggleMap() {
 }
 
 void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
-	 /* pausing game ? figure out event on pause
-	if (TimeWarpLevel == 0 && !IsPaused()) {
-		SetPause(true);
-		// SetActorTickEnabled(true);
-		// PlayerCameraManager->SetActorTickEnabled(true);
-	}
-	if (TimeWarpLevel != 0 && IsPaused()) {
-		SetPause(false);
-	}
-	// */
-
 	TimeWarp = TimeWarpLevel;
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeWarpMapping[TimeWarp]);
 	HUD->TimeWarp->SetPercent(float(TimeWarp) / 6);
@@ -275,28 +254,23 @@ void ASimulationController::TimeWarpReset() {
 	SetTimeWarp(1);
 }
 
-void ASimulationController::Action(int Action) {
-	switch (Action)
-	{
-	case 1:
+void ASimulationController::Action(FKey Key) {
+	if (Key == EKeys::One) {
 		Craft->SetPhysicsEnabled(false);
-		break;
-	case 2:
+	}
+	else if (Key == EKeys::Two) {
 		Craft->SetPhysicsEnabled(true);
-		break;
-	case 3:
+	}
+	else if (Key == EKeys::Three) {
 		Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
-		break;
-	case 4:
-	{
+	}
+	else if (Key == EKeys::Four) {
 		if (Craft->OrbitComponent->CentralBody == nullptr) {
 			Craft->OrbitComponent->CentralBody = Earth;
 			UE_LOG(LogTemp, Warning, TEXT("Craft orbit didn't have a central body"))
 		}
 	}
-		break;
-	case 5:
-	{
+	else if (Key == EKeys::Five) {
 		UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 		orbit->CentralBody = Earth;
 		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity());
@@ -310,12 +284,8 @@ void ASimulationController::Action(int Action) {
 			DrawDebugDirectionalArrow(GetWorld(), Array[i], Array[i + 1], 20, FColor(200, 0, 200), true, -1, 0, 2);
 		}
 	}
-		break;
-	case 6:
+	else if (Key == EKeys::Six) {
 		UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
-		break;
-	default:
-		break;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("action %d"), Action);
