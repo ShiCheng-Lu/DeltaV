@@ -8,6 +8,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
@@ -23,7 +24,6 @@
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	PlayerCameraManagerClass = ASimulationCamera::StaticClass();
 
 }
 
@@ -67,7 +67,7 @@ void ASimulationController::BeginPlay() {
 	SetControlRotation(FRotator(0));
 	Craft->OrbitComponent->CentralBody = Earth;
 
-	PlayerCameraManager->FreeCamDistance = 1000;
+	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
 
 	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
@@ -82,6 +82,33 @@ void ASimulationController::BeginPlay() {
 
 	ControlStabilizer->RegisterComponent();
 }
+
+
+void ASimulationController::UpdateRotation(float DeltaTime)
+{
+	// Calculate Delta to be applied on ViewRotation
+	FRotator DeltaRot(RotationInput);
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ProcessViewRotation(DeltaTime, ViewRotation, DeltaRot);
+	}
+
+	FRotator Rotation = GetPawn()->GetActorLocation().ToOrientationRotator();
+	Rotation = UKismetMathLibrary::ComposeRotators(FRotator(90, -180, 0), Rotation);
+
+	UE_LOG(LogTemp, Warning, TEXT("Rotation: %s"), *Rotation.ToString());
+	Rotation = UKismetMathLibrary::ComposeRotators(ViewRotation, Rotation);
+
+	SetControlRotation(Rotation);
+
+	APawn* const P = GetPawnOrSpectator();
+	if (P)
+	{
+		P->FaceRotation(Rotation, DeltaTime);
+	}
+}
+
 
 void ASimulationController::SetupInputComponent() {
 	Super::SetupInputComponent();
@@ -220,6 +247,15 @@ void ASimulationController::ToggleMap() {
 }
 
 void ASimulationController::SetTimeWarp(int TimeWarpLevel) {
+	/* pausing game? figure out event on pause
+	if (TimeWarpLevel == 0 && !IsPaused()) {
+		SetPause(true);
+	}
+	if (TimeWarpLevel != 0 && IsPaused()) {
+		SetPause(false);
+	}
+	*/
+
 	TimeWarp = TimeWarpLevel;
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeWarpMapping[TimeWarp]);
 	HUD->TimeWarp->SetPercent(float(TimeWarp) / 6);

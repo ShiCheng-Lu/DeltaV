@@ -281,7 +281,7 @@ void ACraft::Throttle(float throttle) {
 		// FuelDrain += Engine.FuelDrain;
 	}
 
-	TMap<FuelType, double> FuelTotal;
+	FuelState FuelTotal;
 	for (auto& FuelTank : ActiveFuelTanks) {
 		
 		// FuelTotal += FuelTank.Fuel;

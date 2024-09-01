@@ -27,6 +27,10 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	virtual void UpdateRotation(float DeltaTime) override;
+
+	FRotator ViewRotation;
+
 	TObjectPtr<class ACraft> Craft;
 	TObjectPtr<class UObjectComponent> CraftOrbit;
 

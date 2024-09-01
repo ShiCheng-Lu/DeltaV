@@ -14,7 +14,7 @@ enum class FuelType {
 	Monopropellant,
 };
 
-class FuelState : TMap<FuelType, double> {
+class FuelState : public TMap<FuelType, double> {
 public:
 	FuelState();
 
