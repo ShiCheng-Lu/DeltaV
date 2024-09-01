@@ -22,6 +22,8 @@ AConstructionPawn::AConstructionPawn()
 	SetActorEnableCollision(false);
 	SetCanBeDamaged(true);
 
+	DisableInput(nullptr);
+
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
 	NetPriority = 3.0f;
@@ -71,7 +73,6 @@ void AConstructionPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis("MoveUpDown", this, &AConstructionPawn::MoveUp);
 
 	UE_LOG(LogTemp, Warning, TEXT("PlayerInput Setup"));
-
 }
 
 void AConstructionPawn::MoveRight(float Val)

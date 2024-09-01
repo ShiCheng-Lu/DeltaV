@@ -8,7 +8,6 @@
 #include "Common/JsonUtil.h"
 #include "Common/Part.h"
 #include "Common/AttachmentNode.h"
-#include "Common/CameraManager.h"
 #include "Construction/ConstructionCraft.h"
 #include "Construction/UI/ConstructionHUD.h"
 #include "Construction/PartShapeEditor.h"
@@ -30,17 +29,16 @@ AConstructionController::AConstructionController() {
 
 	Symmetry = 1;
 
-	PlayerCameraManagerClass = ACameraManager::StaticClass();
+	// PlayerCameraManagerClass = ACameraManager::StaticClass();
 }
 
 void AConstructionController::BeginPlay() {
 	Super::BeginPlay();
 	
-	SetShowMouseCursor(true);
+	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
 
-	FInputModeGameAndUI InputMode = FInputModeGameAndUI();
-	InputMode.SetHideCursorDuringCapture(false);
-	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
 	HUD = CreateWidget<UConstructionHUD>(this, UConstructionHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
@@ -143,7 +141,7 @@ void AConstructionController::Zoom(float value) {
 }
 
 void AConstructionController::RotatePart(FRotator Rotation) {
-	if (Selected) {
+	if (Selected && !GetPawn()->InputEnabled()) {
 		UE_LOG(LogTemp, Warning, TEXT("Rotated %s"), *Rotation.ToString());
 		Selected->SetActorRotation(Rotation.Quaternion() * Selected->GetActorQuat());
 	}
@@ -184,24 +182,24 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 		return { nullptr, false };
 	}
 
-	FVector location;
+	FVector CameraLocation;
 	FVector direction;
-	if (!DeprojectMousePositionToWorld(location, direction)) {
+	if (!DeprojectMousePositionToWorld(CameraLocation, direction)) {
 		return { nullptr, false };
 	}
 
-	FVector CameraLocation;
 	FRotator CameraRot;
-	PlayerCameraManager->GetCameraViewPoint(location, CameraRot);
+	PlayerCameraManager->GetCameraViewPoint(CameraLocation, CameraRot);
 
-	FVector part_location = location + direction * PlaceDistance;
+	FVector part_location = CameraLocation + direction * PlaceDistance;
 	UPart* AttachTo = nullptr;
 
 	// node attachment
 	for (auto& node : SelectedPart->AttachmentNodes) {
 		TArray<FHitResult> hit_results;
-		FVector start = location;
-		FVector end = (part_location + node->GetRelativeLocation() - location) * 2 + location;
+		FVector start = CameraLocation;
+		FVector RelativeNodeLocation = node->GetComponentLocation() - SelectedPart->GetComponentLocation();
+		FVector end = ((part_location + RelativeNodeLocation) - start) * 2 + start;
 
 		GetWorld()->LineTraceMultiByObjectType(hit_results, start, end, FCollisionObjectQueryParams::AllObjects);
 
@@ -215,7 +213,7 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 			AttachTo = Cast<UPart>(component->GetOuter());
 			// Actor filter don't work for some reason, maybe to do with changing component ownership with .Rename()
 			if (AttachTo) {
-				part_location = AttachTo->GetComponentLocation() + component->GetRelativeLocation() - node->GetRelativeLocation();
+				part_location = component->GetComponentLocation() - RelativeNodeLocation;
 
 				Selected->SetActorLocation(part_location);
 
@@ -230,7 +228,7 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 	// side attachment
 	if (AttachTo == nullptr) {
 		TArray<FHitResult> HitResults;
-		FVector Start = location;
+		FVector Start = CameraLocation;
 		FVector End = Start + direction * PlaceDistance;
 
 		GetWorld()->LineTraceMultiByObjectType(HitResults, Start, End, FCollisionObjectQueryParams::AllObjects);
