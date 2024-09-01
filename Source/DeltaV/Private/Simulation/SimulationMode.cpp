@@ -4,8 +4,6 @@
 #include "Simulation/SimulationMode.h"
 
 #include "Simulation/SimulationController.h"
-#include "Simulation/SimulationCamera.h"
-
 
 ASimulationMode::ASimulationMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

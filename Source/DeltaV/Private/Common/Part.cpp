@@ -19,6 +19,7 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 		// TODO: add custom collision channel for each craft, no intervessel collision
 
 	SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
+	SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
 
 	SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -102,7 +103,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
 	Type = InJson->GetStringField(TEXT("type"));
 
 	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
-	SetRelativeRotation(JsonUtil::Quat(InJson, "rotation"));
+	SetRelativeRotation(JsonUtil::Rotator(InJson, "rotation"));
 	SetRelativeScale3D(JsonUtil::Vector(InJson, "scale"));
 
 	FString MeshPath = UAssetLibrary::PartDefinition(Type)->GetStringField(TEXT("mesh"));
@@ -121,7 +122,7 @@ TSharedPtr<FJsonObject> UPart::ToJson() {
 
 	OutJson->SetStringField(TEXT("type"), Type);
 	JsonUtil::Vector(OutJson, "location", GetRelativeLocation());
-	JsonUtil::Quat(OutJson, "rotation", GetRelativeRotation().Quaternion());
+	JsonUtil::Rotator(OutJson, "rotation", GetRelativeRotation());
 	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());
 
 	return OutJson;

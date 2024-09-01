@@ -41,6 +41,7 @@ void UConstructionHUD::NativeOnInitialized() {
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cylinder"), 0, 1);
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "decoupler"), 1, 0);
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "engine"), 1, 1);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "wing"), 2, 0);
 }
 
 void UConstructionHUD::LaunchButtonClicked() {

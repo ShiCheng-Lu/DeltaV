@@ -29,7 +29,7 @@
   "craft": {
     "name": "cone",
     "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0, 1 ],
+    "rotation": [ 0, 0, 0 ],
     "structure": {
       "cone": {}
     },
@@ -37,7 +37,7 @@
       "cone": {
         "type": "cone",
         "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0, 1 ],
+        "rotation": [ 0, 0, 0 ],
         "scale": [ 1, 1, 1 ],
         "attached_at": 1
       }

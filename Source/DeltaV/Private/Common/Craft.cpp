@@ -163,7 +163,6 @@ void ACraft::Tick(float DeltaTime)
 
 	// Engine
 	// use DeltaTime and AddImpulse, because we want to calculate fuel drain correctly, so the force must be applied based on the last frame
-
 }
 
 // Called to bind functionality to input

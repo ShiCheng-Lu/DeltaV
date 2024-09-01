@@ -88,3 +88,27 @@ void JsonUtil::Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, con
 
 	Json->SetArrayField(FieldName, Array);
 }
+
+FRotator JsonUtil::Rotator(const TSharedPtr<FJsonObject>& Json, const FString& FieldName) {
+	TArray<TSharedPtr<FJsonValue>> Values = Json->GetArrayField(FieldName);
+
+	if (Values.Num() != 3) {
+		return FRotator();
+	}
+
+	return FRotator(
+		Values[0]->AsNumber(),
+		Values[1]->AsNumber(),
+		Values[2]->AsNumber()
+	);
+}
+
+void JsonUtil::Rotator(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FRotator& Rotator) {
+	TArray<TSharedPtr<FJsonValue>> Array;
+
+	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Pitch)));
+	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Yaw)));
+	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Roll)));
+
+	Json->SetArrayField(FieldName, Array);
+}

@@ -22,5 +22,8 @@ public:
 	static void Vector(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FVector& Vector);
 
 	static FQuat Quat(const TSharedPtr<FJsonObject>& Json, const FString& FieldName);
-	static void Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FQuat& Vector);
+	static void Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FQuat& Quat);
+
+	static FRotator Rotator(const TSharedPtr<FJsonObject>& Json, const FString& FieldName);
+	static void Rotator(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FRotator& Rotator);
 };

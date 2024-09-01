@@ -13,7 +13,6 @@
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
 #include "Common/JsonUtil.h"
-#include "Simulation/SimulationCamera.h"
 #include "Simulation/UI/SimulationHUD.h"
 #include "Simulation/MapViewPawn.h"
 #include "Simulation/OrbitComponent.h"
@@ -96,8 +95,6 @@ void ASimulationController::UpdateRotation(float DeltaTime)
 
 	FRotator Rotation = GetPawn()->GetActorLocation().ToOrientationRotator();
 	Rotation = UKismetMathLibrary::ComposeRotators(FRotator(90, -180, 0), Rotation);
-
-	UE_LOG(LogTemp, Warning, TEXT("Rotation: %s"), *Rotation.ToString());
 	Rotation = UKismetMathLibrary::ComposeRotators(ViewRotation, Rotation);
 
 	SetControlRotation(Rotation);
