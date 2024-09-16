@@ -25,6 +25,8 @@ UOrbitComponent::UOrbitComponent()
 	SetUsingAbsoluteScale(true);
 
 	SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+	SetClosedLoop(true, false);
 }
 
 
@@ -49,19 +51,21 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector RelativeVelocity) {
 	if (CentralBody == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("No CentralBody"));
 		return;
 	}
 
-	FVector AngularMomentumVector = OrbitRelativeLocation.Cross(RelativeVelocity);
-	AxisOfRotation = AngularMomentumVector.GetSafeNormal();
-	AngularMomentum = AngularMomentumVector.SquaredLength(); // (cm)^2
+	AngularMomentum = OrbitRelativeLocation.Cross(RelativeVelocity);
+	AxisOfRotation = AngularMomentum.GetSafeNormal();
+	AngularMomentumSquared = AngularMomentum.SquaredLength(); // (cm)^2
 
 	double Energy = RelativeVelocity.SquaredLength() / 2 - CentralBody->Mu / OrbitRelativeLocation.Length(); // (cm/s)^2 - (cm)^3(s^-2) / (cm) = (cm^2)(s^-2)
-	Eccentricity = sqrt(1 + 2 * Energy * AngularMomentum / (CentralBody->Mu * CentralBody->Mu)); // (cm^2)(s^-2)(cm)^2 / (cm)^3(s^-2)(cm)^3(s^-2) = 1
-
+	Eccentricity = sqrt(1 + 2 * Energy * AngularMomentumSquared / (CentralBody->Mu * CentralBody->Mu)); // (cm^2)(s^-2)(cm)^2 / (cm)^3(s^-2)(cm)^3(s^-2) = 1
+	EccentricityVector = ((RelativeVelocity.SquaredLength() - CentralBody->Mu / OrbitRelativeLocation.Length()) * OrbitRelativeLocation
+		- (OrbitRelativeLocation.Dot(RelativeVelocity) * RelativeVelocity)) / CentralBody->Mu;
 
 	// find the periapsis point
-	double Angle = FMath::Acos((AngularMomentum / (CentralBody->Mu * OrbitRelativeLocation.Length()) - 1) / Eccentricity);
+	double Angle = FMath::Acos((AngularMomentumSquared / (CentralBody->Mu * OrbitRelativeLocation.Length()) - 1) / Eccentricity);
 	if (RelativeVelocity.ProjectOnTo(OrbitRelativeLocation).GetSafeNormal().Equals(OrbitRelativeLocation.GetSafeNormal())) {
 		Angle *= -1;
 	}
@@ -69,29 +73,109 @@ void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector Relativ
 	PeriapsisDirection = OrbitRelativeLocation.RotateAngleAxisRad(Angle, AxisOfRotation);
 	PeriapsisDirection.Normalize();
 
-	// UE_LOG(LogTemp, Warning, TEXT("values %f %f %f"), AngularMomentum, Eccentricity, Angle);
+	double SemiMajorAxis = AngularMomentum.SquaredLength() / (CentralBody->Mu * (1 - Eccentricity * Eccentricity));
+	double SemiMinorAxis = SemiMajorAxis * FMath::Sqrt(1 - Eccentricity * Eccentricity);
+	OrbitDuration = 2 * PI * SemiMajorAxis * SemiMinorAxis / AngularMomentum.Length();
+
+
+	// UE_LOG(LogTemp, Warning, TEXT("values %f %f %f %f"), AngularMomentum.Length(), Eccentricity, Angle, OrbitDuration);
 
 	if (IsVisible()) {
 		UpdateSplineWithOrbit();
 	}
 }
 
-FVector UOrbitComponent::GetPosition(float Time) {
-	// Current implmemntation evaluate time as degrees after periapsis
-	double Angle = FMath::DegreesToRadians(Time);
-	double Radius = AngularMomentum / (CentralBody->Mu + CentralBody->Mu * Eccentricity * FMath::Cos(Angle));
+double UOrbitComponent::GetTime(double TrueAnomaly) {
+	double MeanAnomaly = TrueAnomaly;
+	if (Eccentricity < 1) {
+		double SinAnomaly, CosAnomaly;
+		FMath::SinCos(&SinAnomaly, &CosAnomaly, TrueAnomaly);
+		MeanAnomaly = 2 * FMath::Atan(FMath::Sqrt((1 - Eccentricity) / (1 + Eccentricity)) * FMath::Tan(TrueAnomaly / 2))
+			- (Eccentricity * FMath::Sqrt(1 - Eccentricity * Eccentricity) * SinAnomaly) / (1 + Eccentricity * CosAnomaly);
 
-	FVector Result = PeriapsisDirection.RotateAngleAxisRad(Angle, AxisOfRotation);
+		return MeanAnomaly * OrbitDuration / (PI * 2);
+	}
+	else if (Eccentricity == 1) {
+		double TanAnomaly = FMath::Tan(TrueAnomaly / 2);
+		MeanAnomaly = TanAnomaly / 2 + TanAnomaly * TanAnomaly * TanAnomaly / 6;
 
-	return Result * Radius;
+		return MeanAnomaly * AngularMomentumSquared * FMath::Sqrt(AngularMomentumSquared) / (CentralBody->Mu * CentralBody->Mu);
+	}
+	else {
+		return 0;
+	}
 }
 
-FVector UOrbitComponent::GetVelocity(float Time) {
-	return FVector();
+double UOrbitComponent::GetTrueAnomaly(double Time) const {
+	static double LastEccentricAnomalyGuess = 0;
+	if (Eccentricity < 1) {
+		double MeanAnomaly = Time * (2 * PI) / OrbitDuration;
+		// solve EccentricAnomaly - Eccentricity * sin(EccentricAnomaly) - MeanAnomaly = f(EccentricAnomaly) = 0
+		//   with derivative f'(EccentricAnomaly) = 1 - Eccentricity * cos(EccentricAnomaly)
+		double EccentricAnomaly = 0;
+		for (int i = 0; i < 5; ++i) {
+			double SinEccentricityAnomaly, CosEccentricityAnomaly;
+			FMath::SinCos(&SinEccentricityAnomaly, &CosEccentricityAnomaly, EccentricAnomaly);
+			double FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
+			double DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
+			EccentricAnomaly = EccentricAnomaly - FunctionValue / DerivativeValue;
+
+			// UE_LOG(LogTemp, Warning, TEXT("Newton: %f"), FunctionValue);
+		}
+		LastEccentricAnomalyGuess = EccentricAnomaly;
+
+		double TrueAnomaly = FMath::Atan(FMath::Tan(EccentricAnomaly / 2) / FMath::Sqrt((1 - Eccentricity) / (1 + Eccentricity))) * 2;
+
+		return TrueAnomaly;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Eccentricity %f does not apply"), Eccentricity);
+		return 0; // todo: 
+	}
+}
+
+void UOrbitComponent::GetPositionAndVelocity(FVector* Position, FVector* Velocity, double TrueAnomaly) const {
+	// get angle from time after periapsis
+	// if e < 1:
+	// u^2 / h^3 * t = (2 tan-1 ( sqrt((1 - e) / (1 + e)) tan (a / 2) ) - (e sqrt(1 - e^2) sin a) / (1 + e cos a)) / (e^2 - 1)^(3/2)
+	// 
+	// if e = 1:
+	// u^2 / h^3 * t = (tan(v / 2) / 2 + tan^3(v / 2) / 6)
+	// 
+	// if e > 1
+	// u^2 / h^3 * t = ((e sqrt(e^2 - 1) sin a) / (1 + e cos a) - ln((sqrt(e + 1) + sqrt(e - 1) tan (a / 2)) / (sqrt(e + 1) - sqrt(e - 1) tan (a / 2)))) / (e^2 - 1)^(3/2)
+
+	if (Eccentricity < 1) {
+		
+	}
+	else if (Eccentricity > 1) {
+
+	}
+	else {
+
+	}
+	FVector RightApsisDirection = AngularMomentum.GetSafeNormal().Cross(PeriapsisDirection);
+
+	// Position and Velocity
+	double SinAnomaly, CosAnomaly; // no sin/cos approximation for doubles, Sin Cos is evaluated individually. maybe we can just use float (depending on desired precision)
+	FMath::SinCos(&SinAnomaly, &CosAnomaly, TrueAnomaly);
+
+	if (Position) {
+		*Position = CosAnomaly * PeriapsisDirection + SinAnomaly * RightApsisDirection; // Position direction
+		*Position *= AngularMomentum.SquaredLength() / (CentralBody->Mu + CentralBody->Mu * Eccentricity * CosAnomaly); // Position Radius
+	}
+	if (Velocity) {
+		*Velocity = -SinAnomaly * PeriapsisDirection + (Eccentricity + CosAnomaly) * RightApsisDirection; // Velocity direction
+		*Velocity *= CentralBody->Mu / AngularMomentum.Length(); // Velocity magnitude
+	}
 }
 
 void UOrbitComponent::UpdateSpline() {
 	Super::UpdateSpline();
+
+	if (Spline.Num() > 10) {
+		return;
+	}
 
 	// UE_LOG(LogTemp, Warning, TEXT("Spline updated"));
 	
@@ -121,54 +205,70 @@ void UOrbitComponent::UpdateSpline() {
 	// update spline mesh components
 	FInterpCurveVector SplinePoints = GetSplinePointsPosition();
 
-	for (int i = 0; i < Spline.Num(); ++i) {
+	for (int i = 0; i < GetNumberOfSplinePoints() - 1; ++i) {
 		Spline[i]->SetStartAndEnd(
 			SplinePoints.Points[i].OutVal,
 			SplinePoints.Points[i].LeaveTangent,
-			SplinePoints.Points[(i + 1) % Spline.Num()].OutVal,
-			SplinePoints.Points[(i + 1) % Spline.Num()].ArriveTangent
+			SplinePoints.Points[i + 1].OutVal,
+			SplinePoints.Points[i + 1].ArriveTangent
 		);
 	}
+	if (IsClosedLoop()) {
+		int i = GetNumberOfSplinePoints() - 1;
+		Spline[i]->SetStartAndEnd(
+			SplinePoints.Points[i].OutVal,
+			SplinePoints.Points[i].LeaveTangent,
+			SplinePoints.Points[0].OutVal,
+			SplinePoints.Points[0].ArriveTangent
+		);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Update Spline itself"));
 }
 
 double UOrbitComponent::Periapsis() {
 	if (CentralBody == nullptr) {
 		return 0;
 	}
-	return AngularMomentum / (CentralBody->Mu + CentralBody->Mu * Eccentricity);
+	return AngularMomentum.SquaredLength() / (CentralBody->Mu + CentralBody->Mu * Eccentricity);
 }
 
 double UOrbitComponent::Apoapsis() {
 	if (CentralBody == nullptr) {
 		return 0;
 	}
-	return AngularMomentum / (CentralBody->Mu - CentralBody->Mu * Eccentricity);
+	return AngularMomentum.SquaredLength() / (CentralBody->Mu - CentralBody->Mu * Eccentricity);
 }
 
 void UOrbitComponent::UpdateSplineWithOrbit() {
-	
-	FVector Periapsis;
-	FVector Apoapsis;
 
-	FVector Midpoint = (Periapsis + Apoapsis) / 2;
+	if (Eccentricity > 0.95) {
+		return; // Cannot draw Eclipse with eccentricity over 0.95 for now, needs a different strategy
+	}
 
-	FVector FocalPoint;
+	UE_LOG(LogTemp, Warning, TEXT("UpdateSplineWithOrbit"));
 
-	FVector HighFocalPoint = Periapsis - FocalPoint + Apoapsis;
-
-	// construct until midpoint
 	ClearSplinePoints(false);
+	// SetClosedLoop(true, false);
+	double SemiMajorAxis = AngularMomentum.SquaredLength() / (CentralBody->Mu * (1 - Eccentricity * Eccentricity));
+	double SemiMinorAxis = SemiMajorAxis * FMath::Sqrt(1 - Eccentricity * Eccentricity);
+
+	SetWorldLocation(FVector(0, 0, 0));
+	// transform circle into orbit?
+
+	FTransform Transform; // scale, rotate, and translate
+	Transform.SetScale3D(FVector(SemiMinorAxis, SemiMajorAxis, 1));
+	Transform.SetTranslation(-PeriapsisDirection * SemiMajorAxis * Eccentricity);
 
 	// while point doesn't cross midpoint axis
 	//   add point
 	int TotalPoints = 0;
-	for (int i = 0; i < 36; ++i) {
-		FVector PointLocation = GetPosition(TotalPoints * 10); // 
-		if (PointLocation.X < 0) {
-			break;
-		}
-		FVector PointTangent = -PointLocation.Cross(FVector(0, 0, 1)); // TODO: get real tangent from velocity
-		FSplinePoint NewPoint(TotalPoints, PointLocation, PointTangent, PointTangent);
+	for (int i = 0; i < 4; ++i) {
+		FVector PointLocation = Transform.TransformPosition(FVector(0, -1, 0).RotateAngleAxis(-i * 90, FVector(0, 0, 1)));
+		FVector PointTangent = Transform.TransformVector(FVector(-1, 0, 0).RotateAngleAxis(-i * 90, FVector(0, 0, 1)) * 3 * 0.525);
+		// PointTangent.Normalize();
+		// PointTangent *= 1000;
+		FSplinePoint NewPoint = FSplinePoint(TotalPoints, PointLocation, PointTangent, PointTangent);
 		AddPoint(NewPoint, false);
 		TotalPoints += 1;
 	}
@@ -200,12 +300,10 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 	}
 	*/
 
-	for (int i = 0; i < GetNumberOfSplineSegments(); ++i) {
-		
-	}
-
 	// call update spline once everything has updated to update the mesh
 	UpdateSpline();
+
+	// SetWorldLocation(- PeriapsisDirection * SemiMajorAxis * Eccentricity);
 }
 
 void UOrbitComponent::OnVisibilityChanged() {

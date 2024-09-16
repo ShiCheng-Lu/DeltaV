@@ -25,20 +25,20 @@ public:
 
 	double Mass;
 
-	double AngularMomentum; // (cm)^2
+	FVector AngularMomentum;
+	double AngularMomentumSquared; // (cm)^2
 	FVector AxisOfRotation;
 	double Eccentricity; // unitless
+	FVector EccentricityVector;
 	FVector PeriapsisDirection;
 
 	double OrbitDuration;
 	double TimeAtPeriapsis;
 	TObjectPtr<class ACelestialBody> CentralBody;
 
+
+
 	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity);
-
-	FVector GetPosition(float Time);
-
-	FVector GetVelocity(float Time);
 
 	inline static TObjectPtr<class UStaticMesh> SplineMesh;
 
@@ -53,4 +53,10 @@ public:
 	double Periapsis(); // cm
 
 	double Apoapsis(); // cm
+
+	void GetPositionAndVelocity(FVector* Position, FVector* Velocity, double TrueAnomaly) const;
+
+	double GetTime(double TrueAnomaly);
+
+	double GetTrueAnomaly(double Time) const;
 };

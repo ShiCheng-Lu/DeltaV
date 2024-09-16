@@ -275,6 +275,7 @@ void ASimulationController::Action(FKey Key) {
 		orbit->CentralBody = Earth;
 		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity());
 
+		/*
 		TArray<FVector> Array;
 		for (int i = 0; i < 360; i++) {
 			Array.Add(orbit->GetPosition(i));
@@ -282,11 +283,11 @@ void ASimulationController::Action(FKey Key) {
 
 		for (int i = 0; i < 359; i++) {
 			DrawDebugDirectionalArrow(GetWorld(), Array[i], Array[i + 1], 20, FColor(200, 0, 200), true, -1, 0, 2);
-		}
+		}*/
 	}
 	else if (Key == EKeys::Six) {
 		UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("action %d"), Action);
+	UE_LOG(LogTemp, Warning, TEXT("action %s"), *Key.GetFName().ToString());
 }

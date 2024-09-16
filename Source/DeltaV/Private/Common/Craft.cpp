@@ -148,18 +148,19 @@ void ACraft::Tick(float DeltaTime)
 	}
 
 	// Simple gravity force
-	FVector GravityDirection = (GetActorLocation() - GetVelocity() * DeltaTime / 2) - OrbitComponent->CentralBody->GetActorLocation();
+	FVector GravityDirection = OrbitComponent->CentralBody->GetActorLocation() - (GetActorLocation() +GetVelocity() * DeltaTime / 5);
 	double SquareDistance = GravityDirection.SquaredLength();
 	GravityDirection.Normalize();
+	FVector Acceleration = GravityDirection * OrbitComponent->CentralBody->Mu / SquareDistance;
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
-		Part->AddForce(GravityDirection * -OrbitComponent->CentralBody->Mu / SquareDistance, NAME_None, true);
+		Part->AddForce(Acceleration, NAME_None, true);
 	}
-	Cast<USphereComponent>(RootComponent)->AddForce(GravityDirection * -OrbitComponent->CentralBody->Mu / SquareDistance, NAME_None, true);
+	Cast<USphereComponent>(RootComponent)->AddForce(Acceleration, NAME_None, true);
 	
 	// calculate orbit
-	OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
+	// OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
 
 	// Engine
 	// use DeltaTime and AddImpulse, because we want to calculate fuel drain correctly, so the force must be applied based on the last frame

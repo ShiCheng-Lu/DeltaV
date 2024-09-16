@@ -29,6 +29,10 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UStaticMeshComponent> Mesh;
 
+	TObjectPtr<class UOrbitComponent> Orbit;
+
+	TObjectPtr<ACelestialBody> Parent;
+
 	double angle;
 	FVector axis_of_rotation;
 	double angle_to_parent;
@@ -41,7 +45,11 @@ public:
 	// condition
 	double radius_of_influence;
 
+	UPROPERTY(EditAnywhere)
+	FVector InitialVelocity;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostEditMove(bool bFinished) override;
 #endif
 };
