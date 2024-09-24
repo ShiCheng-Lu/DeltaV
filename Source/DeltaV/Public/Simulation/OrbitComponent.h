@@ -38,7 +38,7 @@ public:
 
 
 
-	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity);
+	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity, double Time);
 
 	inline static TObjectPtr<class UStaticMesh> SplineMesh;
 

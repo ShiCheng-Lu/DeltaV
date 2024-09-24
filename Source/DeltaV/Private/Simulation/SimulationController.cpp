@@ -33,6 +33,8 @@ void ASimulationController::BeginPlay() {
 	TArray<AActor*> celestial_bodies;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACelestialBody::StaticClass(), celestial_bodies);
 
+
+
 	if (celestial_bodies.Num() > 0) {
 		Earth = (ACelestialBody*)celestial_bodies[0];
 	}
@@ -63,7 +65,7 @@ void ASimulationController::BeginPlay() {
 
 	Possess(Craft);
 	SetControlRotation(FRotator(0));
-	Craft->OrbitComponent->CentralBody = Earth;
+	Craft->Orbit->CentralBody = Earth;
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
 
@@ -172,13 +174,11 @@ void ASimulationController::SetupInputComponent() {
 void ASimulationController::Throttle(float value) {
 	if (value != 0 && Craft) {
 		ThrottleValue = FMath::Clamp(ThrottleValue + value, 0, 1);
-		HUD->Throttle->SetPercent(ThrottleValue);
 	}
 }
 
 void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
-	Craft->Throttle(ThrottleValue);
 	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
 }
 
@@ -265,15 +265,15 @@ void ASimulationController::Action(FKey Key) {
 		Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
 	}
 	else if (Key == EKeys::Four) {
-		if (Craft->OrbitComponent->CentralBody == nullptr) {
-			Craft->OrbitComponent->CentralBody = Earth;
+		if (Craft->Orbit->CentralBody == nullptr) {
+			Craft->Orbit->CentralBody = Earth;
 			UE_LOG(LogTemp, Warning, TEXT("Craft orbit didn't have a central body"))
 		}
 	}
 	else if (Key == EKeys::Five) {
 		UOrbitComponent* orbit = NewObject<UOrbitComponent>(this);
 		orbit->CentralBody = Earth;
-		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity());
+		orbit->UpdateOrbit(Craft->GetActorLocation(), Craft->GetVelocity(), GetGameTimeSinceCreation());
 
 		/*
 		TArray<FVector> Array;

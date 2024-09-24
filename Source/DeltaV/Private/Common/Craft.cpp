@@ -9,6 +9,7 @@
 #include "Common/JsonUtil.h"
 #include "Simulation/CelestialBody.h"
 #include "Simulation/OrbitComponent.h"
+#include "Simulation/SimulationController.h"
 #include "Common/Craft/FuelComponent.h"
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
@@ -20,6 +21,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PostPhysicsTick.bCanEverTick = true;
 
 	USphereComponent* Root = CreateDefaultSubobject<USphereComponent>("Root");
 	
@@ -39,7 +41,9 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
 
-	OrbitComponent = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
+	Orbit = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
+
+	// TickActor(0, ELevelTick::LEVELTICK_All, PrimaryActorTick);
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -141,17 +145,55 @@ void ACraft::BeginPlay()
 void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UE_LOG(LogTemp, Warning, TEXT("PrePhys Tick: %f"), DeltaTime);
 
-	if (!PhysicsEnabled || OrbitComponent->CentralBody == nullptr) {
+	if (!PhysicsEnabled) {
 		// UE_LOG(LogTemp, Warning, TEXT("no grav"));
+		if (Orbit->CentralBody != nullptr) {
+			double Time = GetGameTimeSinceCreation();
+			FVector Position;
+			double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
+			Orbit->GetPositionAndVelocity(&Position, nullptr, TrueAnomaly);
+			SetActorLocation(Position + Orbit->CentralBody->GetActorLocation());
+
+			Orbit->UpdateSpline();
+		}
 		return;
 	}
 
+	FVector Position, Velocity;
+	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation());
+	Orbit->GetPositionAndVelocity(&Position, &Velocity, TrueAnomaly);
+
+
+	{ // Throttle
+		double FuelDrain = 0;
+		for (auto& Engine : ActiveEngines) {
+			// FuelDrain += Engine.FuelDrain;
+		}
+
+		FuelState FuelTotal;
+		for (auto& FuelTank : ActiveFuelTanks) {
+
+			// FuelTotal += FuelTank.Fuel;
+		}
+
+		ASimulationController* SimulationController = Cast<ASimulationController>(Controller);
+		double ThrustPercent = FMath::Min(FuelTotal.FindChecked(FuelType::LiquidFuel) / FuelDrain, SimulationController->ThrottleValue);
+
+		FVector thrust = FVector(0, 0, 700000 * SimulationController->ThrottleValue);
+		thrust = RootPart->GetComponentRotation().RotateVector(thrust);
+		RootPart->AddForce(thrust);
+
+		// update orbit
+		Orbit->UpdateOrbit(GetActorLocation(), GetVelocity(), GetGameTimeSinceCreation());
+	}
+
 	// Simple gravity force
-	FVector GravityDirection = OrbitComponent->CentralBody->GetActorLocation() - (GetActorLocation() +GetVelocity() * DeltaTime / 5);
+	FVector GravityDirection = Orbit->CentralBody->GetActorLocation() - (GetActorLocation() +GetVelocity() * DeltaTime / 5);
 	double SquareDistance = GravityDirection.SquaredLength();
 	GravityDirection.Normalize();
-	FVector Acceleration = GravityDirection * OrbitComponent->CentralBody->Mu / SquareDistance;
+	FVector Acceleration = GravityDirection * Orbit->CentralBody->Mu / SquareDistance;
 	for (auto& PartKVP : Parts) {
 		UPart* Part = PartKVP.Value;
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
@@ -160,10 +202,14 @@ void ACraft::Tick(float DeltaTime)
 	Cast<USphereComponent>(RootComponent)->AddForce(Acceleration, NAME_None, true);
 	
 	// calculate orbit
-	// OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
+	// OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity(), GetGameTimeSinceCreation());
 
 	// Engine
-	// use DeltaTime and AddImpulse, because we want to calculate fuel drain correctly, so the force must be applied based on the last frame
+	// very possibly we can just use impulse here.
+}
+
+void ACraft::TickPostPhysics(float DeltaTime) {
+	UE_LOG(LogTemp, Warning, TEXT("PostPhys Tick: %f"), DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -269,33 +315,6 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Source craft should be empty but is not!"));
 	}
-}
-
-void ACraft::Throttle(float throttle) {
-	if (!PhysicsEnabled) {
-		return;
-	}
-
-	double FuelDrain = 0;
-	for (auto& Engine : ActiveEngines) {
-		// FuelDrain += Engine.FuelDrain;
-	}
-
-	FuelState FuelTotal;
-	for (auto& FuelTank : ActiveFuelTanks) {
-		
-		// FuelTotal += FuelTank.Fuel;
-	}
-
-	double ThrustPercent = FMath::Min(FuelTotal.FindChecked(FuelType::LiquidFuel) / FuelDrain, throttle);
-
-
-	FVector thrust = FVector(0, 0, 700000 * throttle);
-	thrust = RootPart->GetComponentRotation().RotateVector(thrust);
-	RootPart->AddForce(thrust);
-
-	// update orbit
-	OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity());
 }
 
 void ACraft::Rotate(FRotator rotator, float strength) {

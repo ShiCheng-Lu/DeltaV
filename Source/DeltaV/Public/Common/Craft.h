@@ -6,14 +6,16 @@
 #include "GameFramework/Pawn.h"
 
 #include "Common/Part.h"
+#include "Common/MultiTickActor.h"
 #include "Components/SphereComponent.h"
 
 #include "Craft.generated.h"
 
 UCLASS()
-class DELTAV_API ACraft : public APawn
+class DELTAV_API ACraft : public APawn, public MultiTickActor
 {
 	GENERATED_BODY()
+
 
 public:
 	// TSharedPtr<FJsonObject> Json;
@@ -21,7 +23,7 @@ public:
 	bool PhysicsEnabled;
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
-	TObjectPtr<class UOrbitComponent> OrbitComponent;
+	TObjectPtr<class UOrbitComponent> Orbit;
 
 	TSet<UPart*> ActiveEngines;
 	TSet<UPart*> ActiveFuelTanks;
@@ -64,11 +66,21 @@ public:
 	// control
 	void Rotate(FRotator rotator, float strength);
 
-	void Throttle(float throttle);
-
 	void SetPhysicsEnabled(bool enabled);
 
 	TArray<ACraft*> StageCraft();
 
 	FVector GetAngularVelocity();
+
+
+	// AMultiTickActor
+	virtual void TickPostPhysics(float DeltaTime) override;
+
+	virtual void TickDuringPhysics(float DeltaTime) override {};
+
+
+	virtual void RegisterActorTickFunctions(bool bRegister) override {
+		Super::RegisterActorTickFunctions(bRegister);
+		RegisterMultiTickActorTickFunctions(this, bRegister);
+	}
 };

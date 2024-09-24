@@ -52,8 +52,8 @@ void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) 
 	}
 
 	Info->SetText(FText::Format(FTextFormat::FromString("Periapsis: {0}\nApoapsis: {1}\nAltitude: {2}\nVelocity: {3}"), 
-		Controller->Craft->OrbitComponent->Periapsis() * 0.01,
-		Controller->Craft->OrbitComponent->Apoapsis() * 0.01,
+		Controller->Craft->Orbit->Periapsis() * 0.01,
+		Controller->Craft->Orbit->Apoapsis() * 0.01,
 		Controller->Craft->GetActorLocation().Length() * 0.01,
 		Controller->Craft->GetVelocity().Length() * 0.01));
 }

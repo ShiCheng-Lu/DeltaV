@@ -13,7 +13,8 @@
 				"Slate",
 				"SlateCore",
 				"UMG",
-				"GeometryFramework"
+				"GeometryFramework",
+				"CoreUObject"
 			]
 		}
 	],

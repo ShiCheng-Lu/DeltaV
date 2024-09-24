@@ -387,7 +387,7 @@ void AConstructionController::PlayerTick(float DeltaTime) {
 
 void AConstructionController::Throttle(float Val) {
 	if (Val != 0 && Craft != nullptr) {
-		Craft->Throttle(Val);
+		// Craft->Throttle(Val);
 	}
 }
 

@@ -43,14 +43,20 @@ void ACelestialBody::BeginPlay()
 	if (Orbit->CentralBody) {
 		Orbit->CentralBody->Mu = Orbit->CentralBody->Mesh->CalculateMass() * 6.6743E-5;
 		UE_LOG(LogTemp, Warning, TEXT("Mass %f"), Orbit->CentralBody->Mu);
+
+		PrimaryActorTick.AddPrerequisite(Orbit->CentralBody, Orbit->CentralBody->PrimaryActorTick);
+
+
+		Mesh->SetSimulatePhysics(true);
+
+		Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), InitialVelocity, GetGameTimeSinceCreation());
 	}
-	Mesh->SetSimulatePhysics(true);
+
 
 	// // Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>("Atmosphere");
 	// // Atmosphere->TransformMode = ESkyAtmosphereTransformMode::PlanetCenterAtComponentTransform;
 
 	// // Atmosphere->SetupAttachment(Mesh);
-	Orbit->UpdateOrbit(GetActorLocation(), InitialVelocity);
 	// Orbit->SetVisibility(true);
 
 	// UE_LOG(LogTemp, Warning, TEXT("CelestInit: %s - %s"), *InitialVelocity.ToString(), *GetActorLocation().ToString());
@@ -65,27 +71,16 @@ void ACelestialBody::Tick(float DeltaTime)
 
 	// GetWorld()->GetGameState();
 	double Time = GetGameTimeSinceCreation();
-
-	FVector Position, Velocity;
-	// Orbit->GetPositionAndVelocity(&Position, &Velocity, Time);
-
-	// FVector Pos2 = Orbit->GetPosition(Time);
-
-	// SetActorLocation(Position);
-
 	double RotationPeriod = 60; // 60 seconds for a full rotation
-
-	UE_LOG(LogTemp, Warning, TEXT("Tick Time: %f"), Time);
-
 	SetActorRotation(FRotator(0, Time / RotationPeriod, 0));
+	
 	if (Orbit->CentralBody) {
-		FVector Postion;
+		FVector Position;
 		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
 		Orbit->GetPositionAndVelocity(&Position, nullptr, TrueAnomaly);
-		SetActorLocation(Position);
+		SetActorLocation(Position + Orbit->CentralBody->GetActorLocation());
 
-
-		UE_LOG(LogTemp, Warning, TEXT("Pos %s   %f"), *Position.ToString(), TrueAnomaly);
+		Orbit->UpdateSpline();
 	}
 }
 
@@ -108,7 +103,10 @@ void ACelestialBody::PostEditChangeProperty(FPropertyChangedEvent& PropertyChang
 	if (PropertyName == "InitialVelocity" || PropertyName == "RelativeLocation") {
 		// Draw Debug
 		Orbit->CentralBody = Cast<ACelestialBody>(GetAttachParentActor());
-		Orbit->UpdateOrbit(GetActorLocation(), InitialVelocity);
+		if (Orbit->CentralBody) {
+			UE_LOG(LogTemp, Warning, TEXT("Parent Name %s - %s"), *GetActorLabel(), *Orbit->CentralBody->GetActorLabel());
+			Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), InitialVelocity, GetGameTimeSinceCreation());
+		}
 	}
 }
 
