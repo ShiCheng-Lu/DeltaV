@@ -12,7 +12,7 @@ FString CustomTickFunction::DiagnosticMessage() {
 	return FString("CustomTickFunction");
 }
 
-FName DiagnosticContext(bool bDetailed) {
+FName CustomTickFunction::DiagnosticContext(bool bDetailed) {
 	return FName("CustomTickFunction");
 }
 

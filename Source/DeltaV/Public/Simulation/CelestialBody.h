@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Common/MultiTickActor.h"
 #include "CelestialBody.generated.h"
 
 UCLASS()
-class DELTAV_API ACelestialBody : public AActor
+class DELTAV_API ACelestialBody : public AActor, public MultiTickActor
 {
 	GENERATED_BODY()
 	
@@ -29,15 +30,19 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UStaticMeshComponent> Mesh;
 
+	UPROPERTY()
+	FString Name;
+
+	// UPROPERTY()
 	TObjectPtr<class UOrbitComponent> Orbit;
 
+	// UPROPERTY()
 	TObjectPtr<ACelestialBody> Parent;
 
 	double angle;
 	FVector axis_of_rotation;
 	double angle_to_parent;
 
-	TObjectPtr<ACelestialBody> parent;
 	double Mass; // kg
 	double Mu; // (cm^3)(s^-2) gravitational parameter = Mass * G
 	double Radius; // m
@@ -52,4 +57,13 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostEditMove(bool bFinished) override;
 #endif
+
+	virtual void TickPostPhysics(float DeltaTime) override;
+
+	virtual void TickDuringPhysics(float DeltaTime) override {};
+
+	virtual void RegisterActorTickFunctions(bool bRegister) override {
+		Super::RegisterActorTickFunctions(bRegister);
+		RegisterMultiTickActorTickFunctions(this, bRegister);
+	}
 };

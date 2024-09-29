@@ -145,10 +145,8 @@ void ACraft::BeginPlay()
 void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("PrePhys Tick: %f"), DeltaTime);
 
 	if (!PhysicsEnabled) {
-		// UE_LOG(LogTemp, Warning, TEXT("no grav"));
 		if (Orbit->CentralBody != nullptr) {
 			double Time = GetGameTimeSinceCreation();
 			FVector Position;
@@ -165,6 +163,12 @@ void ACraft::Tick(float DeltaTime)
 	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation());
 	Orbit->GetPositionAndVelocity(&Position, &Velocity, TrueAnomaly);
 
+//	SetActorLocation(Position);
+
+
+	// UE_LOG(LogTemp, Warning, TEXT("pre tick pos: %s"), *GetActorLocation().ToString());
+
+	return;
 
 	{ // Throttle
 		double FuelDrain = 0;
@@ -209,7 +213,7 @@ void ACraft::Tick(float DeltaTime)
 }
 
 void ACraft::TickPostPhysics(float DeltaTime) {
-	UE_LOG(LogTemp, Warning, TEXT("PostPhys Tick: %f"), DeltaTime);
+	// UE_LOG(LogTemp, Warning, TEXT("post tick pos: %s"), *GetActorLocation().ToString());
 }
 
 // Called to bind functionality to input

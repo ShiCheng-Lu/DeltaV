@@ -76,7 +76,7 @@ void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector Relativ
 	double SemiMinorAxis = SemiMajorAxis * FMath::Sqrt(1 - Eccentricity * Eccentricity);
 	OrbitDuration = 2 * PI * SemiMajorAxis * SemiMinorAxis / AngularMomentum.Length();
 
-	TimeAtPeriapsis = Time;
+	TimeAtPeriapsis = Time - GetTime(Angle);
 
 	// UE_LOG(LogTemp, Warning, TEXT("values %f %f %f %f"), AngularMomentum.Length(), Eccentricity, Angle, OrbitDuration);
 
@@ -122,19 +122,18 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 
 	static double LastEccentricAnomalyGuess = 0;
 	if (Eccentricity < 1) {
-		double MeanAnomaly = FMath::Modulo(Time, OrbitDuration) * (2 * PI) / OrbitDuration;
+		double MeanAnomaly = FMath::Modulo(Time - TimeAtPeriapsis, OrbitDuration) * (2 * PI) / OrbitDuration;
 		// solve EccentricAnomaly - Eccentricity * sin(EccentricAnomaly) - MeanAnomaly = f(EccentricAnomaly) = 0
 		//   with derivative f'(EccentricAnomaly) = 1 - Eccentricity * cos(EccentricAnomaly)
 		double EccentricAnomaly = 0;
-		for (int i = 0; i < 5; ++i) {
-			double SinEccentricityAnomaly, CosEccentricityAnomaly;
+		double SinEccentricityAnomaly, CosEccentricityAnomaly, FunctionValue, DerivativeValue;
+		do { // Newton's method to find the root (FunctionValue == 0)
 			FMath::SinCos(&SinEccentricityAnomaly, &CosEccentricityAnomaly, EccentricAnomaly);
-			double FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
-			double DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
+			FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
+			DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
 			EccentricAnomaly = EccentricAnomaly - FunctionValue / DerivativeValue;
+		} while (FMath::Abs(FunctionValue) > 1e-10);
 
-			// UE_LOG(LogTemp, Warning, TEXT("Newton: %f"), FunctionValue);
-		}
 		LastEccentricAnomalyGuess = EccentricAnomaly;
 
 		double TrueAnomaly = FMath::Atan(FMath::Tan(EccentricAnomaly / 2) / FMath::Sqrt((1 - Eccentricity) / (1 + Eccentricity))) * 2;

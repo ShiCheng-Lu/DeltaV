@@ -23,6 +23,8 @@
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	
+
 }
 
 void ASimulationController::BeginPlay() {
@@ -30,18 +32,21 @@ void ASimulationController::BeginPlay() {
 	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
 	// get references to the celestial bodies placed in the world
-	TArray<AActor*> celestial_bodies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACelestialBody::StaticClass(), celestial_bodies);
+	TArray<AActor*> CelestialBodies;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACelestialBody::StaticClass(), CelestialBodies);
 
-
-
-	if (celestial_bodies.Num() > 0) {
-		Earth = (ACelestialBody*)celestial_bodies[0];
+	for (auto Actor : CelestialBodies) {
+		ACelestialBody* CelestialBody = Cast<ACelestialBody>(Actor);
+		if (CelestialBody && CelestialBody->Name == FString("Sun")) {
+			Earth = CelestialBody;
+			break;
+		}
 	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("No celestial body"));
-		return;
+	if (!Earth) {
+		UE_LOG(LogTemp, Warning, TEXT("NO EARTH FOUND, Using first celestial body"));
+		Earth = Cast<ACelestialBody>(CelestialBodies[0]);
 	}
+
 
 	FString Path = Cast<UMainGameInstance>(GetGameInstance())->CraftPath;
 

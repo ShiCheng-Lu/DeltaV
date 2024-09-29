@@ -14,6 +14,7 @@ ACelestialBody::ACelestialBody(const FObjectInitializer& ObjectInitializer) : Su
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PostPhysicsTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("StaticMesh'/Game/Shapes/Shape_Sphere.Shape_Sphere'"));
@@ -30,15 +31,13 @@ ACelestialBody::ACelestialBody(const FObjectInitializer& ObjectInitializer) : Su
 	Mu = Mesh->CalculateMass() * 6.6743E-5; // G: 6.6743E-5 (cN)(cm^2)(kg^-2), Mu: (cN)(cm^2)(kg^-1) = (cm^3)(s^-2)
 
 	Orbit = CreateDefaultSubobject<UOrbitComponent>("Orbit");
-
-
 }
 
 // Called when the game starts or when spawned
 void ACelestialBody::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	Orbit->CentralBody = Cast<ACelestialBody>(GetAttachParentActor());
 	if (Orbit->CentralBody) {
 		Orbit->CentralBody->Mu = Orbit->CentralBody->Mesh->CalculateMass() * 6.6743E-5;
@@ -46,11 +45,11 @@ void ACelestialBody::BeginPlay()
 
 		PrimaryActorTick.AddPrerequisite(Orbit->CentralBody, Orbit->CentralBody->PrimaryActorTick);
 
-
 		Mesh->SetSimulatePhysics(true);
 
 		Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), InitialVelocity, GetGameTimeSinceCreation());
 	}
+
 
 
 	// // Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>("Atmosphere");
@@ -68,17 +67,26 @@ void ACelestialBody::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
 	// GetWorld()->GetGameState();
 	double Time = GetGameTimeSinceCreation();
 	double RotationPeriod = 60; // 60 seconds for a full rotation
 	SetActorRotation(FRotator(0, Time / RotationPeriod, 0));
 	
 	if (Orbit->CentralBody) {
-		FVector Position;
-		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
-		Orbit->GetPositionAndVelocity(&Position, nullptr, TrueAnomaly);
-		SetActorLocation(Position + Orbit->CentralBody->GetActorLocation());
+		FVector NextPosition, VelocityChange;
+		double TrueAnomaly = Orbit->GetTrueAnomaly(Time + DeltaTime);
+		Orbit->GetPositionAndVelocity(&NextPosition, nullptr, TrueAnomaly);
+		VelocityChange = (NextPosition + Orbit->CentralBody->GetActorLocation() - GetActorLocation()) / DeltaTime - GetVelocity();
+
+		Mesh->AddImpulse(VelocityChange, NAME_None, true);
+		
+		UE_LOG(LogTemp, Warning, TEXT("%s pre phys tick pos: %s, expect next %s"), *Name, *GetActorLocation().ToString(), *NextPosition.ToString());
+	}
+}
+
+void ACelestialBody::TickPostPhysics(float DeltaTime) {
+	if (Orbit->CentralBody) {
+		// UE_LOG(LogTemp, Warning, TEXT("%s post tick pos: %s, vel %s"), *Name, *GetActorLocation().ToString(), *GetVelocity().ToString());
 
 		Orbit->UpdateSpline();
 	}
@@ -97,16 +105,24 @@ void ACelestialBody::PostEditChangeProperty(FPropertyChangedEvent& PropertyChang
 		Mesh->SetRelativeScale3D(FVector(Radius));
 		Mu = Mesh->CalculateMass() * 6.6743E-5;
 		// Atmosphere->SetBottomRadius(Radius / 1000); // in km
-		UE_LOG(LogTemp, Warning, TEXT("Mu %f"), Mu);
 	}
 
 	if (PropertyName == "InitialVelocity" || PropertyName == "RelativeLocation") {
 		// Draw Debug
 		Orbit->CentralBody = Cast<ACelestialBody>(GetAttachParentActor());
+		Orbit->SetVisibility(true);
 		if (Orbit->CentralBody) {
-			UE_LOG(LogTemp, Warning, TEXT("Parent Name %s - %s"), *GetActorLabel(), *Orbit->CentralBody->GetActorLabel());
 			Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), InitialVelocity, GetGameTimeSinceCreation());
+			Orbit->UpdateSplineWithOrbit();
+
+			if (Orbit->Eccentricity >= 1) {
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: %s is on Hyperbolic orbit"), *Name);
+			}
 		}
+	}
+
+	if (PropertyName == "ActorLabel") {
+		Name = GetActorLabel();
 	}
 }
 

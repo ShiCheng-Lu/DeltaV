@@ -23,20 +23,35 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UPROPERTY()
 	double Mass;
 
+	UPROPERTY()
 	FVector AngularMomentum;
+
+	UPROPERTY()
 	double AngularMomentumSquared; // (cm)^2
+
+	UPROPERTY()
 	FVector AxisOfRotation;
+
+	UPROPERTY()
 	double Eccentricity; // unitless
+
+	UPROPERTY()
 	FVector EccentricityVector;
+
+	UPROPERTY()
 	FVector PeriapsisDirection;
 
+	UPROPERTY()
 	double OrbitDuration;
+
+	UPROPERTY()
 	double TimeAtPeriapsis;
+
+	UPROPERTY()
 	TObjectPtr<class ACelestialBody> CentralBody;
-
-
 
 	void UpdateOrbit(FVector RelativeLocation, FVector RelativeVelocity, double Time);
 
@@ -54,6 +69,9 @@ public:
 
 	double Apoapsis(); // cm
 
+	/**
+	 Get relative position and velocity to the parent body at true anomaly
+	*/
 	void GetPositionAndVelocity(FVector* Position, FVector* Velocity, double TrueAnomaly) const;
 
 	double GetTime(double TrueAnomaly);
