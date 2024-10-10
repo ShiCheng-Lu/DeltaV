@@ -47,9 +47,7 @@ void ASimulationController::BeginPlay() {
 		Earth = Cast<ACelestialBody>(CelestialBodies[0]);
 	}
 
-
 	FString Path = Cast<UMainGameInstance>(GetGameInstance())->CraftPath;
-
 
 	UE_LOG(LogTemp, Warning, TEXT("Path: %s"), *Path);
 
@@ -64,13 +62,16 @@ void ASimulationController::BeginPlay() {
 
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
-	Craft->SetActorLocation(FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0));
+	FVector CraftLocation = FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0) * 2;
+	Craft->SetActorLocation(CraftLocation);
 	Craft->SetActorRotation(FRotator(180, 0, 0));
 	Craft->SetPhysicsEnabled(true);
 
 	Possess(Craft);
 	SetControlRotation(FRotator(0));
 	Craft->Orbit->CentralBody = Earth;
+	
+	Craft->Orbit->UpdateOrbit(CraftLocation, FVector(0, 0, 1000).Cross(CraftLocation.GetSafeNormal()), 0);
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
 
@@ -86,7 +87,6 @@ void ASimulationController::BeginPlay() {
 	ControlStabilizer->Controller = this;
 
 	ControlStabilizer->RegisterComponent();
-
 }
 
 
@@ -100,15 +100,17 @@ void ASimulationController::UpdateRotation(float DeltaTime)
 		PlayerCameraManager->ProcessViewRotation(DeltaTime, ViewRotation, DeltaRot);
 	}
 
-	FRotator Rotation = GetPawn()->GetActorLocation().ToOrientationRotator();
-	Rotation = UKismetMathLibrary::ComposeRotators(FRotator(90, -180, 0), Rotation);
-	Rotation = UKismetMathLibrary::ComposeRotators(ViewRotation, Rotation);
-
-	SetControlRotation(Rotation);
-
 	APawn* const P = GetPawnOrSpectator();
 	if (P)
 	{
+		FRotator Rotation = GetPawn()->GetActorLocation().ToOrientationRotator();
+
+
+		Rotation = UKismetMathLibrary::ComposeRotators(FRotator(90, -180, 0), Rotation);
+		Rotation = UKismetMathLibrary::ComposeRotators(ViewRotation, Rotation);
+
+		SetControlRotation(Rotation);
+
 		P->FaceRotation(Rotation, DeltaTime);
 	}
 }
@@ -292,6 +294,9 @@ void ASimulationController::Action(FKey Key) {
 	}
 	else if (Key == EKeys::Six) {
 		UE_LOG(LogTemp, Warning, TEXT("craft loc %s"), *Craft->GetActorLocation().ToString());
+	}
+	else if (Key == EKeys::Seven) {
+		Craft->Orbit->SetVisibility(!Craft->Orbit->IsVisible());
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("action %s"), *Key.GetFName().ToString());

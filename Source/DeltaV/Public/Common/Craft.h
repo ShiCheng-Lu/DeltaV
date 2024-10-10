@@ -24,6 +24,8 @@ public:
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
 	TObjectPtr<class UOrbitComponent> Orbit;
+	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
+	FVector TargetPosition;
 
 	TSet<UPart*> ActiveEngines;
 	TSet<UPart*> ActiveFuelTanks;

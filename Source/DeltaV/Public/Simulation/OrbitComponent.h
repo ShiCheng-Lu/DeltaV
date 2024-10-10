@@ -57,6 +57,7 @@ public:
 
 	inline static TObjectPtr<class UStaticMesh> SplineMesh;
 
+	UPROPERTY()
 	TArray<TObjectPtr<class USplineMeshComponent>> Spline;
 
 	void UpdateSplineWithOrbit();

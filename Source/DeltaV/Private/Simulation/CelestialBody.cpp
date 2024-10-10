@@ -40,9 +40,6 @@ void ACelestialBody::BeginPlay()
 	
 	Orbit->CentralBody = Cast<ACelestialBody>(GetAttachParentActor());
 	if (Orbit->CentralBody) {
-		Orbit->CentralBody->Mu = Orbit->CentralBody->Mesh->CalculateMass() * 6.6743E-5;
-		UE_LOG(LogTemp, Warning, TEXT("Mass %f"), Orbit->CentralBody->Mu);
-
 		PrimaryActorTick.AddPrerequisite(Orbit->CentralBody, Orbit->CentralBody->PrimaryActorTick);
 
 		Mesh->SetSimulatePhysics(true);
@@ -50,7 +47,7 @@ void ACelestialBody::BeginPlay()
 		Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), InitialVelocity, GetGameTimeSinceCreation());
 	}
 
-
+	TargetPosition = GetActorLocation();
 
 	// // Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>("Atmosphere");
 	// // Atmosphere->TransformMode = ESkyAtmosphereTransformMode::PlanetCenterAtComponentTransform;
@@ -73,14 +70,14 @@ void ACelestialBody::Tick(float DeltaTime)
 	SetActorRotation(FRotator(0, Time / RotationPeriod, 0));
 	
 	if (Orbit->CentralBody) {
-		FVector NextPosition, VelocityChange;
 		double TrueAnomaly = Orbit->GetTrueAnomaly(Time + DeltaTime);
-		Orbit->GetPositionAndVelocity(&NextPosition, nullptr, TrueAnomaly);
-		VelocityChange = (NextPosition + Orbit->CentralBody->GetActorLocation() - GetActorLocation()) / DeltaTime - GetVelocity();
+		Orbit->GetPositionAndVelocity(&TargetPosition, nullptr, TrueAnomaly);
+		TargetPosition += Orbit->CentralBody->TargetPosition;
+		FVector VelocityChange = (TargetPosition - GetActorLocation()) / DeltaTime - GetVelocity();
 
 		Mesh->AddImpulse(VelocityChange, NAME_None, true);
 		
-		UE_LOG(LogTemp, Warning, TEXT("%s pre phys tick pos: %s, expect next %s"), *Name, *GetActorLocation().ToString(), *NextPosition.ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("%s pre phys tick pos: %s, expect next %s"), *Name, *GetActorLocation().ToString(), *TargetPosition.ToString());
 	}
 }
 

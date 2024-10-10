@@ -44,7 +44,6 @@ void UOrbitComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
 
 }
 
@@ -78,7 +77,7 @@ void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector Relativ
 
 	TimeAtPeriapsis = Time - GetTime(Angle);
 
-	// UE_LOG(LogTemp, Warning, TEXT("values %f %f %f %f"), AngularMomentum.Length(), Eccentricity, Angle, OrbitDuration);
+	UE_LOG(LogTemp, Warning, TEXT("values %f %s %f %f %f %f"), AngularMomentum.Length(), *RelativeVelocity.ToString(), Eccentricity, Angle, OrbitDuration, SemiMajorAxis * SemiMinorAxis);
 
 	if (IsVisible()) {
 		UpdateSplineWithOrbit();
@@ -108,6 +107,7 @@ double UOrbitComponent::GetTime(double TrueAnomaly) {
 
 double UOrbitComponent::GetTrueAnomaly(double Time) const {
 	if (OrbitDuration == 0) {
+		UE_LOG(LogTemp, Warning, TEXT("Orbit duration is 0"), Eccentricity);
 		return 0;
 	}
 	// get angle from time after periapsis
@@ -132,7 +132,7 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 			FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
 			DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
 			EccentricAnomaly = EccentricAnomaly - FunctionValue / DerivativeValue;
-		} while (FMath::Abs(FunctionValue) > 1e-10);
+		} while (FMath::Abs(FunctionValue) > 1e-13);
 
 		LastEccentricAnomalyGuess = EccentricAnomaly;
 
@@ -166,7 +166,7 @@ void UOrbitComponent::GetPositionAndVelocity(FVector* Position, FVector* Velocit
 void UOrbitComponent::UpdateSpline() {
 	Super::UpdateSpline();
 
-	if (Spline.Num() > 10) {
+	if (GetNumberOfSplineSegments() > 10) {
 		return;
 	}
 
@@ -186,7 +186,7 @@ void UOrbitComponent::UpdateSpline() {
 		SplineComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		SplineComponent->SetStaticMesh(SplineMesh);
 		SplineComponent->SetForwardAxis(ESplineMeshAxis::Z);
-		// SplineComponent->SetupAttachment(this);
+		SplineComponent->SetMobility(EComponentMobility::Movable);
 		SplineComponent->RegisterComponent();
 		Spline.Add(SplineComponent);
 	}

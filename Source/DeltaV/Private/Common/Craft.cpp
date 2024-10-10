@@ -159,18 +159,33 @@ void ACraft::Tick(float DeltaTime)
 		return;
 	}
 
+	if (!PhysicsEnabled && Orbit->CentralBody == nullptr) {
+		return; // In build mode
+	}
+
 	FVector Position, Velocity;
-	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation());
+	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation() + DeltaTime);
 	Orbit->GetPositionAndVelocity(&Position, &Velocity, TrueAnomaly);
 
-//	SetActorLocation(Position);
+	// Gravitation (via Orbit component)
+	TargetPosition = (Position + Orbit->CentralBody->TargetPosition);
+	TargetVelocity = (TargetPosition - GetActorLocation()) / DeltaTime;
+	FVector VelocityChange = TargetVelocity - GetVelocity();
 
+	UE_LOG(LogTemp, Warning, TEXT("Vel Change: %s -- %s -- %s -- %s -- %s"), *TargetPosition.ToString(), *Orbit->CentralBody->TargetPosition.ToString(), *TargetVelocity.ToString(), *GetVelocity().ToString(), *RootPart->GetComponentVelocity().ToString());
 
-	// UE_LOG(LogTemp, Warning, TEXT("pre tick pos: %s"), *GetActorLocation().ToString());
+	for (auto& PartKVP : Parts) {
+		UPart* Part = PartKVP.Value;
+		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
+		Part->AddImpulse(VelocityChange, NAME_None, true);
+	}
+	Cast<USphereComponent>(RootComponent)->AddImpulse(VelocityChange, NAME_None, true);
 
 	return;
-
-	{ // Throttle
+	// Throttle
+	ASimulationController* SimulationController = Cast<ASimulationController>(Controller);
+	if (SimulationController && SimulationController->ThrottleValue > 0) 
+	{
 		double FuelDrain = 0;
 		for (auto& Engine : ActiveEngines) {
 			// FuelDrain += Engine.FuelDrain;
@@ -182,38 +197,58 @@ void ACraft::Tick(float DeltaTime)
 			// FuelTotal += FuelTank.Fuel;
 		}
 
-		ASimulationController* SimulationController = Cast<ASimulationController>(Controller);
 		double ThrustPercent = FMath::Min(FuelTotal.FindChecked(FuelType::LiquidFuel) / FuelDrain, SimulationController->ThrottleValue);
 
 		FVector thrust = FVector(0, 0, 700000 * SimulationController->ThrottleValue);
 		thrust = RootPart->GetComponentRotation().RotateVector(thrust);
 		RootPart->AddForce(thrust);
-
-		// update orbit
-		Orbit->UpdateOrbit(GetActorLocation(), GetVelocity(), GetGameTimeSinceCreation());
 	}
-
-	// Simple gravity force
-	FVector GravityDirection = Orbit->CentralBody->GetActorLocation() - (GetActorLocation() +GetVelocity() * DeltaTime / 5);
-	double SquareDistance = GravityDirection.SquaredLength();
-	GravityDirection.Normalize();
-	FVector Acceleration = GravityDirection * Orbit->CentralBody->Mu / SquareDistance;
-	for (auto& PartKVP : Parts) {
-		UPart* Part = PartKVP.Value;
-		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
-		Part->AddForce(Acceleration, NAME_None, true);
-	}
-	Cast<USphereComponent>(RootComponent)->AddForce(Acceleration, NAME_None, true);
-	
-	// calculate orbit
-	// OrbitComponent->UpdateOrbit(GetActorLocation(), GetVelocity(), GetGameTimeSinceCreation());
-
-	// Engine
-	// very possibly we can just use impulse here.
 }
 
 void ACraft::TickPostPhysics(float DeltaTime) {
+
+	if (!PhysicsEnabled && Orbit->CentralBody == nullptr) {
+		return; // In build mode
+	}
+
+
 	// UE_LOG(LogTemp, Warning, TEXT("post tick pos: %s"), *GetActorLocation().ToString());
+	
+	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
+
+	// Updating orbit
+	FVector PositionChange = GetActorLocation() - TargetPosition;
+	FVector VelocityChange = GetVelocity() - TargetVelocity;
+	if (!VelocityChange.IsNearlyZero()) {
+		FVector Velocity;
+		double Time = GetGameTimeSinceCreation() + DeltaTime;
+		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
+		Orbit->GetPositionAndVelocity(nullptr, &Velocity, TrueAnomaly);
+
+		UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
+
+		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
+	}
+
+	if (!PositionChange.IsNearlyZero()) {
+		UE_LOG(LogTemp, Warning, TEXT("Position didn't get there - %f"), PositionChange.Length());
+
+	}
+
+	return;
+
+	// Updating frame of reference if outside SOI
+	if (FVector::DistSquared(GetActorLocation(), Orbit->CentralBody->GetActorLocation()) > FMath::Square(Orbit->CentralBody->RadiusOfInfluence)) {
+		FVector Position, Velocity;
+		FVector CentralBodyPosition, CentralBodyVelocity;
+		double Time = GetGameTimeSinceCreation() + DeltaTime;
+		// 
+		Orbit->CentralBody = Orbit->CentralBody->Orbit->CentralBody;
+		Orbit->UpdateOrbit(Position + CentralBodyPosition, Velocity + CentralBodyVelocity, Time);
+	}
+
+	// Updating frame of reference if going inside a moon of this planet
+	Orbit->UpdateSpline();
 }
 
 // Called to bind functionality to input

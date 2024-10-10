@@ -33,22 +33,27 @@ public:
 	UPROPERTY()
 	FString Name;
 
-	// UPROPERTY()
+	UPROPERTY()
 	TObjectPtr<class UOrbitComponent> Orbit;
 
 	// UPROPERTY()
 	TObjectPtr<ACelestialBody> Parent;
 
+	FVector TargetPosition;
+
 	double angle;
 	FVector axis_of_rotation;
-	double angle_to_parent;
 
 	double Mass; // kg
+
+	UPROPERTY()
 	double Mu; // (cm^3)(s^-2) gravitational parameter = Mass * G
+
+
 	double Radius; // m
 
 	// condition
-	double radius_of_influence;
+	double RadiusOfInfluence = INFINITY;
 
 	UPROPERTY(EditAnywhere)
 	FVector InitialVelocity;

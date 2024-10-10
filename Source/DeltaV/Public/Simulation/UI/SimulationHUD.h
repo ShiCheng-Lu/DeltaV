@@ -65,4 +65,6 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UTextBlock> Info;
+
+	FVector VelocityValue = FVector(0);
 };
