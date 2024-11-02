@@ -23,18 +23,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = true;
 	PostPhysicsTick.bCanEverTick = true;
 
-	USphereComponent* Root = CreateDefaultSubobject<USphereComponent>("Root");
-	
-	Root->SetLinearDamping(0);
-	Root->SetAngularDamping(0);
-	Root->SetMassOverrideInKg(NAME_None, 0);
-	Root->SetMassScale(NAME_None, 0);
-	Root->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	Root->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-
-	UE_LOG(LogTemp, Warning, TEXT("Sphere root mass %f"), Root->CalculateMass());
-	SetRootComponent(Root);
-
 	BaseEyeHeight = 0;
 	PhysicsEnabled = false;
 	RootPart = nullptr;
@@ -169,7 +157,7 @@ void ACraft::Tick(float DeltaTime)
 
 	// Gravitation (via Orbit component)
 	TargetPosition = (Position + Orbit->CentralBody->TargetPosition);
-	TargetVelocity = (TargetPosition - GetActorLocation()) / DeltaTime;
+	TargetVelocity = (TargetPosition - CalculateCoM()) / DeltaTime;
 	FVector VelocityChange = TargetVelocity - GetVelocity();
 
 	UE_LOG(LogTemp, Warning, TEXT("Vel Change: %s -- %s -- %s -- %s -- %s"), *TargetPosition.ToString(), *Orbit->CentralBody->TargetPosition.ToString(), *TargetVelocity.ToString(), *GetVelocity().ToString(), *RootPart->GetComponentVelocity().ToString());
@@ -179,7 +167,6 @@ void ACraft::Tick(float DeltaTime)
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
 		Part->AddImpulse(VelocityChange, NAME_None, true);
 	}
-	Cast<USphereComponent>(RootComponent)->AddImpulse(VelocityChange, NAME_None, true);
 
 	return;
 	// Throttle
@@ -217,7 +204,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
 
 	// Updating orbit
-	FVector PositionChange = GetActorLocation() - TargetPosition;
+	FVector PositionChange = CalculateCoM() - TargetPosition;
 	FVector VelocityChange = GetVelocity() - TargetVelocity;
 	if (!VelocityChange.IsNearlyZero()) {
 		FVector Velocity;
@@ -229,12 +216,11 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
-
+	 
 	if (!PositionChange.IsNearlyZero()) {
 		UE_LOG(LogTemp, Warning, TEXT("Position didn't get there - %f"), PositionChange.Length());
 
 	}
-
 	return;
 
 	// Updating frame of reference if outside SOI
@@ -394,6 +380,17 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 	UE_LOG(LogTemp, Warning, TEXT("root loc %s"), *GetRootComponent()->GetComponentLocation().ToString());
 }
 
+FVector ACraft::CalculateCoM() {
+	// center of mass relative to root
+	double Mass = 0;
+	FVector CenterOfMass = FVector(0);
+	for (auto PartKVP : Parts) {
+		auto Part = PartKVP.Value;
+		CenterOfMass += Part->GetRelativeLocation() * Part->CalculateMass();
+		Mass += Part->CalculateMass();
+	}
+	return CenterOfMass / Mass;
+}
 
 TArray<ACraft*> ACraft::StageCraft() {
 	TArray<ACraft*> Detached;

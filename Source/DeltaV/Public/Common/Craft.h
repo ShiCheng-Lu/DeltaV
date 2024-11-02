@@ -74,6 +74,7 @@ public:
 
 	FVector GetAngularVelocity();
 
+	FVector CalculateCoM();
 
 	// AMultiTickActor
 	virtual void TickPostPhysics(float DeltaTime) override;
