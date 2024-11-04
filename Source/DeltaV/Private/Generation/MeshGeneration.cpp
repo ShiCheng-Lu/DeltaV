@@ -4,6 +4,7 @@
 #include "Generation/MeshGeneration.h"
 #include "Generation/SimplexNoise.h"
 #include "DrawDebugHelpers.h"
+#include "DynamicMesh/MeshAttributeUtil.h"
 
 using UE::Geometry::FIndex2i;
 
@@ -26,18 +27,21 @@ void StreamTree(FDynamicMesh3& MeshInOut) {
 }
 
 void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
-	GenerateIsoSphere(MeshInOut, 5);
+	MeshInOut.EnableAttributes();
+	MeshInOut.Attributes()->EnableMaterialID();
+
+	GenerateIsoSphere(MeshInOut, 6);
 
 	for (int VertexId : MeshInOut.VertexIndicesItr()) {
 		FVector Vertex = MeshInOut.GetVertex(VertexId);
-		double Noise = SimplexNoise::At(Vertex);
-		double Scale = Noise / 2 + 1;
+		double Noise = SimplexNoise::At(Vertex) + 0.02;
 		UpliftMap.Add(VertexId, Noise);
-		HeightMap.Add(VertexId, Radius * Scale);
-		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * Radius * Scale);
+		double Noise2 = SimplexNoise::At(Vertex * 2);
+		double Noise3 = SimplexNoise::At(Vertex * 4);
+		HeightMap.Add(VertexId, Radius * (1 + Noise / 2 + Noise2 / 8 + Noise3 / 32));
+		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * HeightMap[VertexId]);
 	}
 }
-
 
 struct OverflowPass {
 	FIndex2i Lakes;
@@ -51,7 +55,7 @@ struct OverflowPass {
 
 void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 	// which vertex is the lowest from the current node
-	TMap<int, int> Path;
+	TMap<int, int> DownstreamMap;
 	TMap<int, int> DrainageMap;
 	TArray<int> Roots;
 
@@ -63,7 +67,7 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 		else {
 			High = Edge.Vert.B; Low = Edge.Vert.A;
 		}
-		
+
 		if (HeightMap[High] <= Radius) {
 			continue;
 		}
@@ -71,21 +75,22 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 			Roots.Add(Low);
 		}
 
-		if (Path.Find(High) == nullptr) {
-			Path.Add(High, Low);
+		if (DownstreamMap.Find(High) == nullptr) {
+			DownstreamMap.Add(High, Low);
 			DrainageMap.Add(High, 0);
-		} else if (HeightMap[Low] < HeightMap[Path[High]]) {
-			Path[High] = Low;
+		}
+		else if (HeightMap[Low] < HeightMap[DownstreamMap[High]]) {
+			DownstreamMap[High] = Low;
 		}
 	}
-	
+
 	// construct a connected tree
 	// start from edges and work our way up
 	TMap<int, TArray<int>> Tree;
 	TSet<int> MinimumsSet;
-	for (auto& KVP : Path) {
+	for (auto& KVP : DownstreamMap) {
 		Tree.FindOrAdd(KVP.Value).Add(KVP.Key);
-		if (Path.Find(KVP.Value) == nullptr && HeightMap[KVP.Value] > Radius) { // the downstream doesn't have a downstream and doens't lead to the ocean, so it must be a minimum
+		if (!DownstreamMap.Contains(KVP.Value) && HeightMap[KVP.Value] > Radius) { // the downstream doesn't have a downstream and doens't lead to the ocean, so it must be a minimum
 			MinimumsSet.Add(KVP.Value);
 		}
 	}
@@ -95,7 +100,7 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 	TMap<int, int> Lake;
 	for (int LakeId = 0; LakeId < Minimums.Num(); ++LakeId) {
 		// traverse the tree from the minimum to mark as this lake
-		TArray<int> Vertices = { Minimums[LakeId]};
+		TArray<int> Vertices = { Minimums[LakeId] };
 		while (!Vertices.IsEmpty()) {
 			int Vertex = Vertices.Pop();
 			Lake.Add(Vertex, LakeId);
@@ -103,7 +108,6 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 				Vertices.Append(Tree[Vertex]);
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("lake base %s"), *MeshInOut.GetVertex(Minimums[LakeId]).ToString());
 	}
 
 	TMap<FIndex2i, OverflowPass> OverflowPassesMap;
@@ -127,7 +131,7 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 			Pass.PassHeight = PassHeight;
 		}
 	}
-	
+
 	TArray<OverflowPass> OverflowPasses;
 	OverflowPassesMap.GenerateValueArray(OverflowPasses);
 	OverflowPasses.Sort();
@@ -141,40 +145,78 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 			if (!ContainA && !ContainB) {
 				NextSetOverflowPasses.Add(Pass);
 			}
+			else if (ContainA && ContainB) {
+			}
 			else if (ContainA) {
 				Tree.FindOrAdd(Pass.Pass.A).Add(Minimums[Pass.Lakes.B]);
+				DownstreamMap.Add(Minimums[Pass.Lakes.B], Pass.Pass.A);
 				Connected.Add(Pass.Lakes.B);
-
-				FVector A = MeshInOut.GetVertex(Minimums[Pass.Lakes.B]);
-				FVector B = MeshInOut.GetVertex(Pass.Pass.A);
-				DrawDebugDirectionalArrow(GetWorld(), A, B, 1, FColor::Purple, true);
 			}
 			else if (ContainB) {
 				Tree.FindOrAdd(Pass.Pass.B).Add(Minimums[Pass.Lakes.A]);
+				DownstreamMap.Add(Minimums[Pass.Lakes.A], Pass.Pass.B);
 				Connected.Add(Pass.Lakes.A);
-
-				FVector A = MeshInOut.GetVertex(Minimums[Pass.Lakes.A]);
-				FVector B = MeshInOut.GetVertex(Pass.Pass.B);
-				DrawDebugDirectionalArrow(GetWorld(), A, B, 1, FColor::Purple, true);
 			}
 		}
 		OverflowPasses = NextSetOverflowPasses;
 	}
 
-	for (auto& KVP : Tree) {
-		for (auto& Vertices : KVP.Value) {
-			FVector A = MeshInOut.GetVertex(KVP.Key);
-			FVector B = MeshInOut.GetVertex(Vertices);
+	// since our graph is an iso sphere, most of the drainage area will be the same size
+	// we can reuse the same for approximation. Hexagon with side length of ~ Radius / (5 * (2 ^ SubdivideLevel))
+	double DrainageAreaConstant = 3 * FMath::Sqrt(3.0) / 8; // area of single drainage
+	double ErosionRate = 0.01408361 * 3;
+
+	// using Roots as the stack for DFS to traverse the entire stream map
+	TArray<int> TreeInBFS = TArray(Roots);
+	for (int i = 0; i < TreeInBFS.Num(); ++i) {
+		TArray<int>* Upstreams = Tree.Find(TreeInBFS[i]);
+		if (Upstreams != nullptr) {
+			TreeInBFS.Append(*Upstreams);
+		}
+	}
+
+	// traverse in reverse order and calculate drainage area and height change
+	TMap<int, int> DrainageAreaMap;
+	TMap<int, double> Deltas;
+
+	for (int i = TreeInBFS.Num() - 1; i >= Roots.Num(); --i) {
+		int Vertex = TreeInBFS[i];
+		int DrainageArea = 1;
+		TArray<int>* Upstreams = Tree.Find(Vertex);
+		if (Upstreams != nullptr) {
+			for (int Upstream : *Upstreams) {
+				DrainageArea += DrainageAreaMap[Upstream];
+			}
+		}
+		DrainageAreaMap.Add(Vertex, DrainageArea);
+
+		// try using the current height gradient
+		// maybe this needs to be done separately afterwards to solve with next step gradient
+		double Slope = (HeightMap[Vertex] - HeightMap[DownstreamMap[Vertex]]) / 3;
+
+		double Delta = UpliftMap[Vertex] / 8 - ErosionRate * FMath::Sqrt(DrainageArea * DrainageAreaConstant) * Slope;
+		if (Delta + HeightMap[Vertex] > Radius) {
+			HeightMap[Vertex] += Delta / 32;
+		}
+		Deltas.Add(Vertex, Delta);
+	}
+
+	FlushPersistentDebugLines(GetWorld());
+	for (auto& KVP : DownstreamMap) {
+		FVector A = MeshInOut.GetVertex(KVP.Key);
+		FVector B = MeshInOut.GetVertex(KVP.Value);
+
+		/*
+		if (Deltas[KVP.Key] > 0) {
+			DrawDebugPoint(GetWorld(), A, 10, FColor::Green, true);
+		}*/
+
+		if (Lake.Find(KVP.Key) != nullptr) {
+			DrawDebugDirectionalArrow(GetWorld(), A, B, 1, FColor::Purple, true);
+		} else {
 			DrawDebugDirectionalArrow(GetWorld(), A, B, 1, FColor::Red, true);
 		}
 	}
-	/*
-	for (auto& KVP : Path) {
-		FVector A = MeshInOut.GetVertex(KVP.Key);
-		FVector B = MeshInOut.GetVertex(KVP.Value);
-		DrawDebugDirectionalArrow(GetWorld(), A, B, 1, FColor::Red, true);
-	}
-	*/
 	for (auto Vertex : Roots) {
 		FVector A = MeshInOut.GetVertex(Vertex);
 		DrawDebugPoint(GetWorld(), A, 10, FColor::Orange, true);
@@ -184,24 +226,31 @@ void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
 		DrawDebugPoint(GetWorld(), A, 20, FColor::Green, true);
 	}
 
-	TArray<FColor> Colors = { FColor::Yellow, FColor::Blue, FColor::Purple, FColor::Cyan };
-	for (auto& KVP : Lake) {
-		FVector A = MeshInOut.GetVertex(KVP.Key);
-		if (KVP.Value < 4) {
-			DrawDebugPoint(GetWorld(), A, 10, Colors[KVP.Value], true);
-		}
+	double maxUplift = 0;
+	for (auto& KVP : UpliftMap) {
+		maxUplift = FMath::Max(KVP.Value, maxUplift);
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Path size %d - lake num %d"), Path.Num(), Minimums.Num());
-
-	// DFS traverse the tree to generate the drainage area
-
 }
 
 void UMeshGeneration::Generate(FDynamicMesh3& MeshInOut) {
+	double MaxHeight = 0;
 	for (int VertexId : MeshInOut.VertexIndicesItr()) {
 		FVector Vertex = MeshInOut.GetVertex(VertexId);
-		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * HeightMap[VertexId]);
+		double Height = HeightMap[VertexId];
+		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * Height);
+		MeshInOut.SetVertexNormal(VertexId, FVector3f(Vertex.GetSafeNormal()));
+		MeshInOut.SetVertexColor(VertexId, FVector3f(0, 0, 0));
+		MaxHeight = FMath::Max(MaxHeight, Height);
+	}
+	MaxHeight -= Radius;
+	int id = 0;
+	for (int TriangleId : MeshInOut.TriangleIndicesItr()) {
+		FIndex3i Triangle = MeshInOut.GetTriangle(TriangleId);
+		double TotalHeight = HeightMap[Triangle.A] + HeightMap[Triangle.B] + HeightMap[Triangle.C];
+		int GroupId = (TotalHeight / 3 - Radius) / MaxHeight * 5 + 1; // 0 for negative
+
+		// Any material id or vertex color needs to be set on attributes (haven't tried vertex color)
+		MeshInOut.Attributes()->GetMaterialID()->SetValue(TriangleId, FMath::Clamp(GroupId, 0, 5));
 	}
 }
 
@@ -274,7 +323,7 @@ int UMeshGeneration::GetMidpoint(FDynamicMesh3& MeshInOut, int a, int b) {
 
 void UMeshGeneration::Subdivide(FDynamicMesh3& MeshInOut, FIndex3i Face, int Depth) {
 	if (Depth <= 0) { // Last depth, Add face to dynamic mesh
-		MeshInOut.AppendTriangle(Face);
+		MeshInOut.AppendTriangle(Face, 2);
 		return;
 	}
 	int AB = GetMidpoint(MeshInOut, Face.A, Face.B);

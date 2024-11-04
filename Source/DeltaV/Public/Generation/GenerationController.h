@@ -9,6 +9,7 @@
 
 
 class UMeshGeneration;
+class UDynamicMesh;
 
 /**
  * 
@@ -22,10 +23,24 @@ public:
 	virtual void BeginPlay() override;
 
 	bool started = false;
+	bool Progress = false;
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	UPROPERTY()
 	UMeshGeneration* ShapeEditor;
+
 	FDynamicMesh3 Mesh;
 
+	UPROPERTY()
+	UDynamicMesh* DynamicMesh;
+	
+	UPROPERTY()
+	ADynamicMeshActor* NewActor;
+
+	void SetupInputComponent();
+	void Start();
+	void Stop();
+	void Toggle();
+	void Clear();
 };

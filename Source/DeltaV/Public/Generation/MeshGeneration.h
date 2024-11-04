@@ -21,7 +21,10 @@ public:
 	
 	double Radius = 100;
 
+	UPROPERTY()
 	TMap<int, double> UpliftMap;
+
+	UPROPERTY()
 	TMap<int, double> HeightMap;
 
 public:
