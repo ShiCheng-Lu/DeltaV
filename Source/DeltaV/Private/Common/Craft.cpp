@@ -134,6 +134,7 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	return;
 	if (!PhysicsEnabled) {
 		if (Orbit->CentralBody != nullptr) {
 			double Time = GetGameTimeSinceCreation();
@@ -168,7 +169,6 @@ void ACraft::Tick(float DeltaTime)
 		Part->AddImpulse(VelocityChange, NAME_None, true);
 	}
 
-	return;
 	// Throttle
 	ASimulationController* SimulationController = Cast<ASimulationController>(Controller);
 	if (SimulationController && SimulationController->ThrottleValue > 0) 

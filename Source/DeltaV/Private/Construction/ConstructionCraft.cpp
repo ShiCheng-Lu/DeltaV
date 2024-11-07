@@ -33,6 +33,8 @@ void AConstructionCraft::FromJson(TSharedPtr<FJsonObject> CraftJson) {
 			auto attachment_node = NewObject<UAttachmentNode>(Part);
 			attachment_node->SetRelativeLocation(location);
 			attachment_node->RegisterComponent();
+			attachment_node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
+			attachment_node->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 			Part->AttachmentNodes.Add(attachment_node);
 		}

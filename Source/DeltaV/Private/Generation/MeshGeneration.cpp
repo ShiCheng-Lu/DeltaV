@@ -29,6 +29,7 @@ void StreamTree(FDynamicMesh3& MeshInOut) {
 void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
 	MeshInOut.EnableAttributes();
 	MeshInOut.Attributes()->EnableMaterialID();
+	MeshInOut.EnableVertexNormals(FVector3f(0));
 
 	GenerateIsoSphere(MeshInOut, 6);
 
@@ -38,7 +39,11 @@ void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
 		UpliftMap.Add(VertexId, Noise);
 		double Noise2 = SimplexNoise::At(Vertex * 2);
 		double Noise3 = SimplexNoise::At(Vertex * 4);
-		HeightMap.Add(VertexId, Radius * (1 + Noise / 2 + Noise2 / 8 + Noise3 / 32));
+		double Height = Radius * (1 + Noise / 2 + Noise2 / 8 + Noise3 / 32);
+		if (Height < Radius) {
+			Height = Radius;
+		}
+		HeightMap.Add(VertexId, Height);
 		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * HeightMap[VertexId]);
 	}
 }
@@ -247,7 +252,7 @@ void UMeshGeneration::Generate(FDynamicMesh3& MeshInOut) {
 	for (int TriangleId : MeshInOut.TriangleIndicesItr()) {
 		FIndex3i Triangle = MeshInOut.GetTriangle(TriangleId);
 		double TotalHeight = HeightMap[Triangle.A] + HeightMap[Triangle.B] + HeightMap[Triangle.C];
-		int GroupId = (TotalHeight / 3 - Radius) / MaxHeight * 5 + 1; // 0 for negative
+		int GroupId = (TotalHeight / 3 - Radius) / MaxHeight * 5 + 0.9; // 0 for negative
 
 		// Any material id or vertex color needs to be set on attributes (haven't tried vertex color)
 		MeshInOut.Attributes()->GetMaterialID()->SetValue(TriangleId, FMath::Clamp(GroupId, 0, 5));

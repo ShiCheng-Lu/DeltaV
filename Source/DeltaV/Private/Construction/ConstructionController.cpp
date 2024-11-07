@@ -36,6 +36,7 @@ void AConstructionController::BeginPlay() {
 	Super::BeginPlay();
 	
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
+	PlayerCameraManager->SetActorEnableCollision(false);
 
 	SetShowMouseCursor(true);
 	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
