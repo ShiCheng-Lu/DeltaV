@@ -4,12 +4,17 @@
 #include "Common/Part.h"
 
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 #include "Common/JsonUtil.h"
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
+
+
+static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
+static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 
 UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
 
@@ -38,16 +43,19 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 
 	SetLinearDamping(0);
 	SetAngularDamping(0);
+
+	// static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysMaterial(TEXT("/Game/Simulation/Rubber"));
+	// UPhysicalMaterial* PhysMaterial = NewObject<UPhysicalMaterial>();
+	// PhysMaterial->Friction = 1;
+
+	// SetPhysMaterialOverride(PhysMaterial);
 }
 
 // Sets default values
 void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TSharedPtr<FJsonObject> InJson)
 {
 	Id = InId;
-	Structure = InStructure;
-	Json = InJson;
 	
-
 	// set locaiton and scale
 	FromJson(InJson);
 	
@@ -69,31 +77,65 @@ void UPart::SetParent(UPart* NewParent) {
 
 	if (Parent != nullptr) {
 		Parent->Children.Remove(this);
-		Parent->Structure->RemoveField(Id);
+
 	}
+	
+	// Detach();
+
 	Parent = NewParent;
 	if (Parent != nullptr) {
 		Parent->Children.Add(this);
-		if (!Parent->Structure->HasField(Id)) {
-			Parent->Structure->SetObjectField(Id, Structure);
-		}
-		Physics->SetConstrainedComponents(this, "", Parent, "");
 	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("Suppose to break parent"));
-		Physics->BreakConstraint();
-	}
+
+	// Attach();
 }
 
 void UPart::SetSimulatePhysics(bool bSimulate) {
 	// UE_LOG(LogTemp, Warning, TEXT("phys constraint: %s, %s"), *Id, *Physics->GetComponentLocation().ToString());
-	if (Parent && bSimulate) {
+	/*
+	if (Parent == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("No parent"));
+		DetachFromComponent(DetachmentRule);
+		Physics->BreakConstraint();
+	}
+	else if (bSimulate) {
+		DetachFromComponent(DetachmentRule);
 		Physics->SetConstrainedComponents(this, "", Parent, "");
 	}
 	else {
+		UE_LOG(LogTemp, Warning, TEXT("Yes parent"));
+		UE_LOG(LogTemp, Warning, TEXT("asdas"));
+		Physics->BreakConstraint();
+		AttachToComponent(Parent, AttachmentRule);
+	}*/
+	Super::SetSimulatePhysics(bSimulate);
+}
+
+void UPart::Detach() {
+	if (PhysicsEnabled) {
 		Physics->BreakConstraint();
 	}
-	Super::SetSimulatePhysics(bSimulate);
+	else {
+		DetachFromComponent(DetachmentRule);
+	}
+}
+
+void UPart::Attach() {
+	if (PhysicsEnabled) {
+		Physics->SetConstrainedComponents(this, "", Parent, "");
+	}
+	else {
+		AttachToComponent(Parent, AttachmentRule);
+	}
+}
+
+void UPart::SetPhysicsEnabled(bool bSimulate) {
+	if (PhysicsEnabled == bSimulate) {
+		return;
+	}
+	Detach();
+	PhysicsEnabled = bSimulate;
+	Attach();
 }
 
 
@@ -118,9 +160,11 @@ void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
 TSharedPtr<FJsonObject> UPart::ToJson() {
 	TSharedPtr<FJsonObject> OutJson = MakeShareable(new FJsonObject());
 
+	AActor* Owner = GetOwner();
+
 	OutJson->SetStringField(TEXT("type"), Type);
-	JsonUtil::Vector(OutJson, "location", GetRelativeLocation());
-	JsonUtil::Rotator(OutJson, "rotation", GetRelativeRotation());
+	JsonUtil::Vector(OutJson, "location", GetComponentLocation() - Owner->GetActorLocation());
+	JsonUtil::Rotator(OutJson, "rotation", GetComponentRotation() - Owner->GetActorRotation());
 	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());
 
 	return OutJson;

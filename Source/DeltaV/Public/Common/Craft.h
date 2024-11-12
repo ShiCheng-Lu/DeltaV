@@ -32,8 +32,6 @@ public:
 
 	TArray<TArray<UPart*>> Stages;
 
-	UPart* RootPart;
-
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 	ACraft* Clone();
@@ -52,12 +50,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void AddPart(UPart* Part);
-
-	void RemovePart(UPart* Part);
-
-	static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft);
 
 	void SetAttachmentNodeVisibility(bool visibility);
 
@@ -86,4 +78,6 @@ public:
 		Super::RegisterActorTickFunctions(bRegister);
 		RegisterMultiTickActorTickFunctions(this, bRegister);
 	}
+
+	UPart* RootPart() { return Cast<UPart>(GetRootComponent()); }
 };

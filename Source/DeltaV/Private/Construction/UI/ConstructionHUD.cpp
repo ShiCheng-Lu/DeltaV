@@ -58,5 +58,6 @@ void UConstructionHUD::ClearPart() {
 	}
 	if (Controller->Selected) {
 		Controller->Selected->Destroy();
+		Controller->Selected = nullptr;
 	}
 }

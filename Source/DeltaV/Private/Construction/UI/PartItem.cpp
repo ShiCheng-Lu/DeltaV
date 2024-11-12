@@ -85,6 +85,6 @@ void UPartItem::MainButtonClicked() {
 		Controller->Selected->Destroy();
 	}
 	Controller->Selected = Craft;
-	Controller->SelectedPart = Craft->RootPart;
+	Controller->SelectedPart = Craft->RootPart();
 	Controller->PlaceDistance = 500;
 }

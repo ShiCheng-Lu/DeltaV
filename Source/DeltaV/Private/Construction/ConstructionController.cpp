@@ -4,6 +4,8 @@
 #include "Construction/ConstructionController.h"
 
 #include "GameFramework/PlayerInput.h"
+#include "InputMappingContext.h"
+#include "EnhancedInputComponent.h"
 
 #include "Common/JsonUtil.h"
 #include "Common/Part.h"
@@ -47,6 +49,7 @@ void AConstructionController::BeginPlay() {
 
 void AConstructionController::SetupInputComponent() {
 	Super::SetupInputComponent();
+
 
 	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
 
@@ -124,14 +127,27 @@ void AConstructionController::SetupInputComponent() {
 	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, -90, 0));
 	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, 90));
 	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, -90));
+
+	/*
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+
+	if (EnhancedInputComponent) {
+		UE_LOG(LogTemp, Warning, TEXT("ENAHNED INPUT !!! WE CAN USE"));
+	}
+	UInputAction* Action;
+	EnhancedInputComponent->BindActionValueLambda(Action, ETriggerEvent::Triggered, [this]() { RotatePart(FRotator(90, 0, 0)); });
+	// EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, );
+	*/
 }
 
 void AConstructionController::EnableMovement() {
 	GetPawn()->EnableInput(this);
+	ResetIgnoreLookInput();
 }
 
 void AConstructionController::DisableMovement() {
 	GetPawn()->DisableInput(this);
+	SetIgnoreLookInput(true);
 }
 
 
@@ -206,10 +222,10 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 
 		for (auto& HitResult : hit_results) {
 			UAttachmentNode* component = Cast<UAttachmentNode>(HitResult.GetComponent());
-			if (component == nullptr || HitResult.GetActor() == Selected) {
+			if (component == nullptr || component->GetOwner() == Selected) {
 				continue;
 			}
-
+			UE_LOG(LogTemp, Warning, TEXT("Project Collide %s.%s, %s"), *component->GetOwner()->GetName(), *component->GetName(), *Selected->GetName());
 			// don't check for the closer attachment node for now
 			AttachTo = Cast<UPart>(component->GetOuter());
 			// Actor filter don't work for some reason, maybe to do with changing component ownership with .Rename()
@@ -250,6 +266,14 @@ std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
 }
 
 void AConstructionController::HandleClick(FKey Key) {
+	if (Key == EKeys::MiddleMouseButton && Selected == nullptr) {
+		FHitResult Result;
+		if (GetHitResultUnderCursor(ECC_WorldStatic, true, Result)) {
+			FVector Location = Result.GetComponent()->GetComponentLocation();
+			GetPawn()->SetActorLocation(Location);
+		}
+	}
+
 	if (ConstructionMode == AConstructionController::EditMode) {
 		if (Key == EKeys::LeftMouseButton) {
 			if (Selected != nullptr) {
@@ -258,36 +282,41 @@ void AConstructionController::HandleClick(FKey Key) {
 				
 				// Craft->SetAttachmentNodeVisibility(true);
 				if (AttachToPart == nullptr) {
+					UE_LOG(LogTemp, Warning, TEXT("Simple place"));
 					Selected = nullptr;
 					return;
 				}
+				UE_LOG(LogTemp, Warning, TEXT("Attach place to %s.%s"), *AttachToPart->GetOwner()->GetName(), *AttachToPart->GetName());
 				//if (AttachToPart->SymmetryGroup) {
 
 				// }
 
+				Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
 				if (SideAttachment && Symmetry == 0) {
 					// mirror attachment, TODO: implement
-					Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
 					Craft->AttachPart(Selected, AttachToPart);
 				}
 				else {
 					FVector Center = AttachToPart->GetComponentLocation();
 					FVector Offset = SelectedPart->GetComponentLocation() - Center;
-					// rotational symmetry attachment, place at location and additional positions
-					for (int i = 1; i < Symmetry; ++i) {
-						FQuat RotationQuat = FQuat(FVector(0, 0, 1), 2 * PI * i / Symmetry);
-						FVector NewOffset = RotationQuat.RotateVector(Offset);
-						FQuat NewRotation = RotationQuat * SelectedPart->GetComponentQuat();
+					if (SideAttachment) {
+						// rotational symmetry attachment, place at location and additional positions
+						for (int i = 1; i < Symmetry * SideAttachment; ++i) {
+							FQuat RotationQuat = FQuat(FVector(0, 0, 1), 2 * PI * i / Symmetry);
+							FVector NewOffset = RotationQuat.RotateVector(Offset);
+							FQuat NewRotation = RotationQuat * SelectedPart->GetComponentQuat();
 
-						// clone by converting to json and spawning another instance from json
-						AConstructionCraft* NewCraft = Selected->Clone();
-						NewCraft->SetActorLocationAndRotation(Center + NewOffset, NewRotation);
-						Craft->AttachPart(NewCraft, AttachToPart);
+							// clone by converting to json and spawning another instance from json
+							AConstructionCraft* NewCraft = Selected->Clone();
+							NewCraft->SetActorLocationAndRotation(Center + NewOffset, NewRotation);
+							Craft->AttachPart(NewCraft, AttachToPart);
+						}
 					}
-					// place base 
+					// place base
 					Craft->AttachPart(Selected, AttachToPart);
 				}
 				Selected = nullptr;
+				SelectedPart = nullptr;
 			}
 			else {
 				// Select
@@ -298,15 +327,13 @@ void AConstructionController::HandleClick(FKey Key) {
 						return;
 					}
 
-					FVector ActorLocation = SelectedPart->GetComponentLocation();
-					FVector PawnLocation;
-					FRotator Rot;
-					PlayerCameraManager->GetCameraViewPoint(PawnLocation, Rot);
-					PlaceDistance = FVector::Distance(ActorLocation, PawnLocation);
+					FVector CameraLocation; FRotator Rot;
+					PlayerCameraManager->GetCameraViewPoint(CameraLocation, Rot);
+					PlaceDistance = FVector::Distance(SelectedPart->GetComponentLocation(), CameraLocation);
 
 					Selected = Cast<AConstructionCraft>(SelectedPart->GetOwner());
 
-					if (Selected->RootPart != SelectedPart) {
+					if (Selected->RootPart() != SelectedPart) {
 						FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
 						SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 						auto NewCraft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
@@ -323,7 +350,12 @@ void AConstructionController::HandleClick(FKey Key) {
 
 					// Craft->SetAttachmentNodeVisibility(false);
 				}
-				UE_LOG(LogTemp, Warning, TEXT("Nothing Selected"));
+				if (Selected) {
+					UE_LOG(LogTemp, Warning, TEXT("Selected Craft: %s"), *Selected->GetName());
+				}
+				else {
+					UE_LOG(LogTemp, Warning, TEXT("Nothing Selected"));
+				}
 			}
 		}
 		else if (Key == EKeys::RightMouseButton) {

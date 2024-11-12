@@ -62,7 +62,7 @@ void ASimulationController::BeginPlay() {
 
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
-	FVector CraftLocation = FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0) * 2;
+	FVector CraftLocation = FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0);
 	Craft->SetActorLocation(CraftLocation);
 	Craft->SetActorRotation(FRotator(180, 0, 0));
 	Craft->SetPhysicsEnabled(true);

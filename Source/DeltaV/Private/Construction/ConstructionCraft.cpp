@@ -7,6 +7,9 @@
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 
+static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
+static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
+
 AConstructionCraft::AConstructionCraft(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) 
 {
@@ -19,10 +22,6 @@ void AConstructionCraft::FromJson(TSharedPtr<FJsonObject> CraftJson) {
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
 
-		if (Part != RootPart) {
-			Part->AttachToComponent(RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
-		}
-
 		Part->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Part->SetSimulatePhysics(false);
 
@@ -30,13 +29,13 @@ void AConstructionCraft::FromJson(TSharedPtr<FJsonObject> CraftJson) {
 		for (auto& Node : PartDefinition->GetArrayField(TEXT("attachment"))) {
 			auto location = JsonUtil::Vector(Node->AsObject(), "location");
 
-			auto attachment_node = NewObject<UAttachmentNode>(Part);
-			attachment_node->SetRelativeLocation(location);
-			attachment_node->RegisterComponent();
-			attachment_node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
-			attachment_node->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+			auto AttachmentNode = NewObject<UAttachmentNode>(Part);
+			AttachmentNode->SetRelativeLocation(location);
+			AttachmentNode->RegisterComponent();
+			AttachmentNode->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
+			AttachmentNode->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
-			Part->AttachmentNodes.Add(attachment_node);
+			Part->AttachmentNodes.Add(AttachmentNode);
 		}
 	}
 }
@@ -46,22 +45,18 @@ void AConstructionCraft::SetAttachmentNodeVisibility(bool visibility) {
 }
 
 void AConstructionCraft::AttachPart(AConstructionCraft* SourceCraft, UPart* AttachToPart) {
-	
-	TArray<UPart*> SourceParts;
-	for (auto& PartKVP : SourceCraft->Parts) {
-		SourceParts.Add(PartKVP.Value);
-	}
-
 	Super::AttachPart(SourceCraft, AttachToPart);
-	
-	for (auto& Part : SourceParts) {
-		Part->AttachToComponent(RootPart, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+	/*
+	for (auto& PartKVP : Parts) {
+		auto Part = PartKVP.Value;
+		Part->AttachToComponent(Part->Parent, AttachmentRule);
 	}
+	*/
 }
 
 void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCraft) {
 	Super::DetachPart(DetachPart, NewCraft);
-	
+	/*
 	auto AttachmentRule2 = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 	for (auto& PartKVP : NewCraft->Parts) {
 		auto& Part = PartKVP.Value;
@@ -69,6 +64,7 @@ void AConstructionCraft::DetachPart(UPart* DetachPart, AConstructionCraft* NewCr
 
 		UE_LOG(LogTemp, Warning, TEXT("Detached part %s"), *PartKVP.Key);
 	}
+	*/
 }
 
 AConstructionCraft* AConstructionCraft::Clone() {

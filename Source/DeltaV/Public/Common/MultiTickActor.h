@@ -38,6 +38,8 @@ public:
 
 	MultiTickActor();
 
+	virtual ~MultiTickActor() {};
+
 	virtual void TickPostPhysics(float DeltaTime) = 0;
 
 	virtual void TickDuringPhysics(float DeltaTime) = 0;

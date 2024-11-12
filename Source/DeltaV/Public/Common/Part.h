@@ -20,11 +20,6 @@ class UPart : public UStaticMeshComponent
 public:
 	virtual void SetSimulatePhysics(bool bSimulate) override;
 
-	// we don't need these 3
-	TSharedPtr<FJsonObject> Json;
-	TSharedPtr<FJsonObject> Structure;
-	TSharedPtr<FJsonObject> definition;
-
 	FString Id;
 	TArray<UPart*> Children;
 	UPart* Parent;
@@ -62,4 +57,10 @@ public:
 	TObjectPtr<T> GetComponent() {
 		return Cast<T>(Component);
 	}
+
+	bool PhysicsEnabled;
+	void SetPhysicsEnabled(bool bSimulate);
+
+	void Attach();
+	void Detach();
 };
