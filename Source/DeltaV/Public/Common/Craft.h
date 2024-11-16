@@ -16,7 +16,6 @@ class DELTAV_API ACraft : public APawn, public MultiTickActor
 {
 	GENERATED_BODY()
 
-
 public:
 	// TSharedPtr<FJsonObject> Json;
 	TMap<FString, UPart*> Parts;

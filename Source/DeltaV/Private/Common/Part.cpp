@@ -21,11 +21,8 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	Parent = nullptr;
 	Children = TArray<UPart*>();
 	FCollisionResponseContainer();
-		// TODO: add custom collision channel for each craft, no intervessel collision
-
-	SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
-	SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
+	
+	// TODO: add custom collision channel for each craft, no intervessel collision
 
 	SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
@@ -43,6 +40,8 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 
 	SetLinearDamping(0);
 	SetAngularDamping(0);
+
+	SetAbsolute(false, false, true);
 
 	// static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysMaterial(TEXT("/Game/Simulation/Rubber"));
 	// UPhysicalMaterial* PhysMaterial = NewObject<UPhysicalMaterial>();
@@ -144,7 +143,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
 
 	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
 	SetRelativeRotation(JsonUtil::Rotator(InJson, "rotation"));
-	SetRelativeScale3D(JsonUtil::Vector(InJson, "scale"));
+	SetWorldScale3D(JsonUtil::Vector(InJson, "scale"));
 
 	FString MeshPath = UAssetLibrary::PartDefinition(Type)->GetStringField(TEXT("mesh"));
 

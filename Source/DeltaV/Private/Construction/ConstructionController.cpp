@@ -9,15 +9,17 @@
 
 #include "Common/JsonUtil.h"
 #include "Common/Part.h"
+#include "Common/Craft.h"
 #include "Common/AttachmentNode.h"
-#include "Construction/ConstructionCraft.h"
 #include "Construction/UI/ConstructionHUD.h"
 #include "Construction/PartShapeEditor.h"
 #include "Construction/ConstructionPawn.h"
+#include "Construction/UI/PartDetails.h"
 
 #include "DynamicMeshActor.h"
 #include "Components/DynamicMeshComponent.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 AConstructionController::AConstructionController() {
 
@@ -26,11 +28,7 @@ AConstructionController::AConstructionController() {
 	// add right mouse button to click event as well
 	ClickEventKeys.Add(EKeys::RightMouseButton);
 
-	Selected = nullptr;
-	Craft = nullptr;
-
-	Symmetry = 1;
-
+	Constructor.SetController(this);
 	// PlayerCameraManagerClass = ACameraManager::StaticClass();
 }
 
@@ -114,7 +112,7 @@ void AConstructionController::SetupInputComponent() {
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::I, 0.1f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::K, -0.1f));
-	InputComponent->BindAxis("Throttle", this, &AConstructionController::Throttle);
+	// InputComponent->BindAxis("Throttle", this, &AConstructionController::Throttle);
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
 	InputComponent->BindAction("DebugAction", IE_Pressed, this, &AConstructionController::DebugAction);
@@ -158,14 +156,13 @@ void AConstructionController::Zoom(float value) {
 }
 
 void AConstructionController::RotatePart(FRotator Rotation) {
-	if (Selected && !GetPawn()->InputEnabled()) {
-		UE_LOG(LogTemp, Warning, TEXT("Rotated %s"), *Rotation.ToString());
-		Selected->SetActorRotation(Rotation.Quaternion() * Selected->GetActorQuat());
+	if (!GetPawn()->InputEnabled()) {
+		Constructor.RotatePart(Rotation.Quaternion());
 	}
 }
 
-
 void AConstructionController::DebugAction() {
+	/*
 	UPartShapeEditor* ShapeEditor = NewObject<UPartShapeEditor>();
 	SelectedPart->GetStaticMesh()->GetBounds().GetBox().GetVertices(ShapeEditor->TargetBound);
 	
@@ -192,211 +189,62 @@ void AConstructionController::DebugAction() {
 	//DynamicMesh->SetMeshGenerator(ShapeEditor);
 	ShapeEditor->Generate(Mesh);
 	DynamicMesh->SetMesh(Mesh);
-}
-
-std::pair<UPart*, bool> AConstructionController::UpdateHeldPart() {
-	if (Craft == nullptr || SelectedPart == nullptr || Selected == nullptr) {
-		return { nullptr, false };
-	}
-
-	FVector CameraLocation;
-	FVector direction;
-	if (!DeprojectMousePositionToWorld(CameraLocation, direction)) {
-		return { nullptr, false };
-	}
-
-	FRotator CameraRot;
-	PlayerCameraManager->GetCameraViewPoint(CameraLocation, CameraRot);
-
-	FVector part_location = CameraLocation + direction * PlaceDistance;
-	UPart* AttachTo = nullptr;
-
-	// node attachment
-	for (auto& node : SelectedPart->AttachmentNodes) {
-		TArray<FHitResult> hit_results;
-		FVector start = CameraLocation;
-		FVector RelativeNodeLocation = node->GetComponentLocation() - SelectedPart->GetComponentLocation();
-		FVector end = ((part_location + RelativeNodeLocation) - start) * 2 + start;
-
-		GetWorld()->LineTraceMultiByObjectType(hit_results, start, end, FCollisionObjectQueryParams::AllObjects);
-
-		for (auto& HitResult : hit_results) {
-			UAttachmentNode* component = Cast<UAttachmentNode>(HitResult.GetComponent());
-			if (component == nullptr || component->GetOwner() == Selected) {
-				continue;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("Project Collide %s.%s, %s"), *component->GetOwner()->GetName(), *component->GetName(), *Selected->GetName());
-			// don't check for the closer attachment node for now
-			AttachTo = Cast<UPart>(component->GetOuter());
-			// Actor filter don't work for some reason, maybe to do with changing component ownership with .Rename()
-			if (AttachTo) {
-				part_location = component->GetComponentLocation() - RelativeNodeLocation;
-
-				Selected->SetActorLocation(part_location);
-
-				return { AttachTo, false };
-			}
-			else {
-				AttachTo = nullptr;
-			}
-		}
-	}
-
-	// side attachment
-	if (AttachTo == nullptr) {
-		TArray<FHitResult> HitResults;
-		FVector Start = CameraLocation;
-		FVector End = Start + direction * PlaceDistance;
-
-		GetWorld()->LineTraceMultiByObjectType(HitResults, Start, End, FCollisionObjectQueryParams::AllObjects);
-
-		for (auto& HitResult : HitResults) {
-			UPart* Part = Cast<UPart>(HitResult.GetComponent());
-			if (Part == nullptr || Part == SelectedPart || HitResult.GetActor() == Selected) {
-				continue;
-			}
-			AttachTo = Part;
-			part_location = HitResult.Location;
-		}
-	}
-
-	Selected->SetActorLocation(part_location);
-
-	return { AttachTo, true };
+	*/
 }
 
 void AConstructionController::HandleClick(FKey Key) {
-	if (Key == EKeys::MiddleMouseButton && Selected == nullptr) {
-		FHitResult Result;
-		if (GetHitResultUnderCursor(ECC_WorldStatic, true, Result)) {
-			FVector Location = Result.GetComponent()->GetComponentLocation();
-			GetPawn()->SetActorLocation(Location);
-		}
-	}
-
 	if (ConstructionMode == AConstructionController::EditMode) {
 		if (Key == EKeys::LeftMouseButton) {
-			if (Selected != nullptr) {
-				// Place
-				auto [ AttachToPart, SideAttachment ] = UpdateHeldPart();
-				
-				// Craft->SetAttachmentNodeVisibility(true);
-				if (AttachToPart == nullptr) {
-					UE_LOG(LogTemp, Warning, TEXT("Simple place"));
-					Selected = nullptr;
-					return;
-				}
-				UE_LOG(LogTemp, Warning, TEXT("Attach place to %s.%s"), *AttachToPart->GetOwner()->GetName(), *AttachToPart->GetName());
-				//if (AttachToPart->SymmetryGroup) {
-
-				// }
-
-				Craft = Cast<AConstructionCraft>(AttachToPart->GetOwner());
-				if (SideAttachment && Symmetry == 0) {
-					// mirror attachment, TODO: implement
-					Craft->AttachPart(Selected, AttachToPart);
-				}
-				else {
-					FVector Center = AttachToPart->GetComponentLocation();
-					FVector Offset = SelectedPart->GetComponentLocation() - Center;
-					if (SideAttachment) {
-						// rotational symmetry attachment, place at location and additional positions
-						for (int i = 1; i < Symmetry * SideAttachment; ++i) {
-							FQuat RotationQuat = FQuat(FVector(0, 0, 1), 2 * PI * i / Symmetry);
-							FVector NewOffset = RotationQuat.RotateVector(Offset);
-							FQuat NewRotation = RotationQuat * SelectedPart->GetComponentQuat();
-
-							// clone by converting to json and spawning another instance from json
-							AConstructionCraft* NewCraft = Selected->Clone();
-							NewCraft->SetActorLocationAndRotation(Center + NewOffset, NewRotation);
-							Craft->AttachPart(NewCraft, AttachToPart);
-						}
-					}
-					// place base
-					Craft->AttachPart(Selected, AttachToPart);
-				}
-				Selected = nullptr;
-				SelectedPart = nullptr;
+			if (Constructor.Selected) {
+				Constructor.Place();
 			}
 			else {
-				// Select
-				FHitResult result;
-				if (GetHitResultUnderCursor(ECC_WorldStatic, true, result)) {
-					SelectedPart = Cast<UPart>(result.GetComponent());
-					if (!SelectedPart) {
-						return;
-					}
-
-					FVector CameraLocation; FRotator Rot;
-					PlayerCameraManager->GetCameraViewPoint(CameraLocation, Rot);
-					PlaceDistance = FVector::Distance(SelectedPart->GetComponentLocation(), CameraLocation);
-
-					Selected = Cast<AConstructionCraft>(SelectedPart->GetOwner());
-
-					if (Selected->RootPart() != SelectedPart) {
-						FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
-						SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-						auto NewCraft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
-						if (NewCraft) {
-							Selected->DetachPart(SelectedPart, NewCraft);
-							Selected = NewCraft;
-						}
-						else {
-							UE_LOG(LogTemp, Warning, TEXT("Craft not spawned"));
-						}
-					}
-
-					UE_LOG(LogTemp, Warning, TEXT("Selected part %s - %d"), *SelectedPart->Id, Selected->GetUniqueID());
-
-					// Craft->SetAttachmentNodeVisibility(false);
-				}
-				if (Selected) {
-					UE_LOG(LogTemp, Warning, TEXT("Selected Craft: %s"), *Selected->GetName());
-				}
-				else {
-					UE_LOG(LogTemp, Warning, TEXT("Nothing Selected"));
-				}
+				Constructor.Grab();
 			}
 		}
 		else if (Key == EKeys::RightMouseButton) {
-			UE_LOG(LogTemp, Warning, TEXT("Right clicked"));
 			// ignore if holding a part
-			if (SelectedPart == NULL) {
-				FHitResult result;
-				if (GetHitResultUnderCursor(ECC_Visibility, true, result)) {
-					// TSharedPtr<FJsonObject> Part = ((APart*)result.GetActor())->Json;
-					// ((AConstructionHUD*)MyHUD)->MyWidget->ShowPart(Part);
+			if (Constructor.Selected == NULL) {
+				UPart* Part = Constructor.TraceMouse();
+				HUD->PartDetails->SetPart(Part);
+
+				UE_LOG(LogTemp, Warning, TEXT("HERE %d"), Part != nullptr);
+
+				if (GEngine && Part) {
+					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, Part->GetOwner()->GetName());
 				}
 			}
-
-			// DEBUG:
-			if (GEngine) {
-				FHitResult result;
-				if (GetHitResultUnderCursor(ECC_WorldStatic, true, result)) {
-					int actorGuid = result.GetComponent()->GetOwner()->GetUniqueID();
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::FromInt(result.GetComponent()->GetOwner()->GetUniqueID()));
-				}
+		}
+		else if (Key == EKeys::MiddleMouseButton) {
+			UPart* Part = Constructor.TraceMouse();
+			if (Part) {
+				GetPawn()->SetActorLocation(Part->GetComponentLocation());
 			}
 		}
 	}
 	else if (ConstructionMode == AConstructionController::RotateMode) {
 
 	}
-	else { // ConstructionMode == AConstructionController::TranslationMode
+	else if (ConstructionMode == AConstructionController::TranslateMode) {
 
 	}
 }
 
 void AConstructionController::Save() {
-	if (!Craft) {
-		return;
+	TArray<AActor*> Actors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACraft::StaticClass(), Actors);
+	for (AActor* Actor : Actors) {
+		ACraft* Craft = Cast<ACraft>(Actor);
+		FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+		JsonUtil::WriteFile(Path, Craft->ToJson());
 	}
-	JsonUtil::WriteFile(FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json"), Craft->ToJson());
 }
 
 void AConstructionController::Load() {
-	Craft = GetWorld()->SpawnActor<AConstructionCraft>();
+	/*
+	Craft = GetWorld()->SpawnActor<ACraft>();
 	Craft->FromJson(JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/ship.json"));
+	*/
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {
@@ -407,7 +255,7 @@ void AConstructionController::PlayerTick(float DeltaTime) {
 	switch (ConstructionMode)
 	{
 	case AConstructionController::EditMode:
-		UpdateHeldPart();
+		Constructor.Tick();
 		break;
 	case AConstructionController::RotateMode:
 		break;
@@ -418,14 +266,9 @@ void AConstructionController::PlayerTick(float DeltaTime) {
 	}
 }
 
-void AConstructionController::Throttle(float Val) {
-	if (Val != 0 && Craft != nullptr) {
-		// Craft->Throttle(Val);
-	}
-}
-
 void AConstructionController::SymmetryAdd() {
-	Symmetry += 1;
+	int Symmetry = Constructor.Symmetry + 1;
+	Constructor.UpdateSymmetry(Symmetry);
 	if (Symmetry) {
 		HUD->SymmetryText->SetText(FText::Format(FTextFormat::FromString("{0}"), Symmetry));
 	}
@@ -435,7 +278,8 @@ void AConstructionController::SymmetryAdd() {
 }
 
 void AConstructionController::SymmetrySub() {
-	Symmetry = FMath::Max(0, Symmetry - 1);
+	int Symmetry = FMath::Max(0, Constructor.Symmetry - 1);
+	Constructor.UpdateSymmetry(Symmetry);
 	if (Symmetry) {
 		HUD->SymmetryText->SetText(FText::Format(FTextFormat::FromString("{0}"), Symmetry));
 	}

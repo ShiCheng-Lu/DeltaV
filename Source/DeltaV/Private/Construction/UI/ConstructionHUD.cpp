@@ -9,9 +9,9 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Construction/ConstructionController.h"
-#include "Construction/ConstructionCraft.h"
 #include "Construction/UI/PartItem.h"
 #include "Common/MainGameInstance.h"
+#include "Common/Craft.h"
 
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -34,7 +34,7 @@ void UConstructionHUD::NativeOnInitialized() {
 	LaunchButton->OnClicked.Add(LaunchButtonClicked);
 
 	// craft name display
-	CraftName->SetText(FText::FromString("Hello"));
+	CraftName->SetText(FText::FromString("Craft Name"));
 
 	// part list
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cone"), 0, 0);
@@ -53,11 +53,5 @@ void UConstructionHUD::LaunchButtonClicked() {
 }
 
 void UConstructionHUD::ClearPart() {
-	if (Controller->Craft == Controller->Selected) {
-		Controller->Craft = nullptr;
-	}
-	if (Controller->Selected) {
-		Controller->Selected->Destroy();
-		Controller->Selected = nullptr;
-	}
+	Controller->Constructor.Delete();
 }

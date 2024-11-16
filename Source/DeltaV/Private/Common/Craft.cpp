@@ -12,9 +12,6 @@
 #include "Simulation/SimulationController.h"
 #include "Common/Craft/FuelComponent.h"
 
-static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
-static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
-
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

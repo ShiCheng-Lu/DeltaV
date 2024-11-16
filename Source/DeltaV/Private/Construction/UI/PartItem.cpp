@@ -9,12 +9,12 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 
+#include "Common/Craft.h"
 #include "Common/Part.h"
 #include "Common/JsonUtil.h"
 #include "Common/AssetLibrary.h"
 #include "Construction/ConstructionController.h"
-#include "Construction/ConstructionCraft.h"
-
+#include "Construction/Constructor.h"
 
 UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer) 
@@ -51,40 +51,14 @@ void UPartItem::NativeOnInitialized() {
 
 void UPartItem::MainButtonClicked() {
 	UE_LOG(LogTemp, Warning, TEXT("part item clicked"));
-	FActorSpawnParameters SpawnParamsAlwaysSpawn = FActorSpawnParameters();
-	SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	auto Craft = GetWorld()->SpawnActor<AConstructionCraft>(SpawnParamsAlwaysSpawn);
-	// generate an ID for the part
-	FString PartId = PartName; // TODO: id needs to be unique Controller->GetUniquePartId(PartName);
-	// set part at root part of the new craft, and add the part description
-	TSharedPtr<FJsonObject> CraftJson = MakeShareable(new FJsonObject());
-	FJsonObject::Duplicate(PartJson->GetObjectField(TEXT("craft")), CraftJson);
 
-	if (!CraftJson.IsValid()) {
-		UE_LOG(LogTemp, Warning, TEXT("CraftJson was invalid"));
-		return;
-	}
-	if (!Controller) {
-		UE_LOG(LogTemp, Warning, TEXT("Controller not found"));
-		return;
-	}
-
-	Craft->FromJson(CraftJson);
-
-
+	auto Craft = Controller->Constructor.CreateCraft(PartJson->GetObjectField(TEXT("craft")));
 	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->Stages.Num());
 
-
-	if (!Controller->Craft) {
-		Controller->Craft = Craft;
+	if (Controller->Constructor.Selected) {
+		Controller->Constructor.Selected->GetOwner()->Destroy();
+		Controller->Constructor.Selected = nullptr;
 	}
-	if (Controller->Selected) {
-		if (Controller->Selected == Controller->Craft) {
-			Controller->Craft = Craft;
-		}
-		Controller->Selected->Destroy();
-	}
-	Controller->Selected = Craft;
-	Controller->SelectedPart = Craft->RootPart();
-	Controller->PlaceDistance = 500;
+	Controller->Constructor.Select(Craft->RootPart());
+	Controller->Constructor.Distance = 500;
 }

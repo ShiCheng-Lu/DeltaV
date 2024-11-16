@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Constructor.h"
 #include "ConstructionController.generated.h"
 
 class UPart;
-class AConstructionCraft;
+class ACraft;
 class UConstructionHUD;
 
 /**
@@ -31,18 +32,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	UPROPERTY()
-	UPart* SelectedPart;
+	Constructor Constructor;
 
-	UPROPERTY()
-	AConstructionCraft* Craft;
-
-	UPROPERTY()
-	AConstructionCraft* Selected;
-
-	UPROPERTY()
-	float PlaceDistance;
-	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UConstructionHUD> HUDClass;
 
@@ -58,7 +49,6 @@ public:
 	Mode ConstructionMode = Mode::EditMode;
 
 
-	int Symmetry = 1;
 	const static int SYMMETRY_NONE = 1;
 	const static int SYMMETRY_MIRROR = 0;
 
@@ -67,14 +57,6 @@ public:
 	void Save();
 
 	void Load();
-
-	// return the part that the held part is placed against, if it exists
-	UPart* PlaceHeldPart();
-
-	// return the part that the help part will be placed against, if it exists
-	std::pair<UPart*, bool> UpdateHeldPart();
-
-	void Throttle(float Val);
 
 	void SymmetryAdd();
 	void SymmetrySub();

@@ -10,6 +10,7 @@ class AConstructionController;
 class UButton;
 class UTextBlock;
 class UUniformGridPanel;
+class UPartDetails;
 
 /**
  * 
@@ -47,4 +48,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ClearPart();
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UPartDetails* PartDetails;
 };
