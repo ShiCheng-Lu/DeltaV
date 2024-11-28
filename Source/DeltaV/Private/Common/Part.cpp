@@ -31,17 +31,20 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	Physics = CreateDefaultSubobject<UPhysicsConstraintComponent>("Link");
 	Physics->SetRelativeLocation(FVector(0));
 	Physics->SetupAttachment(this);
+	
 	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
 	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
 	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.1);
 	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
 	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
 	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
-
+	
 	SetLinearDamping(0);
 	SetAngularDamping(0);
 
 	SetAbsolute(false, false, true);
+
+	PhysicsEnabled = false;
 
 	// static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysMaterial(TEXT("/Game/Simulation/Rubber"));
 	// UPhysicalMaterial* PhysMaterial = NewObject<UPhysicalMaterial>();
@@ -60,6 +63,13 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	
 	RegisterComponent();
 	Physics->RegisterComponent();
+
+	SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	SetCollisionResponseToChannel(ECC_GameTraceChannel11, ECR_Ignore);
+	SetCollisionObjectType(ECC_GameTraceChannel11);
+
+	SetSimulatePhysics(true);
 }
 
 void UPart::SetAttachmentNodeVisibility(bool visibility) {
@@ -120,6 +130,10 @@ void UPart::Detach() {
 }
 
 void UPart::Attach() {
+	if (Parent == nullptr) {
+		return;
+	}
+
 	if (PhysicsEnabled) {
 		Physics->SetConstrainedComponents(this, "", Parent, "");
 	}
@@ -135,14 +149,14 @@ void UPart::SetPhysicsEnabled(bool bSimulate) {
 	Detach();
 	PhysicsEnabled = bSimulate;
 	Attach();
+	SetSimulatePhysics(PhysicsEnabled);
 }
-
 
 void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
 	Type = InJson->GetStringField(TEXT("type"));
 
 	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
-	SetRelativeRotation(JsonUtil::Rotator(InJson, "rotation"));
+	SetWorldRotation(JsonUtil::Rotator(InJson, "rotation"));
 	SetWorldScale3D(JsonUtil::Vector(InJson, "scale"));
 
 	FString MeshPath = UAssetLibrary::PartDefinition(Type)->GetStringField(TEXT("mesh"));
@@ -163,7 +177,7 @@ TSharedPtr<FJsonObject> UPart::ToJson() {
 
 	OutJson->SetStringField(TEXT("type"), Type);
 	JsonUtil::Vector(OutJson, "location", GetComponentLocation() - Owner->GetActorLocation());
-	JsonUtil::Rotator(OutJson, "rotation", GetComponentRotation() - Owner->GetActorRotation());
+	JsonUtil::Rotator(OutJson, "rotation", GetComponentRotation());
 	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());
 
 	return OutJson;

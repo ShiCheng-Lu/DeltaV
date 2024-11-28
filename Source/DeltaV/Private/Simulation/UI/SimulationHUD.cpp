@@ -58,6 +58,8 @@ void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) 
 		Controller->Craft->Orbit->Apoapsis() * 0.01,
 		Controller->Craft->GetActorLocation().Length() * 0.01,
 		VelocityValue.Length() * 0.01));
+
+	Throttle->SetPercent(Controller->ThrottleValue);
 }
 
 void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const {

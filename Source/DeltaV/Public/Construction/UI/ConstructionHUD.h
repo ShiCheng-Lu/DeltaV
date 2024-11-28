@@ -46,9 +46,15 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* SymmetryText;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UTextBlock* ModeText;
+
 	UFUNCTION(BlueprintCallable)
 	void ClearPart();
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UPartDetails* PartDetails;
+
+	UFUNCTION(BlueprintCallable)
+	void SaveClicked();
 };

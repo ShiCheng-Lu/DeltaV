@@ -42,6 +42,11 @@ void UConstructionHUD::NativeOnInitialized() {
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "decoupler"), 1, 0);
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "engine"), 1, 1);
 	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "wing"), 2, 0);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "cockpit"), 2, 1);
+	PartsList->AddChildToUniformGrid(CreateWidget<UPartItem>(this, UPartItem::BlueprintClass, "leg"), 3, 0);
+
+
+
 }
 
 void UConstructionHUD::LaunchButtonClicked() {
@@ -50,6 +55,14 @@ void UConstructionHUD::LaunchButtonClicked() {
 	Cast<UMainGameInstance>(GetGameInstance())->CraftPath = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 
 	UGameplayStatics::OpenLevel(GetWorld(), "Simulation");
+}
+
+void UConstructionHUD::SaveClicked() {
+	Controller->Save();
+
+
+
+	Controller->Load();
 }
 
 void UConstructionHUD::ClearPart() {

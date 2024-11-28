@@ -127,12 +127,15 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 		//   with derivative f'(EccentricAnomaly) = 1 - Eccentricity * cos(EccentricAnomaly)
 		double EccentricAnomaly = 0;
 		double SinEccentricityAnomaly, CosEccentricityAnomaly, FunctionValue, DerivativeValue;
+
+		int i = 0;
+
 		do { // Newton's method to find the root (FunctionValue == 0)
 			FMath::SinCos(&SinEccentricityAnomaly, &CosEccentricityAnomaly, EccentricAnomaly);
 			FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
 			DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
 			EccentricAnomaly = EccentricAnomaly - FunctionValue / DerivativeValue;
-		} while (FMath::Abs(FunctionValue) > 1e-13);
+		} while (FMath::Abs(FunctionValue) > 1e-13 && i++ < 10);
 
 		LastEccentricAnomalyGuess = EccentricAnomaly;
 

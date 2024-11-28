@@ -15,6 +15,7 @@
 #include "Construction/PartShapeEditor.h"
 #include "Construction/ConstructionPawn.h"
 #include "Construction/UI/PartDetails.h"
+#include "Construction/UI/TransformGadget.h"
 
 #include "DynamicMeshActor.h"
 #include "Components/DynamicMeshComponent.h"
@@ -43,6 +44,11 @@ void AConstructionController::BeginPlay() {
 
 	HUD = CreateWidget<UConstructionHUD>(this, UConstructionHUD::BlueprintClass);
 	HUD->AddToPlayerScreen();
+
+	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();
+	TransformGadget->Controller = this;
+
+	Load();
 }
 
 void AConstructionController::SetupInputComponent() {
@@ -79,28 +85,33 @@ void AConstructionController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetryAdd", EKeys::X, false));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("SymmetrySub", EKeys::X, true));
 
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("RightMouseButton", EKeys::RightMouseButton));
-
 	// Rotate part actions
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+X", EKeys::W));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-X", EKeys::S));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Y", EKeys::A));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Y", EKeys::D));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Z", EKeys::Q));
-	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Z", EKeys::E));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-X", EKeys::W));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+X", EKeys::S));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Y", EKeys::A));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Y", EKeys::D));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate-Z", EKeys::Q));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Rotate+Z", EKeys::E));
+
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("TranslateMode", EKeys::T));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("RotateMode", EKeys::R));
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("ScaleMode", EKeys::F));
 
 
 	InputComponent->BindAxis("CameraZoom", this, &AConstructionController::Zoom);
 
-	InputComponent->BindAction("RightMouseButton", EInputEvent::IE_Pressed, this, &AConstructionController::EnableMovement);
-	InputComponent->BindAction("RightMouseButton", EInputEvent::IE_Released, this, &AConstructionController::DisableMovement);
+	InputComponent->BindAction("RightClick", EInputEvent::IE_Pressed, this, &AConstructionController::EnableMovement);
+	InputComponent->BindAction("RightClick", EInputEvent::IE_Released, this, &AConstructionController::DisableMovement);
 
 	InputComponent->BindAxis("LookX", this, &AConstructionController::AddYawInput);
 	InputComponent->BindAxis("LookY", this, &AConstructionController::AddPitchInput);
 
-	InputComponent->BindAction("LeftClick", IE_Pressed, this, &AConstructionController::HandleClick);
-	InputComponent->BindAction("RightClick", IE_Pressed, this, &AConstructionController::HandleClick);
-	InputComponent->BindAction("MiddleClick", IE_Pressed, this, &AConstructionController::HandleClick);
+	InputComponent->BindAction("LeftClick", IE_Pressed, this, &AConstructionController::Pressed);
+	InputComponent->BindAction("RightClick", IE_Pressed, this, &AConstructionController::Pressed);
+	InputComponent->BindAction("MiddleClick", IE_Pressed, this, &AConstructionController::Pressed);
+	InputComponent->BindAction("LeftClick", IE_Released, this, &AConstructionController::Released);
+	InputComponent->BindAction("RightClick", IE_Released, this, &AConstructionController::Released);
+	InputComponent->BindAction("MiddleClick", IE_Released, this, &AConstructionController::Released);
 
 	InputComponent->BindAction("SymmetryAdd", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetryAdd);
 	InputComponent->BindAction("SymmetrySub", EInputEvent::IE_Pressed, this, &AConstructionController::SymmetrySub);
@@ -119,12 +130,18 @@ void AConstructionController::SetupInputComponent() {
 	
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(90, 0, 0));
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(-90, 0, 0));
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 90, 0));
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, -90, 0));
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate+Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, 90));
-	InputComponent->BindAction<TDelegate<void(FRotator)>, AConstructionController>("Rotate-Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, -90));
+	DECLARE_DELEGATE_OneParam(SwitchMode, Mode);
+	InputComponent->BindAction<SwitchMode>("TranslateMode", IE_Pressed, this, &AConstructionController::SwitchMode, Mode::TranslateMode);
+	InputComponent->BindAction<SwitchMode>("RotateMode", IE_Pressed, this, &AConstructionController::SwitchMode, Mode::RotateMode);
+	InputComponent->BindAction<SwitchMode>("ScaleMode", IE_Pressed, this, &AConstructionController::SwitchMode, Mode::ScaleMode);
+
+	DECLARE_DELEGATE_OneParam(RotatePart, FRotator);
+	InputComponent->BindAction<RotatePart>("Rotate+X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(90, 0, 0));
+	InputComponent->BindAction<RotatePart>("Rotate-X", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(-90, 0, 0));
+	InputComponent->BindAction<RotatePart>("Rotate+Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 90, 0));
+	InputComponent->BindAction<RotatePart>("Rotate-Y", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, -90, 0));
+	InputComponent->BindAction<RotatePart>("Rotate+Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, 90));
+	InputComponent->BindAction<RotatePart>("Rotate-Z", IE_Pressed, this, &AConstructionController::RotatePart, FRotator(0, 0, -90));
 
 	/*
 	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
@@ -136,6 +153,25 @@ void AConstructionController::SetupInputComponent() {
 	EnhancedInputComponent->BindActionValueLambda(Action, ETriggerEvent::Triggered, [this]() { RotatePart(FRotator(90, 0, 0)); });
 	// EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, );
 	*/
+}
+
+void AConstructionController::SwitchMode(Mode NewMode) {
+	if (NewMode == ConstructionMode) {
+		NewMode = Mode::EditMode;
+	}
+	ConstructionMode = NewMode;
+
+	switch (ConstructionMode) {
+	case EditMode:
+		HUD->ModeText->SetText(FText::FromString("E"));
+		break;
+	case TranslateMode:
+		HUD->ModeText->SetText(FText::FromString("T"));
+		break;
+	case RotateMode:
+		HUD->ModeText->SetText(FText::FromString("R"));
+		break;
+	}
 }
 
 void AConstructionController::EnableMovement() {
@@ -162,6 +198,7 @@ void AConstructionController::RotatePart(FRotator Rotation) {
 }
 
 void AConstructionController::DebugAction() {
+
 	/*
 	UPartShapeEditor* ShapeEditor = NewObject<UPartShapeEditor>();
 	SelectedPart->GetStaticMesh()->GetBounds().GetBox().GetVertices(ShapeEditor->TargetBound);
@@ -192,41 +229,63 @@ void AConstructionController::DebugAction() {
 	*/
 }
 
-void AConstructionController::HandleClick(FKey Key) {
-	if (ConstructionMode == AConstructionController::EditMode) {
-		if (Key == EKeys::LeftMouseButton) {
-			if (Constructor.Selected) {
-				Constructor.Place();
-			}
-			else {
-				Constructor.Grab();
-			}
-		}
-		else if (Key == EKeys::RightMouseButton) {
-			// ignore if holding a part
-			if (Constructor.Selected == NULL) {
-				UPart* Part = Constructor.TraceMouse();
-				HUD->PartDetails->SetPart(Part);
-
-				UE_LOG(LogTemp, Warning, TEXT("HERE %d"), Part != nullptr);
-
-				if (GEngine && Part) {
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, Part->GetOwner()->GetName());
-				}
-			}
-		}
-		else if (Key == EKeys::MiddleMouseButton) {
-			UPart* Part = Constructor.TraceMouse();
-			if (Part) {
-				GetPawn()->SetActorLocation(Part->GetComponentLocation());
-			}
+void AConstructionController::Pressed(FKey Key) {
+	if (Key == EKeys::LeftMouseButton) {
+		switch (ConstructionMode)
+		{
+		case AConstructionController::EditMode:
+			Constructor.Selected ? Constructor.Place() : Constructor.Grab();
+			break;
+		case AConstructionController::RotateMode:
+			break;
+		case AConstructionController::TranslateMode:
+			TransformGadget->StartTracking();
+			break;
+		case AConstructionController::ScaleMode:
+			break;
+		case AConstructionController::WarpMode:
+			break;
+		default:
+			break;
 		}
 	}
-	else if (ConstructionMode == AConstructionController::RotateMode) {
-
+	else if (Key == EKeys::RightMouseButton) {
+		// ignore if holding a part
+		GetPawn()->EnableInput(this);
+		ResetIgnoreLookInput();
 	}
-	else if (ConstructionMode == AConstructionController::TranslateMode) {
+	else if (Key == EKeys::MiddleMouseButton) {
+		UPart* Part = Constructor.TraceMouse();
+		if (Part) {
+			GetPawn()->SetActorLocation(Part->GetComponentLocation());
+		}
+	}
+}
 
+void AConstructionController::Released(FKey Key) {
+	if (Key == EKeys::LeftMouseButton) {
+		switch (ConstructionMode)
+		{
+		case AConstructionController::EditMode:
+			break;
+		case AConstructionController::RotateMode:
+			break;
+		case AConstructionController::TranslateMode:
+			TransformGadget->StopTracking();
+			break;
+		case AConstructionController::ScaleMode:
+			break;
+		case AConstructionController::WarpMode:
+			break;
+		default:
+			break;
+		}
+	}
+	else if (Key == EKeys::RightMouseButton) {
+		GetPawn()->DisableInput(this);
+		SetIgnoreLookInput(true);
+	}
+	else if (Key == EKeys::MiddleMouseButton) {
 	}
 }
 
@@ -241,10 +300,9 @@ void AConstructionController::Save() {
 }
 
 void AConstructionController::Load() {
-	/*
-	Craft = GetWorld()->SpawnActor<ACraft>();
-	Craft->FromJson(JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/ship.json"));
-	*/
+	FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
+	Constructor.CreateCraft(CraftJson);
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {
@@ -286,4 +344,17 @@ void AConstructionController::SymmetrySub() {
 	else {
 		HUD->SymmetryText->SetText(FText::FromString("M"));
 	}
+}
+
+
+FRay AConstructionController::GetMouseRay() {
+	FRay MouseRay = FRay();
+
+	if (!DeprojectMousePositionToWorld(MouseRay.Origin, MouseRay.Direction)) {
+		return FRay();
+	}
+	FRotator _;
+	PlayerCameraManager->GetCameraViewPoint(MouseRay.Origin, _);
+	
+	return MouseRay;
 }

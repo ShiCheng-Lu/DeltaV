@@ -22,7 +22,7 @@ void AGenerationController::BeginPlay() {
 	// DynamicMesh->bEnableMeshGenerator = true;
 	// DynamicMesh->SetMeshGenerator(ShapeEditor);
 	ShapeEditor->Initialize(Mesh);
-	ShapeEditor->Iterate(Mesh);
+	ShapeEditor->Iterate2(Mesh);
 	DynamicMesh->SetMesh(Mesh);
 
 	UMaterialInterface* Water = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, 
@@ -43,7 +43,7 @@ void AGenerationController::BeginPlay() {
 
 void AGenerationController::Tick(float DeltaSeconds) {
 	if (Progress) {
-		ShapeEditor->Iterate(Mesh);
+		ShapeEditor->Iterate2(Mesh);
 		ShapeEditor->Generate(Mesh);
 		DynamicMesh->SetMesh(Mesh);
 		NewActor->GetDynamicMeshComponent()->NotifyMeshUpdated();

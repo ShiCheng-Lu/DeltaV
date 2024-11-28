@@ -11,9 +11,10 @@ class AConstructionController;
 
 #define ECC_NoneHeldParts ECC_GameTraceChannel1
 #define ECC_AttachmentNodes ECC_GameTraceChannel2
+#define ECC_TransformGadget ECC_GameTraceChannel3
 
 /**
- * 
+ * Controls building the craft, create, select, place
  */
 class DELTAV_API Constructor
 {
@@ -29,6 +30,8 @@ public:
 	UPart* Selected;
 	double Distance;
 	int Symmetry = 1;
+
+	FRotator DefaultOrientation = FRotator(90, 0, 0);
 
 	Constructor();
 	~Constructor();

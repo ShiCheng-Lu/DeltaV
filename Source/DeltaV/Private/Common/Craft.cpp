@@ -26,8 +26,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
 
 	Orbit = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
-
-	// TickActor(0, ELevelTick::LEVELTICK_All, PrimaryActorTick);
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -43,13 +41,12 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 			auto& PartJson = PartListJson->GetObjectField(PartKVP.Key);
 			Part->Initialize(PartKVP.Key, PartKVP.Value->AsObject(), PartJson);
 			Part->SetParent(PartStructures[i].Key);
+			Part->Attach();
 
 			Parts.Add(PartKVP.Key, Part);
 
 			PartStructures.Add({ Part, PartKVP.Value->AsObject() });
 			UE_LOG(LogTemp, Warning, TEXT("created: %s"), *PartKVP.Key);
-
-			// Part->AttachToComponent(RootComponent, AttachmentRule);
 		}
 	}
 
@@ -145,14 +142,17 @@ void ACraft::Tick(float DeltaTime)
 		return;
 	}
 
-	
-	for (auto& PartKVP : Parts) {
-		UPart* Part = PartKVP.Value;
-		Part->AddForce(-GetActorLocation().GetSafeNormal() * 50, NAME_None, true);
+	if (Orbit->CentralBody != nullptr) {
+		FVector RelativeLocation = Orbit->CentralBody->GetActorLocation() - GetActorLocation();
+		FVector Gravity = RelativeLocation.GetSafeNormal() * Orbit->CentralBody->Mu / RelativeLocation.SquaredLength();
+		for (auto& PartKVP : Parts) {
+			UPart* Part = PartKVP.Value;
+			Part->AddForce(Gravity, NAME_None, true);
+		}
 	}
 	
 	return;
-
+	/*
 	FVector Position, Velocity;
 	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation() + DeltaTime);
 	Orbit->GetPositionAndVelocity(&Position, &Velocity, TrueAnomaly);
@@ -190,7 +190,7 @@ void ACraft::Tick(float DeltaTime)
 		FVector thrust = FVector(0, 0, 700000 * SimulationController->ThrottleValue);
 		thrust = RootPart()->GetComponentRotation().RotateVector(thrust);
 		RootPart()->AddForce(thrust);
-	}
+	}*/
 }
 
 void ACraft::TickPostPhysics(float DeltaTime) {
@@ -198,7 +198,6 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 	if (!PhysicsEnabled && Orbit->CentralBody == nullptr) {
 		return; // In build mode
 	}
-
 
 	// UE_LOG(LogTemp, Warning, TEXT("post tick pos: %s"), *GetActorLocation().ToString());
 	
@@ -215,6 +214,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 
 		UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
 
+		Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
 	 
@@ -223,7 +223,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 
 	}
 	return;
-
+	/*
 	// Updating frame of reference if outside SOI
 	if (FVector::DistSquared(GetActorLocation(), Orbit->CentralBody->GetActorLocation()) > FMath::Square(Orbit->CentralBody->RadiusOfInfluence)) {
 		FVector Position, Velocity;
@@ -236,6 +236,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 
 	// Updating frame of reference if going inside a moon of this planet
 	Orbit->UpdateSpline();
+	*/
 }
 
 // Called to bind functionality to input
@@ -351,7 +352,8 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
-		Part->SetSimulatePhysics(PhysicsEnabled);
+		Part->SetPhysicsEnabled(PhysicsEnabled);
+		// Part->SetSimulatePhysics(PhysicsEnabled);
 	}
 }
 

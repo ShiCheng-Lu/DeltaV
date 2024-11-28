@@ -30,6 +30,8 @@ public:
 	
 	TObjectPtr<class UActorComponent> Component;
 
+	int AttachedWith = -1;
+
 	UPart(const FObjectInitializer &ObjectInitializer);
 
 	void Initialize(FString Id, TSharedPtr<FJsonObject> Structure, TSharedPtr<FJsonObject> Json);

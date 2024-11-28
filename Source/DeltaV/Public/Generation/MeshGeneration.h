@@ -15,6 +15,14 @@ class DELTAV_API UMeshGeneration : public UDynamicMeshGenerator
 	GENERATED_BODY()
 
 	using FIndex3i = UE::Geometry::FIndex3i;
+	
+	struct Node {
+		int DrainageArea = 1;
+		bool Processed = false;
+		TArray<int> Above;
+		TArray<int> Below;
+		double MaxSlope;
+	};
 
 public:
 	TMap<TPair<int, int>, int> MidpointMap;
@@ -37,6 +45,9 @@ public:
 
 	void Initialize(FDynamicMesh3& MeshInOut);
 
+
+	void ComputeDrainageArea(TArray<Node>& Tree, int Node);
+	void Iterate2(FDynamicMesh3& MeshInOut);
 	void Iterate(FDynamicMesh3& MeshInOut);
 
 	void Generate(FDynamicMesh3& MeshInOut);

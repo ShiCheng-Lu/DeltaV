@@ -62,13 +62,24 @@ void ASimulationController::BeginPlay() {
 
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
-	FVector CraftLocation = FVector(-(Earth->GetActorScale3D().Z * 100 + extent.Z * 2), 0, 0);
+
+	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z * 5;
+	FVector CraftLocation = FVector(SpawnDistance, 0, 0);
 	Craft->SetActorLocation(CraftLocation);
-	Craft->SetActorRotation(FRotator(180, 0, 0));
+	Craft->SetActorRotation(FRotator(0, 0, 180));
+	
 	Craft->SetPhysicsEnabled(true);
+	// start the craft with the same rotational velocity as the planet
+	
+	double Velocity = -SpawnDistance * 2 * PI / 360;
+	for (auto& PartKVP : Craft->Parts) {
+		UPart* Part = PartKVP.Value;
+		Part->SetSimulatePhysics(true);
+		Part->AddImpulse(FVector(0, Velocity, 0), NAME_None, true);
+	}
 
 	Possess(Craft);
-	SetControlRotation(FRotator(0));
+	SetControlRotation(FRotator(90, 0, 0));
 	Craft->Orbit->CentralBody = Earth;
 	
 	Craft->Orbit->UpdateOrbit(CraftLocation, FVector(0, 0, 1000).Cross(CraftLocation.GetSafeNormal()), 0);
@@ -187,6 +198,15 @@ void ASimulationController::Throttle(float value) {
 void ASimulationController::Tick(float DeltaSeconds) {
 	Super::Tick(DeltaSeconds);
 	// UE_LOG(LogTemp, Warning, TEXT("craft ore %s"), *craft->GetActorRotation().ToString());
+
+	// Craft throttles
+	if (ThrottleValue > 0) {
+		FVector Throttle = Craft->GetActorRotation().RotateVector(FVector(1000000 * ThrottleValue, 0, 0));
+
+		UE_LOG(LogTemp, Warning, TEXT("Throttle %f"), ThrottleValue);
+		Craft->RootPart()->AddForce(Throttle);
+	}
+
 }
 
 void ASimulationController::Zoom(float value) {
@@ -197,19 +217,19 @@ void ASimulationController::Zoom(float value) {
 
 void ASimulationController::Pitch(float value) {
 	if (value != 0 && GetPawn() == Craft) {
-		Craft->Rotate(FRotator(45, 0, 0), 100000000 * value);
+		Craft->Rotate(FRotator(45, 0, 0), 1000000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Roll(float value) {
 	if (value != 0 && GetPawn() == Craft) {
-		Craft->Rotate(FRotator(0, 0, 45), 100000000 * value);
+		Craft->Rotate(FRotator(0, 0, 45), 1000000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Yaw(float value) {
 	if (value != 0 && GetPawn() == Craft) {
-		Craft->Rotate(FRotator(0, 45, 0), 100000000 * value);
+		Craft->Rotate(FRotator(0, 45, 0), 1000000000 * value);
 		ControlStabilizer->TimeSinceLastInput = 0;
 	}
 }

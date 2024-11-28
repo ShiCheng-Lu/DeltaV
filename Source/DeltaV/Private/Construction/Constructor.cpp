@@ -54,6 +54,8 @@ ACraft* Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 		}
 	}
 
+	Craft->SetActorRotation(DefaultOrientation);
+
 	return Craft;
 }
 
@@ -191,7 +193,7 @@ UPart* Constructor::Update() {
 		UpdateSymmetry(Symmetry);
 		if (SymmetryCrafts.Num() > 0) {
 			FQuat BaseRotation = Selected->GetComponentQuat();
-			FVector Axis = Part->GetComponentRotation().RotateVector(FVector(0, 0, 1));
+			FVector Axis = Part->GetComponentRotation().RotateVector(FVector(1, 0, 0));
 			double Angle = 2 * PI / Symmetry;
 
 			FVector BaseLocation = Part->GetComponentLocation();

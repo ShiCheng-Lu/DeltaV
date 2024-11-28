@@ -1,0 +1,51 @@
+{
+    "name": "cockpit",
+    "mesh": "/Game/Shapes/cockpit.cockpit",
+    "attachment": [
+      {
+        "location": [ -100, 0, 0 ]
+      },
+      {
+        "location": [ 100, 0, 0 ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "width",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      },
+      {
+        "name": "height",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      }
+    ],
+    "craft": {
+      "name": "cockpit",
+      "location": [ 0, 0, 0 ],
+      "rotation": [ 0, 0, 0 ],
+      "structure": {
+        "cockpit": {}
+      },
+      "parts": {
+        "cockpit": {
+          "type": "cockpit",
+          "location": [ 0, 0, 0 ],
+          "rotation": [ 0, 0, 0 ],
+          "scale": [ 1, 1, 1 ],
+          "attached_at": 1
+        }
+      },
+      "stages": []
+    }
+  }
+  

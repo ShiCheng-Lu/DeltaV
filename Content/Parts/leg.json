@@ -1,0 +1,47 @@
+{
+    "name": "leg",
+    "mesh": "/Game/Shapes/leg",
+    "attachment": [
+      {
+        "location": [ 0, 0, 0 ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "width",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      },
+      {
+        "name": "height",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      }
+    ],
+    "craft": {
+      "name": "leg",
+      "location": [ 0, 0, 0 ],
+      "rotation": [ 0, 0, 0 ],
+      "structure": {
+        "leg": {}
+      },
+      "parts": {
+        "leg": {
+          "type": "leg",
+          "location": [ 0, 0, 0 ],
+          "rotation": [ 0, 0, 0 ],
+          "scale": [ 1, 1, 1 ],
+          "attached_at": 1
+        }
+      },
+      "stages": []
+    }
+  }

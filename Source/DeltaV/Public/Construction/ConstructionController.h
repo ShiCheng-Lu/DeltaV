@@ -10,6 +10,7 @@
 class UPart;
 class ACraft;
 class UConstructionHUD;
+class ATransformGadget;
 
 /**
  * 
@@ -22,7 +23,8 @@ class DELTAV_API AConstructionController : public APlayerController
 public:
 	AConstructionController();
 
-	void HandleClick(FKey Key);
+	void Pressed(FKey Key);
+	void Released(FKey Key);
 
 	virtual void SetupInputComponent() override;
 
@@ -44,10 +46,15 @@ public:
 		EditMode,
 		RotateMode,
 		TranslateMode,
+		ScaleMode,
+		WarpMode,
 	};
 
 	Mode ConstructionMode = Mode::EditMode;
 
+	void SwitchMode(Mode NewMode);
+
+	ATransformGadget* TransformGadget;
 
 	const static int SYMMETRY_NONE = 1;
 	const static int SYMMETRY_MIRROR = 0;
@@ -67,4 +74,6 @@ public:
 	void Zoom(float value);
 
 	void RotatePart(FRotator Rotation);
+
+	FRay GetMouseRay();
 };

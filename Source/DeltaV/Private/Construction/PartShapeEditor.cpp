@@ -3,6 +3,7 @@
 
 #include "Construction/PartShapeEditor.h"
 
+#include "Engine/StaticMesh.h"
 #include "MeshDescription.h"
 #include "MeshTypes.h"
 
@@ -17,6 +18,7 @@ FDynamicMesh3 UPartShapeEditor::Initialize(UStaticMesh* StaticMesh) {
 
 	DynamicMesh.Clear();
 
+	/*
 	FMeshDescription* MeshDescription = BaseMesh->GetMeshDescription(0);
 	FVertexArray vertices = MeshDescription->Vertices();
 	for (FVertexID vertexId : vertices.GetElementIDs()) {
@@ -29,7 +31,7 @@ FDynamicMesh3 UPartShapeEditor::Initialize(UStaticMesh* StaticMesh) {
 		UE::Geometry::FIndex3i s = UE::Geometry::FIndex3i(vertexIds[0], vertexIds[1], vertexIds[2]);
 		DynamicMesh.InsertTriangle(triangleId, s);
 	}
-
+	*/
 	return DynamicMesh;
 }
 
@@ -47,6 +49,7 @@ void UPartShapeEditor::Generate(FDynamicMesh3& MeshInOut) {
 	// Vertices[6] = TVector<T>(Min.X, Max.Y, Max.Z);
 	// Vertices[7] = TVector<T>(Max);
 
+	/*
 	FMeshDescription* MeshDescription = BaseMesh->GetMeshDescription(0);
 	FVertexArray vertices = MeshDescription->Vertices();
 	for (auto vertexId : vertices.GetElementIDs()) {	
@@ -69,4 +72,5 @@ void UPartShapeEditor::Generate(FDynamicMesh3& MeshInOut) {
 
 		MeshInOut.SetVertex(vertexId, transformed_position);
 	}
+	*/
 }

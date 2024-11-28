@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "SimulationController.generated.h"
 
+class AStaticMeshActor;
 class USimulationHUD;
 class UControlStabilizer;
 

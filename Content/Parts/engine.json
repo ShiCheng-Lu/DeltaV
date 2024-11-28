@@ -3,7 +3,7 @@
   "mesh": "/Game/Shapes/Shape_Engine.Shape_Engine",
   "attachment": [
     {
-      "location": [ 0, 0, 50 ]
+      "location": [ 50, 0, 0 ]
     }
   ],
   "fields": [

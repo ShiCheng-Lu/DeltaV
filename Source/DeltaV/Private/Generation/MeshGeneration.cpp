@@ -37,9 +37,9 @@ void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
 		FVector Vertex = MeshInOut.GetVertex(VertexId);
 		double Noise = SimplexNoise::At(Vertex) + 0.02;
 		UpliftMap.Add(VertexId, Noise);
-		double Noise2 = SimplexNoise::At(Vertex * 2);
-		double Noise3 = SimplexNoise::At(Vertex * 4);
-		double Height = Radius * (1 + Noise / 2 + Noise2 / 8 + Noise3 / 32);
+		double Noise2 = SimplexNoise::At(Vertex * 4);
+		double Noise3 = SimplexNoise::At(Vertex * 6);
+		double Height = Radius * (1 + Noise + Noise2 / 4 + Noise3 / 4);
 		if (Height < Radius) {
 			Height = Radius;
 		}
@@ -58,7 +58,104 @@ struct OverflowPass {
 	}
 };
 
+
+
+void UMeshGeneration::ComputeDrainageArea(TArray<Node>& Tree, int Node) {
+	for (int Above : Tree[Node].Above) {
+		if (!Tree[Above].Processed) {
+			ComputeDrainageArea(Tree, Above);
+		}
+	}
+	double TotalDrain = 0;
+	for (int Below : Tree[Node].Below) {
+		double Slope = HeightMap[Node] - HeightMap[Below];
+		Tree[Node].MaxSlope = FMath::Max(Slope, Tree[Node].MaxSlope);
+		TotalDrain += Slope * Slope;
+	}
+	TotalDrain /= Tree[Node].DrainageArea;
+	for (int Below : Tree[Node].Below) {
+		double Slope = HeightMap[Node] - HeightMap[Below];
+		Tree[Below].DrainageArea += Slope * Slope / TotalDrain;
+	}
+	Tree[Node].Processed = true;
+}
+
+void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
+	// iterate through every edge, construct child/parent tree, O(E) <= O(6V)
+	// use parent tree to resolve dependency, update child nodes with drainage area
+	// total O(V)
+	MeshInOut.CompactInPlace();
+
+	Node NullNode;
+	TArray<Node> Tree;
+	for (int Node = 0; Node < MeshInOut.VertexCount(); ++Node) {
+		Tree.Emplace();
+	}
+	TArray<int> Roots;
+
+	for (auto Edge : MeshInOut.EdgesItr()) {
+		int High, Low;
+		if (HeightMap[Edge.Vert.A] > HeightMap[Edge.Vert.B]) {
+			High = Edge.Vert.A; Low = Edge.Vert.B;
+		}
+		else {
+			High = Edge.Vert.B; Low = Edge.Vert.A;
+		}
+		if (HeightMap[High] <= Radius) {
+			continue;
+		}
+		if (HeightMap[Low] <= Radius) {
+			Roots.Add(Low);
+		}
+
+		Tree[Low].Above.Add(High);
+		Tree[High].Below.Add(Low);
+	}
+
+	// Connect up lakes
+
+	// traverse tree and calculate
+	for (int Node : Roots) {
+		ComputeDrainageArea(Tree, Node);
+	}
+
+	// Erode
+	double DrainageAreaConstant = 3 * FMath::Sqrt(3.0) / 8; // area of single drainage
+	double ErosionRate = 0.01408361 * 3;
+
+	TMap<int, double> DeltaMap;
+	for (int Node = 0; Node < MeshInOut.VertexCount(); ++Node) {
+		if (!Tree[Node].Processed) {
+			continue;
+		}
+		double Delta = UpliftMap[Node] / 4 - ErosionRate * FMath::Sqrt(Tree[Node].DrainageArea * DrainageAreaConstant) * Tree[Node].MaxSlope;
+		if (Delta + HeightMap[Node] > Radius) {
+			HeightMap[Node] += Delta;
+		}
+		DeltaMap.Add(Node, Delta);
+	}
+
+
+	FlushPersistentDebugLines(GetWorld());
+	for (int Node = 0; Node < HeightMap.Num(); ++Node) {
+		FVector A = MeshInOut.GetVertex(Node);
+		
+		if (DeltaMap.Contains(Node)) {
+			if (DeltaMap[Node] > -0.001 && DeltaMap[Node] < 0.001) {
+				DrawDebugPoint(GetWorld(), A, 10, FColor::Green, true);
+			}
+			else if (DeltaMap[Node] > 0) {
+				DrawDebugPoint(GetWorld(), A, 10, FColor::Blue, true);
+			}
+			else {
+				DrawDebugPoint(GetWorld(), A, 10, FColor::Red, true);
+			}
+		}
+	}
+}
+
 void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {
+
 	// which vertex is the lowest from the current node
 	TMap<int, int> DownstreamMap;
 	TMap<int, int> DrainageMap;
