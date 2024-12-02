@@ -6,9 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "MainMenu.generated.h"
 
-class UButton;
-class UTextBlock;
-
 /**
  * 
  */
@@ -21,21 +18,13 @@ protected:
 	virtual void NativeOnInitialized() override;
 
 public:
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UButton* PlayButton;
 
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UButton* SettingsButton;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UButton* QuitButton;
-
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void PlayButtonClicked();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void SettingsButtonClicked();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void QuitButtonClicked();
 };

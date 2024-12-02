@@ -57,7 +57,6 @@ void ASimulationController::BeginPlay() {
 	}
 
 	Craft = GetWorld()->SpawnActor<ACraft>();
-	Craft->SetActorRotation(FRotator(90, 0, 0));
 	Craft->FromJson(JsonUtil::ReadFile(Path));
 
 	FVector origin, extent;
@@ -74,7 +73,7 @@ void ASimulationController::BeginPlay() {
 	double Velocity = -SpawnDistance * 2 * PI / 360;
 	for (auto& PartKVP : Craft->Parts) {
 		UPart* Part = PartKVP.Value;
-		Part->SetSimulatePhysics(true);
+		// Part->SetSimulatePhysics(true);
 		Part->AddImpulse(FVector(0, Velocity, 0), NAME_None, true);
 	}
 

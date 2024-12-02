@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 
 #include "Common/Part.h"
+#include "Common/Craft/Stage.h"
 #include "Common/MultiTickActor.h"
 #include "Components/SphereComponent.h"
 
@@ -29,7 +30,7 @@ public:
 	TSet<UPart*> ActiveEngines;
 	TSet<UPart*> ActiveFuelTanks;
 
-	TArray<TArray<UPart*>> Stages;
+	TArray<UStage*> Stages;
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
@@ -49,8 +50,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void SetAttachmentNodeVisibility(bool visibility);
 
 	void AttachPart(ACraft* SourceCraft, UPart* AttachToPart);
 

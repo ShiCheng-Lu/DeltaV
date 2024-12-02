@@ -6,7 +6,6 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/Material.h"
-#include "Components/WidgetComponent.h"
 
 #include "Common/Craft.h"
 #include "Common/AssetLibrary.h"

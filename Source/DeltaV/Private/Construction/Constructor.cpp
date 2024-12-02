@@ -3,12 +3,14 @@
 
 #include "Construction/Constructor.h"
 
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "Common/Craft.h"
 #include "Common/Part.h"
 #include "Common/JsonUtil.h"
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 #include "Construction/ConstructionController.h"
+#include "Construction/AttachmentNodes.h"
 
 Constructor::Constructor()
 {
@@ -37,21 +39,8 @@ ACraft* Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 		Part->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
 		Part->SetSimulatePhysics(false);
 
-		TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
-		for (auto& Node : PartDefinition->GetArrayField(TEXT("attachment"))) {
-			auto location = JsonUtil::Vector(Node->AsObject(), "location");
-
-			auto AttachmentNode = NewObject<UAttachmentNode>(Part);
-			AttachmentNode->SetRelativeLocation(location);
-			AttachmentNode->RegisterComponent();
-			AttachmentNode->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
-			AttachmentNode->SetCollisionResponseToAllChannels(ECR_Ignore);
-			AttachmentNode->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
-
-			Part->AttachmentNodes.Add(AttachmentNode);
-
-			AttachmentNode->SetAbsolute(false, true, true);
-		}
+		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);\
+		AttachmentNodes->RegisterComponent();
 	}
 
 	Craft->SetActorRotation(DefaultOrientation);
@@ -70,27 +59,19 @@ void Constructor::Select(UPart* Part) {
 
 	// Set previously selected part to respond to ECC_Construct
 	if (Selected != nullptr && !SameOwner) {
-		for (auto* Component : Selected->GetOwner()->GetComponents()) {
-			UMeshComponent* SceneComponent = Cast<UMeshComponent>(Component);
-			if (Component->GetClass() == UPart::StaticClass()) {
-				SceneComponent->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
-			}
-			if (Component->GetClass() == UAttachmentNode::StaticClass()) {
-				SceneComponent->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
-			}
+		ACraft* Craft = Cast<ACraft>(Selected->GetOwner());
+		for (auto& PartKVP : Craft->Parts) {
+			PartKVP.Value->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
+			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
 		}
 	}
 
 	// Set newly selected part to respond ignore to ECC_Construct
 	if (Part != nullptr && !SameOwner) {
-		for (auto* Component : Part->GetOwner()->GetComponents()) {
-			UMeshComponent* SceneComponent = Cast<UMeshComponent>(Component);
-			if (Component->GetClass() == UPart::StaticClass()) {
-				SceneComponent->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
-			}
-			if (Component->GetClass() == UAttachmentNode::StaticClass()) {
-				SceneComponent->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
-			}
+		ACraft* Craft = Cast<ACraft>(Part->GetOwner());
+		for (auto& PartKVP : Craft->Parts) {
+			PartKVP.Value->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
+			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
 		}
 	}
 
@@ -142,7 +123,6 @@ UPart* Constructor::Update() {
 	FRotator _;
 	Controller->PlayerCameraManager->GetCameraViewPoint(CameraLocation2, _);
 
-
 	FVector PartLocation = CameraLocation + Direction * Distance;
 
 	TArray<FHitResult> Results;
@@ -150,15 +130,18 @@ UPart* Constructor::Update() {
 	FVector End;
 	// node attachment
 	FVector SelectedLocaction = Selected->GetComponentLocation();
-	for (auto& AttachmentNode : Selected->AttachmentNodes) {
-		FVector RelativeLocation = AttachmentNode->GetComponentLocation() - SelectedLocaction;
+
+	UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected);
+	for (auto& Node : Attachment->AttachmentNodes) {
+
+		FVector RelativeLocation = Node->GetComponentLocation() - SelectedLocaction;
 
 		End = (Direction * Distance + RelativeLocation) * 2 + Start;
 
 		World->LineTraceMultiByChannel(Results, Start, End, ECC_AttachmentNodes);
 
 		for (auto& HitResult : Results) {
-			UAttachmentNode* TracedNode = Cast<UAttachmentNode>(HitResult.GetComponent());
+			UStaticMeshComponent* TracedNode = Cast<UStaticMeshComponent>(HitResult.GetComponent());
 			if (TracedNode == nullptr) {
 				continue;
 			}
@@ -173,7 +156,9 @@ UPart* Constructor::Update() {
 				}
 				SymmetryCrafts.Empty();
 			}
-
+			if (Selected) {
+				Selected->Physics->SetWorldLocation(TracedNode->GetComponentLocation());
+			}
 			return TracedNode->GetTypedOuter<UPart>();
 		}
 	}
@@ -185,7 +170,11 @@ UPart* Constructor::Update() {
 	for (auto& HitResult : Results) {
 		UPart* Part = Cast<UPart>(HitResult.GetComponent());
 
-		PartLocation = HitResult.Location;
+		PartLocation = HitResult.Location + Attachment->GetComponentRotation().RotateVector(Attachment->SideAttachment);
+		if (Selected) {
+			Selected->Physics->SetWorldLocation(HitResult.Location);
+		}
+		
 		Selected->GetOwner()->SetActorLocation(PartLocation);
 		
 

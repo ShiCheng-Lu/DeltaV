@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/IUserObjectListEntry.h"
+#include "UObject/ObjectMacros.h"
+#include "UObject/Object.h"
 #include "PartItem.generated.h"
 
 class UImage;
@@ -12,6 +15,19 @@ class UTextBlock;
 class UButton;
 
 class AConstructionController;
+
+
+UCLASS()
+class DELTAV_API UPartItemData : public UObject {
+	GENERATED_BODY()
+
+public:
+	FString Name;
+	TSharedPtr<FJsonObject> PartJson;
+	TSharedPtr<FJsonObject> CraftJson;
+
+	static UPartItemData* Create(FString Name);
+};
 
 /**
  * 
@@ -24,21 +40,8 @@ class DELTAV_API UPartItem : public UUserWidget
 public:
 	UPartItem(const FObjectInitializer& ObjectInitializer);
 
-protected:
-	virtual void NativeOnInitialized() override;
-
 public:
-	AConstructionController* Controller;
-	FString PartName;
-	TSharedPtr<FJsonObject> PartJson;
-
 	inline static TSubclassOf<UUserWidget> BlueprintClass;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UButton* MainButton;
-
-	UFUNCTION(BlueprintCallable)
-	void MainButtonClicked();
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* PartLabel;
@@ -46,4 +49,6 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UImage* Thumbnail;
 
+	UFUNCTION(BlueprintCallable)
+	void Init(UObject* ListItemObject);
 };

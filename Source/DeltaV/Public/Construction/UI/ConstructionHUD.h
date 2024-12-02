@@ -11,6 +11,10 @@ class UButton;
 class UTextBlock;
 class UUniformGridPanel;
 class UPartDetails;
+class UTileView;
+class UTreeView;
+
+class ACraft;
 
 /**
  * 
@@ -41,7 +45,7 @@ public:
 	UTextBlock* CraftName;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UUniformGridPanel* PartsList;
+	UTileView* PartsList;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* SymmetryText;
@@ -55,6 +59,17 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UPartDetails* PartDetails;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UTreeView* StagesList;
+
 	UFUNCTION(BlueprintCallable)
 	void SaveClicked();
+
+	UFUNCTION(BlueprintCallable)
+	void PartClicked(UObject* Object);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<UObject*> GetStagingList(UObject* Object);
+
+	void SetCraft(ACraft* Craft);
 };

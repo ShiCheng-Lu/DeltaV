@@ -3,10 +3,10 @@
   "mesh": "/Game/Shapes/Decoupler.Decoupler",
   "attachment": [
     {
-      "location": [ 0, 0, 5 ]
+      "location": [ 5, 0, 0 ]
     },
     {
-      "location": [ 0, 0, -5 ]
+      "location": [ -5, 0, 0 ]
     }
   ],
   "fields": [
@@ -45,6 +45,8 @@
         "attached_at": 1
       }
     },
-    "stages": [[ "decoupler" ]]
+    "stages": [{
+      "parts": ["decoupler"]
+    }]
   }
 }

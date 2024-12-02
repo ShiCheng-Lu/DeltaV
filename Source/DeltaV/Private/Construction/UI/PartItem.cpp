@@ -15,8 +15,21 @@
 #include "Common/AssetLibrary.h"
 #include "Construction/ConstructionController.h"
 #include "Construction/Constructor.h"
+#include "UObject/Interface.h"
 
-UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer) 
+
+UPartItemData* UPartItemData::Create(FString Name) {
+	UPartItemData* Data = NewObject<UPartItemData>();
+
+	Data->Name = Name;
+	Data->PartJson = UAssetLibrary::PartDefinition(Name);
+	Data->CraftJson = Data->PartJson->GetObjectField(TEXT("craft"));
+
+	return Data;
+}
+
+
+UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) 
 {
 	if (!UPartItem::BlueprintClass) {
@@ -25,40 +38,19 @@ UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer)
 			UPartItem::BlueprintClass = Widget.Class;
 		}
 	}
-
-	PartName = GetName();
-
-	// ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("asd"));
-	// Mesh.Succeeded();
-
-	// USceneCaptureComponent2D* Camera = CreateDefaultSubobject<USceneCaptureComponent2D>("Camera");
-
-	PartJson = UAssetLibrary::PartDefinition(PartName);
 }
 
-void UPartItem::NativeOnInitialized() {
-
-	// main button
-	FScriptDelegate MainButtonClicked;
-	MainButtonClicked.BindUFunction(this, "MainButtonClicked");
-	MainButton->OnClicked.Add(MainButtonClicked);
-
-	// main text
-	PartLabel->SetText(FText::FromString(PartName));
-
-	Controller = GetOwningPlayer<AConstructionController>();
-}
-
-void UPartItem::MainButtonClicked() {
-	UE_LOG(LogTemp, Warning, TEXT("part item clicked"));
-
-	auto Craft = Controller->Constructor.CreateCraft(PartJson->GetObjectField(TEXT("craft")));
-	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->Stages.Num());
-
-	if (Controller->Constructor.Selected) {
-		Controller->Constructor.Selected->GetOwner()->Destroy();
-		Controller->Constructor.Selected = nullptr;
+void UPartItem::Init(UObject* ListItemObject) {
+	UPartItemData* Data = Cast<UPartItemData>(ListItemObject);
+	if (!Data) {
+		UE_LOG(LogTemp, Warning, TEXT("UPartItem: invalid init param"));
+		return;
 	}
-	Controller->Constructor.Select(Craft->RootPart());
-	Controller->Constructor.Distance = 500;
+
+	PartLabel->SetText(FText::FromString(Data->Name));
+	UE_LOG(LogTemp, Warning, TEXT("init part name: %s"), *Data->Name);
+
+
+	
+
 }

@@ -6,6 +6,7 @@
       "location": [ 0, 0, 0 ]
     }
   ],
+  "side_attachment": [0, 25, 0],
   "fields": [
     {
       "name": "width",

@@ -234,7 +234,17 @@ void AConstructionController::Pressed(FKey Key) {
 		switch (ConstructionMode)
 		{
 		case AConstructionController::EditMode:
-			Constructor.Selected ? Constructor.Place() : Constructor.Grab();
+			if (Constructor.Selected) {
+				UPart* Part = Constructor.Selected;
+				Constructor.Place();
+				ACraft* Craft = Cast<ACraft>(Part->GetOwner());
+				if (Craft) {
+					HUD->SetCraft(Craft);
+				}
+			}
+			else {
+				Constructor.Grab();
+			}
 			break;
 		case AConstructionController::RotateMode:
 			break;
@@ -253,12 +263,10 @@ void AConstructionController::Pressed(FKey Key) {
 		// ignore if holding a part
 		GetPawn()->EnableInput(this);
 		ResetIgnoreLookInput();
+
+		GetMousePosition(MousePosition.X, MousePosition.Y);
 	}
 	else if (Key == EKeys::MiddleMouseButton) {
-		UPart* Part = Constructor.TraceMouse();
-		if (Part) {
-			GetPawn()->SetActorLocation(Part->GetComponentLocation());
-		}
 	}
 }
 
@@ -284,8 +292,19 @@ void AConstructionController::Released(FKey Key) {
 	else if (Key == EKeys::RightMouseButton) {
 		GetPawn()->DisableInput(this);
 		SetIgnoreLookInput(true);
+
+		FVector2f ReleasePosition;
+		GetMousePosition(ReleasePosition.X, ReleasePosition.Y);
+		if (ReleasePosition.Equals(MousePosition)) {
+			// mouse haven't moved, consider this a click
+			HUD->PartDetails->SetPart(Constructor.TraceMouse());
+		}
 	}
 	else if (Key == EKeys::MiddleMouseButton) {
+		UPart* Part = Constructor.TraceMouse();
+		if (Part) {
+			GetPawn()->SetActorLocation(Part->GetComponentLocation());
+		}
 	}
 }
 

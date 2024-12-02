@@ -41,7 +41,6 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 			auto& PartJson = PartListJson->GetObjectField(PartKVP.Key);
 			Part->Initialize(PartKVP.Key, PartKVP.Value->AsObject(), PartJson);
 			Part->SetParent(PartStructures[i].Key);
-			Part->Attach();
 
 			Parts.Add(PartKVP.Key, Part);
 
@@ -56,17 +55,14 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	}
 	// stages
 	for (auto& StageJson : Json->GetArrayField(TEXT("stages"))) {
-		TArray<UPart*> Stage;
-		for (auto& PartId : StageJson->AsArray()) {
-			UPart* Part = *Parts.Find(PartId->AsString()); // TODO: error handling here
-			Stage.Add(Part);
-		}
+		UStage* Stage = NewObject<UStage>(this);
+		Stage->FromJson(StageJson);
 		Stages.Add(Stage);
 	}
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
-	TSharedPtr<FJsonObject> ResJson = MakeShareable(new FJsonObject());
+	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> Structure = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> PartsJson = MakeShareable(new FJsonObject());
 
@@ -91,21 +87,17 @@ TSharedPtr<FJsonObject> ACraft::ToJson() {
 		}
 	}
 
-	ResJson->SetObjectField(TEXT("structure"), Structure);
-	ResJson->SetObjectField(TEXT("parts"), PartsJson);
+	Json->SetObjectField(TEXT("structure"), Structure);
+	Json->SetObjectField(TEXT("parts"), PartsJson);
 
 	// stages
 	TArray<TSharedPtr<FJsonValue>> StagesJson;
-	for (auto& Stage : Stages) {
-		TArray<TSharedPtr<FJsonValue>> StageParts;
-		for (auto& Part : Stage) {
-			StageParts.Add(MakeShareable(new FJsonValueString(Part->Id)));
-		}
-		StagesJson.Add(MakeShareable(new FJsonValueArray(StageParts)));
-		// StagesJson.Emplace(Json); // ? is this ok ?
+	for (UStage* Stage : Stages) {
+		StagesJson.Add(Stage->ToJson());
 	}
-	ResJson->SetArrayField(TEXT("stages"), StagesJson);
-	return ResJson;
+	Json->SetArrayField(TEXT("stages"), StagesJson);
+
+	return Json;
 }
 
 ACraft* ACraft::Clone() {
@@ -115,6 +107,7 @@ ACraft* ACraft::Clone() {
 	SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ACraft* NewCraft = GetWorld()->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
 	NewCraft->FromJson(Json);
+
 	return NewCraft;
 }
 
@@ -199,8 +192,6 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 		return; // In build mode
 	}
 
-	// UE_LOG(LogTemp, Warning, TEXT("post tick pos: %s"), *GetActorLocation().ToString());
-	
 	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
 
 	// Updating orbit
@@ -243,12 +234,6 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 void ACraft::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
-void ACraft::SetAttachmentNodeVisibility(bool visibility) {
-	for (auto& part : Parts) {
-		part.Value->SetAttachmentNodeVisibility(visibility);
-	}
 }
 
 // transfer ownership of part and any children to another craft
@@ -371,20 +356,7 @@ FVector ACraft::CalculateCoM() {
 
 TArray<ACraft*> ACraft::StageCraft() {
 	TArray<ACraft*> Detached;
-	for (auto& Part : Stages[0]) {
-		if (Part->Type == "decoupler") {
-			ACraft* Craft = NewObject<ACraft>();
-			Detached.Add(Craft);
-			DetachPart(Part, Craft);
-		}
-		else if (Part->Type == "engine") {
-			ActiveEngines.Add(Part);
-		}
-		else if (Part->Type == "fuel_tank") {
-			ActiveFuelTanks.Add(Part);
-		}
-	}
-	Stages.RemoveAt(0);
+
 	return Detached;
 }
 

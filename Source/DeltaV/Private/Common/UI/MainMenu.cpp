@@ -15,17 +15,8 @@ void UMainMenu::NativeOnInitialized() {
 	GetWorld()->GetFirstPlayerController()->SetShowMouseCursor(true);
 	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeUIOnly());
 
-	FScriptDelegate PlayButtonClicked;
-	PlayButtonClicked.BindUFunction(this, "PlayButtonClicked");
-	PlayButton->OnClicked.Add(PlayButtonClicked);
 
-	FScriptDelegate SettingsButtonClicked;
-	SettingsButtonClicked.BindUFunction(this, "SettingsButtonClicked");
-	SettingsButton->OnClicked.Add(SettingsButtonClicked);
 
-	FScriptDelegate QuitButtonClicked;
-	QuitButtonClicked.BindUFunction(this, "QuitButtonClicked");
-	QuitButton->OnClicked.Add(QuitButtonClicked);
 }
 
 void UMainMenu::PlayButtonClicked() {

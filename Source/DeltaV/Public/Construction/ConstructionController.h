@@ -56,6 +56,9 @@ public:
 
 	ATransformGadget* TransformGadget;
 
+	FVector2f MousePosition;
+	FVector2f MousePosition2;
+
 	const static int SYMMETRY_NONE = 1;
 	const static int SYMMETRY_MIRROR = 0;
 

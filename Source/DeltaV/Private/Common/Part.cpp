@@ -29,15 +29,14 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	// TODO: this should be at the position of the attachment node, maybe then the limit can be smaller
 	// and also add a drive to push the connection back towards to default position
 	Physics = CreateDefaultSubobject<UPhysicsConstraintComponent>("Link");
-	Physics->SetRelativeLocation(FVector(0));
 	Physics->SetupAttachment(this);
 	
-	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
-	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.1);
-	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.1);
-	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
-	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
-	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.015);
+	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0);
+	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0);
+	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0);
+	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0);
+	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0);
+	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0);
 	
 	SetLinearDamping(0);
 	SetAngularDamping(0);
@@ -54,12 +53,12 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 }
 
 // Sets default values
-void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TSharedPtr<FJsonObject> InJson)
+void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TSharedPtr<FJsonObject> Json)
 {
 	Id = InId;
 	
 	// set locaiton and scale
-	FromJson(InJson);
+	FromJson(Json);
 	
 	RegisterComponent();
 	Physics->RegisterComponent();
@@ -89,14 +88,14 @@ void UPart::SetParent(UPart* NewParent) {
 
 	}
 	
-	// Detach();
+	Detach();
 
 	Parent = NewParent;
 	if (Parent != nullptr) {
 		Parent->Children.Add(this);
 	}
 
-	// Attach();
+	Attach();
 }
 
 void UPart::SetSimulatePhysics(bool bSimulate) {
@@ -152,12 +151,14 @@ void UPart::SetPhysicsEnabled(bool bSimulate) {
 	SetSimulatePhysics(PhysicsEnabled);
 }
 
-void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
-	Type = InJson->GetStringField(TEXT("type"));
+void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
+	Type = Json->GetStringField(TEXT("type"));
 
-	SetRelativeLocation(JsonUtil::Vector(InJson, "location"));
-	SetWorldRotation(JsonUtil::Rotator(InJson, "rotation"));
-	SetWorldScale3D(JsonUtil::Vector(InJson, "scale"));
+	SetRelativeLocation(JsonUtil::Vector(Json, "location"));
+	SetWorldRotation(JsonUtil::Rotator(Json, "rotation"));
+	SetWorldScale3D(JsonUtil::Vector(Json, "scale"));
+
+	Physics->SetRelativeLocation(JsonUtil::Vector(Json, "attach_location"));
 
 	FString MeshPath = UAssetLibrary::PartDefinition(Type)->GetStringField(TEXT("mesh"));
 
@@ -171,14 +172,15 @@ void UPart::FromJson(TSharedPtr<FJsonObject> InJson) {
 }
 
 TSharedPtr<FJsonObject> UPart::ToJson() {
-	TSharedPtr<FJsonObject> OutJson = MakeShareable(new FJsonObject());
+	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject());
 
 	AActor* Owner = GetOwner();
 
-	OutJson->SetStringField(TEXT("type"), Type);
-	JsonUtil::Vector(OutJson, "location", GetComponentLocation() - Owner->GetActorLocation());
-	JsonUtil::Rotator(OutJson, "rotation", GetComponentRotation());
-	JsonUtil::Vector(OutJson, "scale", GetRelativeScale3D());
+	Json->SetStringField(TEXT("type"), Type);
+	JsonUtil::Vector(Json, "location", GetComponentLocation() - Owner->GetActorLocation());
+	JsonUtil::Rotator(Json, "rotation", GetComponentRotation());
+	JsonUtil::Vector(Json, "scale", GetRelativeScale3D());
+	JsonUtil::Vector(Json, "attach_location", Physics->GetRelativeLocation());
 
-	return OutJson;
+	return Json;
 }

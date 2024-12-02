@@ -30,7 +30,8 @@ public:
 	
 	TObjectPtr<class UActorComponent> Component;
 
-	int AttachedWith = -1;
+	int AttachedAt = -1; // parent location
+	// AttachLocation = Physics.RelativeLocation
 
 	UPart(const FObjectInitializer &ObjectInitializer);
 
@@ -48,6 +49,10 @@ public:
 	  "rotation": [x, y, z, w],
 	  "scale": [x, y, z],
 	  "attached_at": <int>
+	  "attach_location": [rel_x, rel_y, rel_z]
+
+	  // optional?
+	  "dynamic_warp": [matrix of some sort]
 	}
 	*/
 	void FromJson(TSharedPtr<FJsonObject> Json);
