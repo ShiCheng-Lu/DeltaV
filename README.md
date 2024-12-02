@@ -1,7 +1,6 @@
 TODO:
 - staging
-- side attachment
-- symmetry building
+- symmetry snapping
 - engine system
 - engine gimbal
 - fuel
