@@ -7,13 +7,13 @@
 
 #include "Common/Part.h"
 #include "Common/Craft/Stage.h"
-#include "Common/MultiTickActor.h"
 #include "Components/SphereComponent.h"
+#include "Common/CustomTickFunction.h"
 
 #include "Craft.generated.h"
 
 UCLASS()
-class DELTAV_API ACraft : public APawn, public MultiTickActor
+class DELTAV_API ACraft : public APawn
 {
 	GENERATED_BODY()
 
@@ -27,10 +27,8 @@ public:
 	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
 	FVector TargetPosition;
 
-	TSet<UPart*> ActiveEngines;
-	TSet<UPart*> ActiveFuelTanks;
-
 	TArray<UStage*> Stages;
+	UStage* Active; // stage that is active
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
@@ -66,16 +64,15 @@ public:
 
 	FVector CalculateCoM();
 
-	// AMultiTickActor
-	virtual void TickPostPhysics(float DeltaTime) override;
-
-	virtual void TickDuringPhysics(float DeltaTime) override {};
-
-
-	virtual void RegisterActorTickFunctions(bool bRegister) override {
-		Super::RegisterActorTickFunctions(bRegister);
-		RegisterMultiTickActorTickFunctions(this, bRegister);
-	}
+	FVector GetWorldCoM();
 
 	UPart* RootPart() { return Cast<UPart>(GetRootComponent()); }
+
+
+	FCustomActorTick<ACraft> PostPhysics;
+	void TickPostPhysics(float DeltaTime);
+	virtual void RegisterActorTickFunctions(bool bRegister) override {
+		Super::RegisterActorTickFunctions(bRegister);
+		PostPhysics.RegisterTickFunctions(this, bRegister);
+	}
 };

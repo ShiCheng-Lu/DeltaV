@@ -20,7 +20,7 @@ protected:
 	virtual void NativeOnInitialized() override;
 
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 
 public:
@@ -28,8 +28,6 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UListView* ListView;
-
-	void UpdateList();
 
 	UFUNCTION(BlueprintCallable)
 	void OnItemDropped(UDragDropOperation* Operation);
@@ -39,4 +37,7 @@ public:
 
 	// Should be overriden by child class
 	virtual void DropItem(UUserWidget* After, UDragDropOperation* Operation);
+
+	// Should be overriden by child class
+	virtual void ClickItem(UUserWidget* Widget);
 };

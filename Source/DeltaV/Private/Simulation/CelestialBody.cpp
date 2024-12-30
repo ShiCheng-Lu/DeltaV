@@ -10,11 +10,12 @@
 #include "Simulation/OrbitComponent.h"
 
 // Sets default values
-ACelestialBody::ACelestialBody(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+ACelestialBody::ACelestialBody(const FObjectInitializer& ObjectInitializer) : 
+	Super(ObjectInitializer),
+	PostPhysics(ETickingGroup::TG_PostPhysics, &ACelestialBody::TickPostPhysics)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	PostPhysicsTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("StaticMesh'/Game/Shapes/Shape_Sphere.Shape_Sphere'"));

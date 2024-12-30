@@ -1,3 +1,73 @@
 {
-  "name": "part"
+  "name": "part",
+  "mesh": "path/to/mesh",
+  "attachment": [
+    {
+      "location": [ 0, 0, 0 ]
+    }
+  ],
+  "fields": [
+    {
+      "name": "width",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "edit": "slider",
+      "slider_min": 1,
+      "slider_max": 4
+    }
+  ],
+  "craft": {
+    "name": "part",
+    "location": [ 0, 0, 0 ],
+    "rotation": [ 0, 0, 0 ],
+    "structure": {
+      "part": {}
+    },
+    "parts": {
+      "part": {
+        "type": "part",
+        "location": [ 0, 0, 0 ],
+        "rotation": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "attach_location": [ 0, 0, 0],
+        "engine": {
+          "pivot_offset": [ 0, 0, 0 ],
+          "pivot_limit": 0,
+          "thrust": 50000000,
+          "fuel_drain": {
+            "liquid_fuel": 1,
+            "oxidizer": 1,
+            "solid_fuel": 1,
+            "monopropellant": 1
+          }
+        },
+        "fuel": {
+          "current": {
+            "liquid_fuel": 1,
+            "oxidizer": 1,
+            "solid_fuel": 1,
+            "monopropellant": 1
+          },
+          "max": {
+            "liquid_fuel": 1,
+            "oxidizer": 1,
+            "solid_fuel": 1,
+            "monopropellant": 1
+          }
+        }
+      }
+    },
+    "stages": []
+  }
 }

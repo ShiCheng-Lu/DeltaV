@@ -13,6 +13,7 @@
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
 #include "Common/JsonUtil.h"
+#include "Common/UI/StagesList.h"
 #include "Simulation/UI/SimulationHUD.h"
 #include "Simulation/MapViewPawn.h"
 #include "Simulation/OrbitComponent.h"
@@ -236,6 +237,7 @@ void ASimulationController::Stage() {
 	if (GetPawn() == Craft) {
 		Craft->StageCraft();
 	}
+	HUD->StagesList->Reload();
 }
 
 void ASimulationController::VelChange(float value) {

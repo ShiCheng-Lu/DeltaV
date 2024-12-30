@@ -6,8 +6,13 @@
 #include "Common/Craft.h"
 #include "Common/Part.h"
 
+UStage::UStage(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	Craft = GetTypedOuter<ACraft>();
+}
+
 void UStage::FromJson(TSharedPtr<FJsonValue> Json) {
-	ACraft* Craft = GetTypedOuter<ACraft>();
 	if (!Craft) {
 		return;
 	}
@@ -31,3 +36,17 @@ TSharedPtr<FJsonValue> UStage::ToJson() {
 	return MakeShareable(new FJsonValueObject(Json));
 }
 
+TArray<ACraft*>UStage::Activate() {
+	TArray<ACraft*> Detached;
+	for (UPart* Part : Parts) {
+		if (Part->Type == "decoupler") {
+			ACraft* NewCraft = GetWorld()->SpawnActor<ACraft>();
+			Craft->DetachPart(Part, NewCraft);
+			Detached.Add(NewCraft);
+		}
+		if (Part->Type == "engine") {
+			Craft->Active->Parts.Add(Part);
+		}
+	}
+	return Detached;
+}

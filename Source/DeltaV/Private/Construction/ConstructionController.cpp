@@ -321,7 +321,8 @@ void AConstructionController::Save() {
 void AConstructionController::Load() {
 	FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
-	Constructor.CreateCraft(CraftJson);
+	ACraft* Craft = Constructor.CreateCraft(CraftJson);
+	HUD->SetCraft(Craft);
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {

@@ -6,7 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "ConstructionHUD.generated.h"
 
-class AConstructionController;
 class UButton;
 class UTextBlock;
 class UUniformGridPanel;
@@ -14,6 +13,9 @@ class UPartDetails;
 class UTileView;
 class UTreeView;
 
+class UDragReorderList;
+
+class AConstructionController;
 class ACraft;
 
 /**
@@ -60,7 +62,7 @@ public:
 	UPartDetails* PartDetails;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UTreeView* StagesList;
+	UUserWidget* StagesListWidget;
 
 	UFUNCTION(BlueprintCallable)
 	void SaveClicked();
@@ -68,8 +70,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PartClicked(UObject* Object);
 
-	UFUNCTION(BlueprintCallable)
-	TArray<UObject*> GetStagingList(UObject* Object);
-
-	void SetCraft(ACraft* Craft);
+	void SetCraft(ACraft* Craft) const;
 };

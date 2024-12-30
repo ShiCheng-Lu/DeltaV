@@ -14,6 +14,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 
 #include "Common/Craft.h"
+#include "Common/UI/StagesList.h"
 #include "Simulation/UI/Navball.h"
 #include "Simulation/SimulationController.h"
 #include "Simulation/ControlStabilizer.h"
@@ -64,6 +65,8 @@ void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) 
 
 void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const {
 	NavballActor->SetTarget(Craft, PlanetCenter);
+	StagesList->Craft = Craft;
+	StagesList->Reload();
 }
 
 void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode) {

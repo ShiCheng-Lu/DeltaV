@@ -3,20 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Common/Craft/PartComponent.h"
-#include "AeroCompoenent.generated.h"
+#include "Components/ActorComponent.h"
+#include "PartComponent.generated.h"
 
+class UPart;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UAeroCompoenent : public UPartComponent
+class DELTAV_API UPartComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UAeroCompoenent();
+	UPartComponent();
 
 protected:
+	UPart* Part;
+
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -24,10 +27,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	/*
-	{
-	}
-	*/
-	virtual void FromJson(TSharedPtr<FJsonObject> Json) override;
-	virtual TSharedPtr<FJsonObject> ToJson() override;
+
+	virtual void FromJson(TSharedPtr<FJsonObject> Json) {};
+	virtual TSharedPtr<FJsonObject> ToJson() { return MakeShareable(new FJsonObject()); };
 };

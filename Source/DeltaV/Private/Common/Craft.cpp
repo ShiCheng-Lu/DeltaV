@@ -14,11 +14,11 @@
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer),
+	PostPhysics(ETickingGroup::TG_PostPhysics, &ACraft::TickPostPhysics)
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	PostPhysicsTick.bCanEverTick = true;
 
 	BaseEyeHeight = 0;
 	PhysicsEnabled = false;
@@ -59,6 +59,11 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 		Stage->FromJson(StageJson);
 		Stages.Add(Stage);
 	}
+
+	for (auto& PartKVP : Parts) {
+		PartKVP.Value->RegisterComponent();
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Finished loading craft"));
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
@@ -136,7 +141,7 @@ void ACraft::Tick(float DeltaTime)
 	}
 
 	if (Orbit->CentralBody != nullptr) {
-		FVector RelativeLocation = Orbit->CentralBody->GetActorLocation() - GetActorLocation();
+		FVector RelativeLocation = Orbit->CentralBody->GetActorLocation() - GetWorldCoM();
 		FVector Gravity = RelativeLocation.GetSafeNormal() * Orbit->CentralBody->Mu / RelativeLocation.SquaredLength();
 		for (auto& PartKVP : Parts) {
 			UPart* Part = PartKVP.Value;
@@ -144,7 +149,6 @@ void ACraft::Tick(float DeltaTime)
 		}
 	}
 	
-	return;
 	/*
 	FVector Position, Velocity;
 	double TrueAnomaly = Orbit->GetTrueAnomaly(GetGameTimeSinceCreation() + DeltaTime);
@@ -162,18 +166,19 @@ void ACraft::Tick(float DeltaTime)
 		// UE_LOG(LogTemp, Warning, TEXT("grav %f"), CentralBody->Mu / SquareDistance);
 		Part->AddImpulse(VelocityChange, NAME_None, true);
 	}
-
+	*/
 	// Throttle
+	/*
 	ASimulationController* SimulationController = Cast<ASimulationController>(Controller);
 	if (SimulationController && SimulationController->ThrottleValue > 0) 
 	{
 		double FuelDrain = 0;
-		for (auto& Engine : ActiveEngines) {
+		for (auto& Engine : Active->Engines) {
 			// FuelDrain += Engine.FuelDrain;
 		}
 
 		FuelState FuelTotal;
-		for (auto& FuelTank : ActiveFuelTanks) {
+		for (auto& FuelTank : Active->Fuels) {
 
 			// FuelTotal += FuelTank.Fuel;
 		}
@@ -183,7 +188,8 @@ void ACraft::Tick(float DeltaTime)
 		FVector thrust = FVector(0, 0, 700000 * SimulationController->ThrottleValue);
 		thrust = RootPart()->GetComponentRotation().RotateVector(thrust);
 		RootPart()->AddForce(thrust);
-	}*/
+	}
+	*/
 }
 
 void ACraft::TickPostPhysics(float DeltaTime) {
@@ -192,10 +198,14 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 		return; // In build mode
 	}
 
+	if (Orbit->CentralBody == nullptr) {
+		return;
+	}
+
 	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
 
 	// Updating orbit
-	FVector PositionChange = CalculateCoM() - TargetPosition;
+	FVector PositionChange = GetWorldCoM() - TargetPosition;
 	FVector VelocityChange = GetVelocity() - TargetVelocity;
 	if (!VelocityChange.IsNearlyZero()) {
 		FVector Velocity;
@@ -205,7 +215,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 
 		UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
 
-		Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
+		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
 	 
@@ -354,10 +364,25 @@ FVector ACraft::CalculateCoM() {
 	return CenterOfMass / Mass;
 }
 
-TArray<ACraft*> ACraft::StageCraft() {
-	TArray<ACraft*> Detached;
 
-	return Detached;
+FVector ACraft::GetWorldCoM() {
+	// center of mass relative to root
+	double Mass = 0;
+	FVector CenterOfMass = FVector(0);
+	for (auto PartKVP : Parts) {
+		auto Part = PartKVP.Value;
+		CenterOfMass += Part->GetComponentLocation() * Part->CalculateMass();
+		Mass += Part->CalculateMass();
+	}
+	return CenterOfMass / Mass;
+}
+
+TArray<ACraft*> ACraft::StageCraft() {
+	UStage* Stage = Stages.Pop();
+	if (!Stage) {
+		return TArray<ACraft*>();
+	}
+	return Stage->Activate();
 }
 
 FVector ACraft::GetAngularVelocity() {

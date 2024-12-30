@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Common/Craft/PartComponent.h"
 #include "FuelComponent.generated.h"
 
 UENUM()
@@ -20,6 +20,12 @@ public:
 
 	double Drain(FuelState FuelDrain);
 	double Fill(FuelState FuelFill);
+
+	void FromJson(TSharedPtr<FJsonObject> Json);
+	TSharedPtr<FJsonObject> ToJson();
+
+	FuelState operator*(double Mult);
+	double CanDrain(FuelState FuelDrain);
 };
 
 /*
@@ -27,7 +33,7 @@ Fuel can hold any combination of fuel types
 */
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UFuelComponent : public UActorComponent
+class DELTAV_API UFuelComponent : public UPartComponent
 {
 	GENERATED_BODY()
 
@@ -42,12 +48,25 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void TickPostPhysics(float DeltaTime);
 
 	double TotalCapacity;
 	
-	FuelState Fuel;
+	FuelState Current;
+	FuelState Max;
 
-	void Drain(FuelState FuelDrain);
 
-	void Fill(FuelState FuelFill);
+	
+
+	/*
+	{
+		"current": {
+			
+		}
+	}
+	*/
+	virtual void FromJson(TSharedPtr<FJsonObject> Json) override;
+	virtual TSharedPtr<FJsonObject> ToJson() override;
+
+	FuelState Total();
 };

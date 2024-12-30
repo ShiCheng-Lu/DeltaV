@@ -18,9 +18,15 @@ class DELTAV_API UStageGroup : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UStageGroup(const FObjectInitializer& ObjectInitializer);
+
+	inline static TSubclassOf<UUserWidget> BlueprintClass;
 
 	UFUNCTION(BlueprintCallable)
 	void Init(UObject* Object);
+
+	UObject* Payload;
+	int Type;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* Name;
@@ -28,5 +34,6 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UWidgetSwitcher* WidgetIndex;
 
-	static TArray<UObject*> GetStagingList(UObject* Object);
+	UFUNCTION(BlueprintCallable)
+	void AddStage(int Offset);
 };

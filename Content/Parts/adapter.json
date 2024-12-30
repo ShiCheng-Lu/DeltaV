@@ -1,12 +1,12 @@
 {
-  "name": "cylinder",
-  "mesh": "/Game/Shapes/cylinder.cylinder",
+  "name": "adapter",
+  "mesh": "/Game/Shapes/adapter.adapter",
   "attachment": [
     {
-      "location": [ -50, 0, 0 ]
+      "location": [ -100, 0, 0 ]
     },
     {
-      "location": [ 50, 0, 0 ]
+      "location": [ 100, 0, 0 ]
     }
   ],
   "side_attachment": [0, 0, 50],
@@ -31,34 +31,20 @@
     }
   ],
   "craft": {
-    "name": "cylinder",
+    "name": "adapter",
     "location": [ 0, 0, 0 ],
     "rotation": [ 0, 0, 0 ],
     "structure": {
-      "cylinder": {}
+      "adapter": {}
     },
     "parts": {
-      "cylinder": {
-        "type": "cylinder",
+      "adapter": {
+        "type": "adapter",
         "location": [ 0, 0, 0 ],
         "rotation": [ 0, 0, 0 ],
         "scale": [ 1, 1, 1 ],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0],
-        "fuel": {
-          "current": {
-            "liquid_fuel": 1,
-            "oxidizer": 1,
-            "solid_fuel": 1,
-            "monopropellant": 1
-          },
-          "max": {
-            "liquid_fuel": 1,
-            "oxidizer": 1,
-            "solid_fuel": 1,
-            "monopropellant": 1
-          }
-        }
+        "attach_location": [ 0, 0, 0]
       }
     },
     "stages": []

@@ -9,13 +9,16 @@
 #include "Components/TileView.h"
 #include "Components/TreeView.h"
 #include "Kismet/GameplayStatics.h"
+#include "HAL/FileManager.h"
 
+#include "Common/UI/DragReorderList.h"
 #include "Construction/ConstructionController.h"
 #include "Construction/UI/PartItem.h"
 #include "Construction/UI/StageGroup.h"
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
 #include "Common/Craft/Stage.h"
+#include "Common/UI/StagesList.h"
 
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -36,14 +39,13 @@ void UConstructionHUD::NativeOnInitialized() {
 	CraftName->SetText(FText::FromString("Craft Name"));
 
 	// part list
-	PartsList->AddItem(UPartItemData::Create("cone"));
-	PartsList->AddItem(UPartItemData::Create("cylinder"));
-	PartsList->AddItem(UPartItemData::Create("decoupler"));
-	PartsList->AddItem(UPartItemData::Create("engine"));
-	PartsList->AddItem(UPartItemData::Create("wing"));
-	PartsList->AddItem(UPartItemData::Create("cockpit"));
-	PartsList->AddItem(UPartItemData::Create("leg"));
-
+	IFileManager& FileManager = IFileManager::Get();
+	TArray<FString> FileNames;
+	FileManager.FindFiles(FileNames, *(FPaths::Combine(FPaths::ProjectContentDir(), "Parts")), TEXT("json"));
+	for (FString& FileName : FileNames) {
+		FString PartName = FPaths::GetBaseFilename(FileName);
+		PartsList->AddItem(UPartItemData::Create(PartName));
+	}
 }
 
 void UConstructionHUD::LaunchButtonClicked() {
@@ -84,29 +86,8 @@ void UConstructionHUD::PartClicked(UObject* Object) {
 	Controller->Constructor.Distance = 500;
 }
 
-TArray<UObject*> UConstructionHUD::GetStagingList(UObject* Object) {
-	UStage* Data = Cast<UStage>(Object);
-	if (!Data) {
-		UE_LOG(LogTemp, Warning, TEXT("GetStagingList, not UStageGroupData"));
-		return TArray<UObject*>();
-	}
-	UE_LOG(LogTemp, Warning, TEXT("GetStagingList, %d items"), Data->Parts.Num());
-	TArray<UObject*> Children;
-	for (UPart* Part : Data->Parts) {
-		Children.Add(Part);
-	}
-	return Children;
-}
-
-void UConstructionHUD::SetCraft(ACraft* Craft) {
-	StagesList->ClearListItems();
-	for (UStage* Stage : Craft->Stages) {
-		StagesList->AddItem(Stage);
-		StagesList->SetItemExpansion(Stage, true);
-	}
-	UE_LOG(LogTemp, Warning, TEXT("Stages has %d items"), StagesList->GetListItems().Num());
-	UE_LOG(LogTemp, Warning, TEXT("Stages has %d renders"), StagesList->GetDisplayedEntryWidgets().Num());
-
-
-
+void UConstructionHUD::SetCraft(ACraft* Craft) const {
+	UStagesList* StagesList = Cast<UStagesList>(StagesListWidget);
+	StagesList->Craft = Craft;
+	StagesList->Reload();
 }

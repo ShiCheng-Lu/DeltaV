@@ -8,6 +8,7 @@
 
 class UAttachmentNode;
 class UPhysicsConstraintComponent;
+class UPartComponent;
 
 /**
  * 
@@ -25,15 +26,16 @@ public:
 	UPart* Parent;
 
 	TArray<UAttachmentNode*> AttachmentNodes;
+	TMap<FString, UPartComponent*> AdditionalComponents;
 
 	UPhysicsConstraintComponent* Physics;
-	
-	TObjectPtr<class UActorComponent> Component;
 
 	int AttachedAt = -1; // parent location
 	// AttachLocation = Physics.RelativeLocation
 
 	UPart(const FObjectInitializer &ObjectInitializer);
+
+	virtual void BeginPlay() override;
 
 	void Initialize(FString Id, TSharedPtr<FJsonObject> Structure, TSharedPtr<FJsonObject> Json);
 	
@@ -60,10 +62,7 @@ public:
 
 	FString Type;
 
-	template<class T>
-	TObjectPtr<T> GetComponent() {
-		return Cast<T>(Component);
-	}
+	UPartComponent* GetComponent(FString Name);
 
 	bool PhysicsEnabled;
 	void SetPhysicsEnabled(bool bSimulate);

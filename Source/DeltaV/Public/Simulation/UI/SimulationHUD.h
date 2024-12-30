@@ -54,6 +54,9 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UUniformGridPanel> StabilizationPanel;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UStagesList> StagesList;
+
 	UFUNCTION(BlueprintCallable)
 	void SetStabilizationMode(bool Checked, EStabilizationMode Mode);
 

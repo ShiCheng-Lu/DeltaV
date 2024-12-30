@@ -5,7 +5,6 @@
 
 #include "Construction/UI/PartItem.h"
 #include "Components/ListView.h"
-#include "Common/UI/DragReorderListItem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 UDragReorderList::UDragReorderList(const FObjectInitializer& ObjectInitializer)
@@ -15,45 +14,52 @@ UDragReorderList::UDragReorderList(const FObjectInitializer& ObjectInitializer)
 
 void UDragReorderList::NativeOnInitialized() {
 	Super::NativeOnInitialized();
-
-	ListView->ClearListItems();
-	ListView->AddItem(UPartItemData::Create("cone"));
-	ListView->AddItem(UPartItemData::Create("cylinder"));
-	ListView->AddItem(UPartItemData::Create("decoupler"));
-	ListView->AddItem(UPartItemData::Create("engine"));
-	ListView->AddItem(UPartItemData::Create("wing"));
-	ListView->AddItem(UPartItemData::Create("cockpit"));
-	ListView->AddItem(UPartItemData::Create("leg"));
 }
 
 FReply UDragReorderList::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) {
-	return FReply::Unhandled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
+	return FReply::Handled()
+			.DetectDrag(TakeWidget(), EKeys::LeftMouseButton)
+			.CaptureMouse(TakeWidget());
+}
+
+FReply UDragReorderList::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) {
+	FVector2f MousePosition = InMouseEvent.GetScreenSpacePosition();
+	for (UUserWidget* Widget : ListView->GetDisplayedEntryWidgets()) {
+		if (Widget->GetTickSpaceGeometry().IsUnderLocation(MousePosition)) {
+			ClickItem(Widget);
+			return FReply::Handled().ReleaseMouseCapture();
+		}
+	}
+	return FReply::Unhandled().ReleaseMouseCapture();
 }
 
 void UDragReorderList::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) {
 	// Grab the Item in the array
 	FVector2f MousePosition = InMouseEvent.GetScreenSpacePosition();
 
+	UUserWidget* DraggedWidget = nullptr;
 	for (UUserWidget* Widget : ListView->GetDisplayedEntryWidgets()) {
 		if (!Widget->GetTickSpaceGeometry().IsUnderLocation(MousePosition)) {
 			continue;
 		}
-
-		// Widget is under the mouse;
-		OutOperation = DragItem(Widget);
-
-		FVector2d RenderOffset = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
-		OutOperation->DefaultDragVisual->SetRenderTranslation(RenderOffset);
-		OutOperation->Pivot = EDragPivot::MouseDown;
-		OutOperation->Offset = FVector2d(-0.5, -0.5);
-
-		FScriptDelegate OnDropDelegate;
-		OnDropDelegate.BindUFunction(this, "OnItemDropped");
-		// Because item doesn't implement on drag/drop completed, it actually triggers OnDragCancelled instead of OnDrop
-		OutOperation->OnDragCancelled.Add(OnDropDelegate);
-
+		DraggedWidget = Widget;
+	}
+	if (DraggedWidget == nullptr) {
 		return;
 	}
+
+	// Widget is under the mouse;
+	OutOperation = DragItem(DraggedWidget);
+
+	FVector2d RenderOffset = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+	OutOperation->DefaultDragVisual->SetRenderTranslation(RenderOffset);
+	OutOperation->Pivot = EDragPivot::MouseDown;
+	OutOperation->Offset = FVector2d(-0.5, -0.5);
+
+	FScriptDelegate OnDropDelegate;
+	OnDropDelegate.BindUFunction(this, "OnItemDropped");
+	// Because item doesn't implement on drag/drop completed, it actually triggers OnDragCancelled instead of OnDrop
+	OutOperation->OnDragCancelled.Add(OnDropDelegate);
 }
 
 void UDragReorderList::OnItemDropped(UDragDropOperation* Operation) {
@@ -61,26 +67,34 @@ void UDragReorderList::OnItemDropped(UDragDropOperation* Operation) {
 	float DroppedY = DroppedGeometry.GetAbsolutePosition().Y;
 
 	UUserWidget* Previous = nullptr;
-	for (UUserWidget* Widget : ListView->GetDisplayedEntryWidgets()) {
-		if (Widget->GetTickSpaceGeometry().GetAbsolutePosition().Y > DroppedY) {
+	TArray<UUserWidget*> ListViewWidget = ListView->GetDisplayedEntryWidgets();
+	ListViewWidget.Sort([](const UUserWidget& A, const UUserWidget& B){
+		float AY = A.GetTickSpaceGeometry().GetAbsolutePosition().Y;
+		float BY = B.GetTickSpaceGeometry().GetAbsolutePosition().Y;
+		return AY < BY;
+	});
+
+	for (UUserWidget* Widget : ListViewWidget) {
+		float WidgetY = Widget->GetTickSpaceGeometry().GetAbsolutePosition().Y;
+		if (WidgetY > DroppedY) {
 			DropItem(Previous, Operation);
 			return;
 		}
 		Previous = Widget;
 	}
+	DropItem(Previous, Operation);
 }
-
 
 UDragDropOperation* UDragReorderList::DragItem(UUserWidget* Widget) {
 	UDragDropOperation* Operation = NewObject<UDragDropOperation>();
-
+	/*
 	UDragReorderListItem* NewWidget = CreateWidget<UDragReorderListItem>(this, UDragReorderListItem::BlueprintClass);
 	Operation->DefaultDragVisual = NewWidget;
 	Operation->Payload = ListView->GetListObjectFromEntry(*Widget);
 	NewWidget->Init(Operation->Payload);
 
 	ListView->RemoveItem(Operation->Payload);
-
+	*/
 	return Operation;
 }
 
@@ -103,4 +117,8 @@ void UDragReorderList::DropItem(UUserWidget* After, UDragDropOperation* Operatio
 			}
 		}
 	}
+}
+
+void UDragReorderList::ClickItem(UUserWidget* Widget) {
+	return;
 }

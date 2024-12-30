@@ -12,11 +12,22 @@
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 
+#include "Common/Craft/FuelComponent.h"
+#include "Common/Craft/EngineComponent.h"
+#include "Common/Craft/AeroCompoenent.h"
+
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 
+static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields;
+
 UPart::UPart(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
+	if (AdditionalFields.Num() == 0) {
+		AdditionalFields.Add("fuel", UFuelComponent::StaticClass());
+		AdditionalFields.Add("aero", UAeroCompoenent::StaticClass());
+		AdditionalFields.Add("engine", UEngineComponent::StaticClass());
+	}
 
 	Parent = nullptr;
 	Children = TArray<UPart*>();
@@ -59,9 +70,6 @@ void UPart::Initialize(FString InId, TSharedPtr<FJsonObject> InStructure, TShare
 	
 	// set locaiton and scale
 	FromJson(Json);
-	
-	RegisterComponent();
-	Physics->RegisterComponent();
 
 	SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
@@ -87,15 +95,15 @@ void UPart::SetParent(UPart* NewParent) {
 		Parent->Children.Remove(this);
 
 	}
-	
-	Detach();
 
-	Parent = NewParent;
-	if (Parent != nullptr) {
-		Parent->Children.Add(this);
-	}
+Detach();
 
-	Attach();
+Parent = NewParent;
+if (Parent != nullptr) {
+	Parent->Children.Add(this);
+}
+
+Attach();
 }
 
 void UPart::SetSimulatePhysics(bool bSimulate) {
@@ -117,6 +125,15 @@ void UPart::SetSimulatePhysics(bool bSimulate) {
 		AttachToComponent(Parent, AttachmentRule);
 	}*/
 	Super::SetSimulatePhysics(bSimulate);
+}
+
+void UPart::BeginPlay() {
+	Super::BeginPlay();
+
+	for (auto& FieldKVP : AdditionalComponents) {
+		FieldKVP.Value->RegisterComponent();
+	}
+	Physics->RegisterComponent();
 }
 
 void UPart::Detach() {
@@ -169,6 +186,14 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("failed to load mesh for: %s"), *Id);
 	}
+
+	for (auto& FieldKVP : AdditionalFields) {
+		if (Json->HasTypedField(FieldKVP.Key, EJson::Object)) {
+			UPartComponent* AdditionalComponent = NewObject<UPartComponent>(this, FieldKVP.Value, FName(FieldKVP.Key));
+			AdditionalComponent->FromJson(Json->GetObjectField(FieldKVP.Key));
+			AdditionalComponents.Add(FieldKVP.Key, AdditionalComponent);
+		}
+	}
 }
 
 TSharedPtr<FJsonObject> UPart::ToJson() {
@@ -182,5 +207,19 @@ TSharedPtr<FJsonObject> UPart::ToJson() {
 	JsonUtil::Vector(Json, "scale", GetRelativeScale3D());
 	JsonUtil::Vector(Json, "attach_location", Physics->GetRelativeLocation());
 
+	for (auto& FieldKVP : AdditionalComponents) {
+		Json->SetObjectField(FieldKVP.Key, FieldKVP.Value->ToJson());
+	}
+
 	return Json;
+}
+
+UPartComponent* UPart::GetComponent(FString Name) {
+	UPartComponent** Component = AdditionalComponents.Find(Name);
+	if (Component == nullptr) {
+		return nullptr;
+	}
+	else {
+		return *Component;
+	}
 }

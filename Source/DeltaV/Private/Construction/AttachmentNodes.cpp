@@ -41,8 +41,12 @@ UAttachmentNodes::UAttachmentNodes()
 		AttachmentNodes.Add(Node);
 	}
 
-	SideAttachment = JsonUtil::Vector(PartDefinition, "side_attachment");
-
+	if (PartDefinition->HasField("side_attachment")) {
+		SideAttachment = JsonUtil::Vector(PartDefinition, "side_attachment");
+	}
+	else {
+		SideAttachment = FVector(INFINITY);
+	}
 	SetupAttachment(Part);
 }
 

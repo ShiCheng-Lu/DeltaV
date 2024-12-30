@@ -23,7 +23,9 @@ UPartItemData* UPartItemData::Create(FString Name) {
 
 	Data->Name = Name;
 	Data->PartJson = UAssetLibrary::PartDefinition(Name);
-	Data->CraftJson = Data->PartJson->GetObjectField(TEXT("craft"));
+	if (Data->PartJson.IsValid()) {
+		Data->CraftJson = Data->PartJson->GetObjectField(TEXT("craft"));
+	}
 
 	return Data;
 }
@@ -48,9 +50,4 @@ void UPartItem::Init(UObject* ListItemObject) {
 	}
 
 	PartLabel->SetText(FText::FromString(Data->Name));
-	UE_LOG(LogTemp, Warning, TEXT("init part name: %s"), *Data->Name);
-
-
-	
-
 }

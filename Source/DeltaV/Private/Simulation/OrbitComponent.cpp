@@ -249,55 +249,31 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 	double SemiMajorAxis = AngularMomentum.SquaredLength() / (CentralBody->Mu * (1 - Eccentricity * Eccentricity));
 	double SemiMinorAxis = SemiMajorAxis * FMath::Sqrt(1 - Eccentricity * Eccentricity);
 
-	SetWorldLocation(FVector(0, 0, 0));
+	// SetWorldLocation(FVector(0, 0, 0));
 	// transform circle into orbit?
+	FVector Translation = -PeriapsisDirection * SemiMajorAxis * Eccentricity;
+	FVector Basis1 = PeriapsisDirection * SemiMajorAxis;
+	FVector Basis2 = -AngularMomentum.GetSafeNormal().Cross(PeriapsisDirection) * SemiMinorAxis;
 
-	FTransform Transform; // scale, rotate, and translate
-	Transform.SetScale3D(FVector(SemiMinorAxis, SemiMajorAxis, 1));
-	Transform.SetTranslation(-PeriapsisDirection * SemiMajorAxis * Eccentricity);
+	FTransform Transform(Basis1, Basis2, AngularMomentum.GetSafeNormal(), Translation);
 
-	// while point doesn't cross midpoint axis
-	//   add point
 	int TotalPoints = 0;
-	
-	for (int i = 0; i < 4; ++i) {
-		// https://spencermortensen.com/articles/bezier-circle/
 
-		FVector PointLocation = Transform.TransformPosition(FVector(0, -1.00005519, 0).RotateAngleAxis(i * 90, FVector(0, 0, 1)));
-		FVector PointTangent = Transform.TransformVector(FVector(1.66028058, 0.00379245, 0).RotateAngleAxis(i * 90, FVector(0, 0, 1)));
+	// https://spencermortensen.com/articles/bezier-circle/
+	FVector BezierPosition = FVector(0, -1.00005519, 0);
+	FVector BezierInTangent = FVector(1.66028058, 0.00379245, 0);
+	FVector BezierOutTangent = FVector(1.66028058, -0.00379245, 0);
+	for (int i = 0; i < 4; ++i) {
+
+		FVector PointLocation = Transform.TransformPosition(BezierPosition.RotateAngleAxis(i * 90, FVector::UpVector));
+		FVector PointInTangent = Transform.TransformVector(BezierInTangent.RotateAngleAxis(i * 90, FVector::UpVector));
+		FVector PointOutTangent = Transform.TransformVector(BezierOutTangent.RotateAngleAxis(i * 90, FVector::UpVector));
 		// PointTangent.Normalize();
 		// PointTangent *= 1000;
-		FSplinePoint NewPoint = FSplinePoint(TotalPoints, PointLocation, PointTangent, PointTangent);
+		FSplinePoint NewPoint = FSplinePoint(TotalPoints, PointLocation, PointInTangent, PointOutTangent);
 		AddPoint(NewPoint, false);
 		TotalPoints += 1;
 	}
-
-	/*
-	
-	// mirror into high half until apoapsis
-	for (int i = GetNumberOfSplineSegments(); i > 0; --i) {
-		FSplinePoint Point = GetSplinePointAt(i, ESplineCoordinateSpace::Local);
-		FSplinePoint NewPoint = FSplinePoint(
-			0, // key
-			Point.Position, // TODO: reflect this across midpoint axis
-			Point.LeaveTangent, // TODO: reflect this across midpont axis
-			Point.ArriveTangent // TODO: reflect this across midpont axis
-		);
-		AddPoint(NewPoint, false);
-	}
-
-	// mirror into second half, from apoapsis back to periapsis
-	for (int i = GetNumberOfSplineSegments() - 1; i > 1; --i) {
-		FSplinePoint Point = GetSplinePointAt(i, ESplineCoordinateSpace::Local);
-		FSplinePoint NewPoint = FSplinePoint(
-			0, // key
-			Point.Position, // TODO: reflect this across apsis axis
-			Point.LeaveTangent, // TODO: reflect this across apsis axis
-			Point.ArriveTangent // TODO: reflect this across apsis axis
-		);
-		AddPoint(NewPoint, false);
-	}
-	*/
 
 	// call update spline once everything has updated to update the mesh
 	UpdateSpline();

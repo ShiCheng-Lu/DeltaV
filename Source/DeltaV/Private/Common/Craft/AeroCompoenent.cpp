@@ -42,3 +42,12 @@ void UAeroCompoenent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 }
 
+
+void UAeroCompoenent::FromJson(TSharedPtr<FJsonObject> Json) {
+}
+
+TSharedPtr<FJsonObject> UAeroCompoenent::ToJson() {
+	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject());
+
+	return Json;
+}

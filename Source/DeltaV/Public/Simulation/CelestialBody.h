@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Common/MultiTickActor.h"
+#include "Common/CustomTickFunction.h"
 #include "CelestialBody.generated.h"
 
 UCLASS()
-class DELTAV_API ACelestialBody : public AActor, public MultiTickActor
+class DELTAV_API ACelestialBody : public AActor
 {
 	GENERATED_BODY()
 	
@@ -63,12 +63,10 @@ public:
 	virtual void PostEditMove(bool bFinished) override;
 #endif
 
-	virtual void TickPostPhysics(float DeltaTime) override;
-
-	virtual void TickDuringPhysics(float DeltaTime) override {};
-
+	FCustomActorTick<ACelestialBody> PostPhysics;
+	void TickPostPhysics(float DeltaTime);
 	virtual void RegisterActorTickFunctions(bool bRegister) override {
 		Super::RegisterActorTickFunctions(bRegister);
-		RegisterMultiTickActorTickFunctions(this, bRegister);
+		PostPhysics.RegisterTickFunctions(this, bRegister);
 	}
 };

@@ -4,6 +4,9 @@
   "attachment": [
     {
       "location": [ 50, 0, 0 ]
+    },
+    {
+      "location": [ -50, 0, 0 ]
     }
   ],
   "fields": [
@@ -39,7 +42,19 @@
         "location": [ 0, 0, 0 ],
         "rotation": [ 0, 0, 0 ],
         "scale": [ 1, 1, 1 ],
-        "attached_at": 1
+        "attached_at": 1,
+        "attach_location": [ 0, 0, 0],
+        "engine": {
+          "pivot_offset": [ 0, 0, 0 ],
+          "pivot_limit": 0,
+          "thrust": 50000000,
+          "fuel_drain": {
+            "liquid_fuel": 1,
+            "oxidizer": 1,
+            "solid_fuel": 1,
+            "monopropellant": 1
+          }
+        }
       }
     },
     "stages": []
