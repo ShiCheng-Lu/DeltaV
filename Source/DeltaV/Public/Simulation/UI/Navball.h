@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Simulation/ControlStabilizer.h"
 #include "Navball.generated.h"
 
 class ACraft;
+class UStaticMeshComponent;
 
 UCLASS()
 class DELTAV_API ANavball : public AActor
@@ -29,7 +31,22 @@ public:
 	TObjectPtr<class USceneCaptureComponent2D> Camera;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<class UStaticMeshComponent> Mesh;
+	TObjectPtr<UStaticMeshComponent> ProgradeTexture;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> RetrogradeTexture;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> NormalTexture;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> AntiNormalTexture;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> RadialInTexture;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> RadialOutTexture;
+
+	EStabilizationMode StabilizationMode;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UStaticMeshComponent> Mesh;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UTextureRenderTarget2D> RenderTarget;

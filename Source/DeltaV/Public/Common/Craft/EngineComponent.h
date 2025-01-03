@@ -15,12 +15,12 @@ class DELTAV_API UEngineComponent : public UPartComponent
 {
 	GENERATED_BODY()
 
+public:
 	FuelState Drain;
 	FVector PivotOffset;
 	double PivotLimit;
 	double Thrust;
-
-	TArray<UPart*> Fuels;
+	double AvailableThrust;
 
 public:
 	// Sets default values for this component's properties

@@ -35,60 +35,44 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (Controller->Craft == nullptr) {
+	return;
+	/*
+	ACraft* Craft = Controller->Craft;
+	if (Craft == nullptr) {
+		return;
+	}
+	if (Mode == EStabilizationMode::NONE) {
 		return;
 	}
 
-	if (TimeSinceLastInput > TimeSinceLastInputThreshold) {
-		if (Mode == EStabilizationMode::NONE) {
-			return;
+	if (Mode == EStabilizationMode::HOLD_ATTITUDE) {
+		TimeSinceLastInput += DeltaTime;
+		if (TimeSinceLastInput < TimeSinceLastInputThreshold) {
+			TargetOrientation = Craft->GetActorRotation().Vector();
+			return; // for normal stabiliztion mode, only update target while there is user input
 		}
-		// try to stabilize craft
-		// Controller->craft->Rotate();
-		FQuat target = Controller->Craft->GetActorRotation().Quaternion();
-		FVector WorldAngularVelocity = Controller->Craft->GetAngularVelocity();
-		// rotate velocity into relative to craft pitch/yaw/roll
-		FVector LocalAngularVelocity = target.Inverse().RotateVector(WorldAngularVelocity);
-
-		FVector DeltaVector = target.Inverse().RotateVector(TargetOrientation.Vector());
-		FRotator DeltaRotator = DeltaVector.ToOrientationRotator();
-		
-		FRotator Rotation = FRotator(0, 0, 0);
-		Rotation.Pitch = FMath::RadiansToDegrees(LocalAngularVelocity.Y);
-		Rotation.Yaw = -FMath::RadiansToDegrees(LocalAngularVelocity.Z);
-		Rotation.Roll = FMath::RadiansToDegrees(LocalAngularVelocity.X);
-
-		if (FMath::Abs(Rotation.Pitch) <= 0.1) {
-			Rotation.Pitch = 0;
-		}
-		if (FMath::Abs(Rotation.Yaw) <= 0.1) {
-			Rotation.Yaw = 0;
-		}
-		if (FMath::Abs(Rotation.Roll) <= 0.1) {
-			Rotation.Roll = 0;
-		}
-
-		// UE_LOG(LogTemp, Warning, TEXT("Target: %s, V: %s,  R: %s"),  *TargetOrientation.ToString(), *LocalAngularVelocity.ToString(), *Rotation.ToString());
-
-		Controller->Craft->Rotate(Rotation, 50000000);
 	}
-	else { // update target orientation
+	else {
+		// TODO: some of these would depend on reference frame
 		switch (Mode)
 		{
 		case EStabilizationMode::NONE:
 			break;
-		case EStabilizationMode::HOLD_ATTITUDE:
-			TargetOrientation = Controller->Craft->GetActorRotation().Quaternion();
+		case EStabilizationMode::HOLD_ATTITUDE: // handled in previous case
 			break;
 		case EStabilizationMode::MANEUVER:
 			break;
 		case EStabilizationMode::PROGRADE:
+			TargetOrientation = Craft->GetVelocity();
 			break;
 		case EStabilizationMode::RETROGRADE:
+			TargetOrientation = -Craft->GetVelocity();
 			break;
 		case EStabilizationMode::RADIAL_IN:
+			TargetOrientation = -Craft->GetActorLocation();
 			break;
 		case EStabilizationMode::RADIAL_OUT:
+			TargetOrientation = Craft->GetActorLocation();
 			break;
 		case EStabilizationMode::NORMAL:
 			break;
@@ -103,5 +87,28 @@ void UControlStabilizer::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		}
 	}
 
-	TimeSinceLastInput += DeltaTime;
+	FQuat CurrentRotation = Craft->GetActorQuat();
+	FVector TargetAngularVel = CurrentRotation.Inverse().RotateVector(TargetOrientation);
+	FVector CurrentAngularVel = CurrentRotation.Inverse().RotateVector(Craft->GetAngularVelocity());
+
+	// stablizing via PD controller, with coefficients of 1
+	// proportional component
+	FRotator Rotation = TargetAngularVel.ToOrientationRotator();
+	// derivative component
+	Rotation.Pitch += FMath::RadiansToDegrees(CurrentAngularVel.Y);
+	Rotation.Yaw -= FMath::RadiansToDegrees(CurrentAngularVel.Z);
+	Rotation.Roll += FMath::RadiansToDegrees(CurrentAngularVel.X);
+
+	if (FMath::Abs(Rotation.Pitch) <= 0.1) {
+		Rotation.Pitch = 0;
+	}
+	if (FMath::Abs(Rotation.Yaw) <= 0.1) {
+		Rotation.Yaw = 0;
+	}
+	if (FMath::Abs(Rotation.Roll) <= 0.1) {
+		Rotation.Roll = 0;
+	}
+
+	Controller->Craft->Rotate(Rotation, 100000000);
+	*/
 }

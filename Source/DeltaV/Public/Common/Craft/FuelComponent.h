@@ -25,6 +25,8 @@ public:
 	TSharedPtr<FJsonObject> ToJson();
 
 	FuelState operator*(double Mult);
+	FuelState operator/(FuelState Other);
+	
 	double CanDrain(FuelState FuelDrain);
 };
 

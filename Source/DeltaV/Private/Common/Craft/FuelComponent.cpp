@@ -39,6 +39,16 @@ FuelState FuelState::operator*(double Mult) {
 	return State;
 }
 
+
+FuelState FuelState::operator/(FuelState Other) {
+	FuelState State;
+	for (auto& KVP : *this) {
+		double Div = Other.FindChecked(KVP.Key);
+		State.FindChecked(KVP.Key) = Div != 0 ? KVP.Value / Div : 0;
+	}
+	return State;
+}
+
 double FuelState::CanDrain(FuelState Fuel) {
 	double MaxDrain = 1;
 	for (auto& KVP : *this) {
@@ -139,24 +149,22 @@ void UFuelComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	FuelState TotalCurrent;
 	FuelState TotalMax;
 
-	/*
-	while (!Parts.IsEmpty()) {
-		for (auto Child : Part->Children) {
+	for (int i = 0; i < Parts.Num(); ++i) {
+		for (auto Child : Parts[i]->Children) {
 			if (Child->Type != "decoupler") {
 				Parts.Add(Child);
 			}
 		}
-		UFuelComponent* Fuel = Cast<UFuelComponent>(Part->GetComponent("fuel"));
+		UFuelComponent* Fuel = Cast<UFuelComponent>(Parts[i]->GetComponent("fuel"));
 		if (Fuel) {
 			TotalCurrent.Fill(Fuel->Current);
 			TotalMax.Fill(Fuel->Max);
 		}
-		UEngineComponent* Engine = Cast<UEngineComponent>(Part->GetComponent("engine"));
+		UEngineComponent* Engine = Cast<UEngineComponent>(Parts[i]->GetComponent("engine"));
 		if (Engine) {
 			Engines.Add(Engine);
 		}
 	}
-	*/
 }
 
 void UFuelComponent::TickPostPhysics(float DeltaTime) {

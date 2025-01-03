@@ -45,6 +45,6 @@ public:
 	float TimeSinceLastInputThreshold;
 
 	ASimulationController* Controller;
-	FQuat TargetOrientation;
+	FVector TargetOrientation;
 	EStabilizationMode Mode;
 };

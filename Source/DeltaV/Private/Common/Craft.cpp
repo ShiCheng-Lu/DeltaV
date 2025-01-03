@@ -213,14 +213,14 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
 		Orbit->GetPositionAndVelocity(nullptr, &Velocity, TrueAnomaly);
 
-		UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
+		//UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
 
 		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
 	 
 	if (!PositionChange.IsNearlyZero()) {
-		UE_LOG(LogTemp, Warning, TEXT("Position didn't get there - %f"), PositionChange.Length());
+		//UE_LOG(LogTemp, Warning, TEXT("Position didn't get there - %f"), PositionChange.Length());
 
 	}
 	return;

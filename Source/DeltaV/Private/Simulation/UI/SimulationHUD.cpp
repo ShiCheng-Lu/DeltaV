@@ -119,6 +119,7 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 			}
 		}
 		Controller->ControlStabilizer->Mode = Mode;
+		NavballActor->StabilizationMode = Mode;
 	}
 	else {
 		// if any other checkbox is checked, this was the result of a change
@@ -130,6 +131,7 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 		}
 		// no other stabilization is checked, disable stabilization
 		Controller->ControlStabilizer->Mode = EStabilizationMode::NONE;
+		NavballActor->StabilizationMode = EStabilizationMode::NONE;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Stabilization %s"), *ModeString);

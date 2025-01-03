@@ -242,8 +242,6 @@ void UOrbitComponent::UpdateSplineWithOrbit() {
 		return; // Cannot draw Eclipse with eccentricity over 0.95 for now, needs a different strategy
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("UpdateSplineWithOrbit"));
-
 	ClearSplinePoints(false);
 	// SetClosedLoop(true, false);
 	double SemiMajorAxis = AngularMomentum.SquaredLength() / (CentralBody->Mu * (1 - Eccentricity * Eccentricity));
