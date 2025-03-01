@@ -64,8 +64,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void GravChange(float value);
 
-	UControlStabilizer* ControlStabilizer;
-
 	void SetTimeWarp(int TimeWarpLevel);
 	void TimeWarpAdd();
 	void TimeWarpSub();

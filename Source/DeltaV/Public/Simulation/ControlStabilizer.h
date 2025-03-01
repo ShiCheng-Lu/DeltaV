@@ -8,20 +8,6 @@
 
 class ASimulationController;
 
-UENUM()
-enum EStabilizationMode : uint8 {
-	NONE,
-	HOLD_ATTITUDE,
-	MANEUVER,
-	PROGRADE,
-	RETROGRADE,
-	RADIAL_IN,
-	RADIAL_OUT,
-	NORMAL,
-	ANTI_NORMAL,
-	TARGET,
-	ANTI_TARGET,
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DELTAV_API UControlStabilizer : public UActorComponent
@@ -46,5 +32,4 @@ public:
 
 	ASimulationController* Controller;
 	FVector TargetOrientation;
-	EStabilizationMode Mode;
 };

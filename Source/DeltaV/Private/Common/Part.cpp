@@ -96,14 +96,14 @@ void UPart::SetParent(UPart* NewParent) {
 
 	}
 
-Detach();
+	Detach();
 
-Parent = NewParent;
-if (Parent != nullptr) {
-	Parent->Children.Add(this);
-}
+	Parent = NewParent;
+	if (Parent != nullptr) {
+		Parent->Children.Add(this);
+	}
 
-Attach();
+	Attach();
 }
 
 void UPart::SetSimulatePhysics(bool bSimulate) {
@@ -214,6 +214,7 @@ TSharedPtr<FJsonObject> UPart::ToJson() {
 	return Json;
 }
 
+/*
 UPartComponent* UPart::GetComponent(FString Name) {
 	UPartComponent** Component = AdditionalComponents.Find(Name);
 	if (Component == nullptr) {
@@ -222,4 +223,4 @@ UPartComponent* UPart::GetComponent(FString Name) {
 	else {
 		return *Component;
 	}
-}
+}*/

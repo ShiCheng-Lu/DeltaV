@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/DynamicMeshComponent.h"
 #include "Part.generated.h"
 
 class UAttachmentNode;
@@ -62,7 +63,23 @@ public:
 
 	FString Type;
 
-	UPartComponent* GetComponent(FString Name);
+	template<typename T>
+	T* GetComponent(FString Name) {
+		for (auto Component : AdditionalComponents) {
+			T* CastComponent = Cast<T>(Component.Value);
+			if (CastComponent) {
+				return CastComponent;
+			}
+		}
+		return nullptr;
+		/*
+		UPartComponent** Component = AdditionalComponents.Find(Name);
+		if (Component == nullptr) {
+			return nullptr;
+		}
+		return Cast<T>(*Component);
+		*/
+	}
 
 	bool PhysicsEnabled;
 	void SetPhysicsEnabled(bool bSimulate);

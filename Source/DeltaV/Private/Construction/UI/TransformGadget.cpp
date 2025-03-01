@@ -24,6 +24,9 @@ void ATransformGadget::SetupStaticMesh(UStaticMeshComponent* Component, UStaticM
 	Component->SetCollisionResponseToChannel(ECC_TransformGadget, ECR_Block);
 
 	Component->SetupAttachment(GetRootComponent());
+
+	Component->SetRenderCustomDepth(true);
+	Component->SetCustomDepthStencilValue(Rotation.X * 1 + Rotation.Y * 2 + Rotation.Z * 3);
 }
 
 // Sets default values
@@ -107,33 +110,36 @@ void ATransformGadget::StartTracking() {
 	// plane such that it's perpendicular to the mouse projection and parallel to the clicked axis
 	FRay MouseRay = Controller->GetMouseRay();
 	
-	FHitResult Result;
-	if (Selected != nullptr && GetWorld()->LineTraceSingleByChannel(Result, MouseRay.Origin, MouseRay.PointAt(10000), ECC_TransformGadget)) {
-		// clicked on a arrow
-		TranslateRay.Origin = GetActorLocation();
-		TranslateRay.Direction = Result.GetComponent()->GetComponentRotation().Vector();
 
-		Offset = TranslateRay.Direction * RayIntersection1(TranslateRay, MouseRay);
-
-		Active = true;
+	if (Selected == nullptr) {
 		return;
 	}
 
-	if (GetWorld()->LineTraceSingleByChannel(Result, MouseRay.Origin, MouseRay.PointAt(10000), ECC_NoneHeldParts)) {
-		// 
-		UE_LOG(LogTemp, Warning, TEXT("Shown"));
-		Selected = Cast<UPart>(Result.GetComponent());
-		if (Selected) {
-			SetActorLocation(Selected->GetComponentLocation());
+	TArray<FHitResult> Results;
+	GetWorld()->LineTraceMultiByChannel(Results, MouseRay.Origin, MouseRay.PointAt(10000), ECC_TransformGadget);
+
+
+	for (FHitResult& Result : Results) {
+		if (Result.GetActor() == this) {
+			TranslateRay.Origin = GetActorLocation();
+			TranslateRay.Direction = Result.GetComponent()->GetComponentRotation().Vector();
+
+			Offset = TranslateRay.Direction * RayIntersection1(TranslateRay, MouseRay);
+
+			Active = true;
+			return;
 		}
 	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("Hidden"));
-		Selected = nullptr;
-	}
-	GetRootComponent()->SetHiddenInGame(!Selected, true);
 }
 
 void ATransformGadget::StopTracking() {
 	Active = false;
+}
+
+void ATransformGadget::Select(USceneComponent* Object) {
+	Selected = Object;
+	if (Selected) {
+		SetActorLocation(Selected->GetComponentLocation());
+	}
+	GetRootComponent()->SetHiddenInGame(!Selected, true);
 }

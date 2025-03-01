@@ -8,6 +8,7 @@
 
 #include "Common/Part.h"
 #include "Construction/ConstructionController.h"
+#include "Construction/PartShapeEditor.h"
 
 UPartDetails::UPartDetails(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -18,10 +19,16 @@ UPartDetails::UPartDetails(const FObjectInitializer& ObjectInitializer)
 			UPartDetails::BlueprintClass = Widget.Class;
 		}
 	}
+
+	SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UPartDetails::NativeOnInitialized() {
 	Controller = GetOwningPlayer<AConstructionController>();
+
+	if (Part == nullptr) {
+		SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 void UPartDetails::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
@@ -61,6 +68,11 @@ void UPartDetails::Update(PartField Field) {
 }
 
 void UPartDetails::SetPart(UPart* InPart) {
+	if (Part) {
+		Part->SetRenderCustomDepth(false);
+		Part->SetCustomDepthStencilValue(0);
+	}
+
 	Part = InPart;
 	if (Part) {
 		PartName->SetText(FText::FromString(Part->GetName()));
@@ -68,5 +80,18 @@ void UPartDetails::SetPart(UPart* InPart) {
 		SizeX->SetValue(Part->GetRelativeScale3D().X);
 		SizeY->SetValue(Part->GetRelativeScale3D().Y);
 		SizeZ->SetValue(Part->GetRelativeScale3D().Z);
+	
+		SetVisibility(ESlateVisibility::Visible);
+
+		Part->SetRenderCustomDepth(false);
+		Part->SetCustomDepthStencilValue(4);
 	}
+	else {
+		SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void UPartDetails::MakeDynamic() {
+	Controller->PartShapeEditor->SetPart(Part);
+	Controller->SwitchMode(AConstructionController::WarpMode);
 }

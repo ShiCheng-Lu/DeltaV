@@ -4,27 +4,41 @@
 
 #include "CoreMinimal.h"
 #include "UDynamicMesh.h"
+#include "DynamicMeshActor.h"
 #include "PartShapeEditor.generated.h"
 
-/**
- * 
- */
+class UPart;
+class UStaticMeshComponent;
+class AConstructionController;
+
 UCLASS()
-class DELTAV_API UPartShapeEditor : public UDynamicMeshGenerator
-{
+class DELTAV_API APartShapeEditor : public ADynamicMeshActor {
 	GENERATED_BODY()
-	
+
 public:
+	APartShapeEditor(const FObjectInitializer& ObjectInitializer);
 
-	virtual void Generate(FDynamicMesh3& MeshInOut);
+	void SetPart(UPart* Part);
 
-	FDynamicMesh3 Initialize(UStaticMesh* StaticMesh);
+	void SetController(AConstructionController* Controller);
 
-	void SetTargetBounds(FVector in_target_bounds[8]);
-public:
-	TObjectPtr<class UStaticMesh> BaseMesh;
+	AConstructionController* Controller;
 
-	FVector BoundPosition; // negative extrema of the bound
-	FVector BoundSize; // size of the bound
-	FVector TargetBound[8];
+	TArray<TObjectPtr<UStaticMeshComponent>> Corners;
+	// the corner that has been selected
+	UStaticMeshComponent* Selected;
+
+	UPart* SelectedPart;
+
+	void Pressed(FKey Key);
+
+	void Released(FKey Key);
+
+	virtual void Tick(float DeltaTime) override;
+
+	void UpdateMesh(FDynamicMesh3& MeshInOut);
+
+	UDynamicMeshComponent* Mesh;
+
+	bool Active;
 };

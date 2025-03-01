@@ -30,6 +30,17 @@ public:
 	double CanDrain(FuelState FuelDrain);
 };
 
+class FuelGroup {
+public:
+	TArray<UPart*> Fuels;
+	TArray<UPart*> Engines;
+
+	FuelState TotalFuel();
+	FuelState TotalDrain();
+
+};
+
+
 /*
 Fuel can hold any combination of fuel types
 */

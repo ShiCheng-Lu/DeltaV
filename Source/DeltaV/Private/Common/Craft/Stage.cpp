@@ -16,7 +16,7 @@ void UStage::FromJson(TSharedPtr<FJsonValue> Json) {
 	if (!Craft) {
 		return;
 	}
-	for (auto& PartJson : Json->AsObject()->GetArrayField("parts")) {
+	for (auto& PartJson : Json->AsObject()->GetArrayField(TEXT("parts"))) {
 		FString PartId = PartJson->AsString();
 		UPart** Part = Craft->Parts.Find(PartId);
 		if (Part) {

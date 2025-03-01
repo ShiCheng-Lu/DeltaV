@@ -4,11 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Simulation/ControlStabilizer.h"
 #include "Navball.generated.h"
 
 class ACraft;
 class UStaticMeshComponent;
+
+UENUM()
+enum EStabilizationMode : uint8 {
+	HoldAttitude,
+	Maneuver,
+	Prograde,
+	Retrograde,
+	RadialIn,
+	RadialOut,
+	Normal,
+	AntiNormal,
+	Target,
+	AntiTarget,
+
+	None,
+	Num = None UMETA(Hidden),
+};
+
 
 UCLASS()
 class DELTAV_API ANavball : public AActor
@@ -43,7 +60,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UStaticMeshComponent> RadialOutTexture;
 
+	UPROPERTY(EditAnywhere, meta = (ArraySizeEnum = "EStabilizationMode"))
+	TObjectPtr<UStaticMeshComponent> TargetTextures[EStabilizationMode::Num];
+
 	EStabilizationMode StabilizationMode;
+	float TimeSinceLastInput;
+	float TimeSinceLastInputThreshold;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UStaticMeshComponent> Mesh;

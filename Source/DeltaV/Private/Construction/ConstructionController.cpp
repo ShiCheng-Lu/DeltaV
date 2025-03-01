@@ -48,6 +48,9 @@ void AConstructionController::BeginPlay() {
 	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();
 	TransformGadget->Controller = this;
 
+	PartShapeEditor = GetWorld()->SpawnActor<APartShapeEditor>();
+	PartShapeEditor->SetController(this);
+
 	Load();
 }
 
@@ -171,6 +174,8 @@ void AConstructionController::SwitchMode(Mode NewMode) {
 	case RotateMode:
 		HUD->ModeText->SetText(FText::FromString("R"));
 		break;
+	case WarpMode:
+		HUD->ModeText->SetText(FText::FromString("W"));
 	}
 }
 
@@ -230,6 +235,8 @@ void AConstructionController::DebugAction() {
 }
 
 void AConstructionController::Pressed(FKey Key) {
+	GetMousePosition(PressedPosition.X, PressedPosition.Y);
+
 	if (Key == EKeys::LeftMouseButton) {
 		switch (ConstructionMode)
 		{
@@ -254,6 +261,7 @@ void AConstructionController::Pressed(FKey Key) {
 		case AConstructionController::ScaleMode:
 			break;
 		case AConstructionController::WarpMode:
+			PartShapeEditor->Pressed(Key);
 			break;
 		default:
 			break;
@@ -263,14 +271,14 @@ void AConstructionController::Pressed(FKey Key) {
 		// ignore if holding a part
 		GetPawn()->EnableInput(this);
 		ResetIgnoreLookInput();
-
-		GetMousePosition(MousePosition.X, MousePosition.Y);
 	}
 	else if (Key == EKeys::MiddleMouseButton) {
 	}
 }
 
 void AConstructionController::Released(FKey Key) {
+	GetMousePosition(ReleasedPosition.X, ReleasedPosition.Y);
+
 	if (Key == EKeys::LeftMouseButton) {
 		switch (ConstructionMode)
 		{
@@ -280,10 +288,14 @@ void AConstructionController::Released(FKey Key) {
 			break;
 		case AConstructionController::TranslateMode:
 			TransformGadget->StopTracking();
+			if (ReleasedPosition.Equals(PressedPosition)) {
+				TransformGadget->Select(Constructor.TraceMouse());
+			}
 			break;
 		case AConstructionController::ScaleMode:
 			break;
 		case AConstructionController::WarpMode:
+			PartShapeEditor->Released(Key);
 			break;
 		default:
 			break;
@@ -293,9 +305,7 @@ void AConstructionController::Released(FKey Key) {
 		GetPawn()->DisableInput(this);
 		SetIgnoreLookInput(true);
 
-		FVector2f ReleasePosition;
-		GetMousePosition(ReleasePosition.X, ReleasePosition.Y);
-		if (ReleasePosition.Equals(MousePosition)) {
+		if (ReleasedPosition.Equals(PressedPosition)) {
 			// mouse haven't moved, consider this a click
 			HUD->PartDetails->SetPart(Constructor.TraceMouse());
 		}

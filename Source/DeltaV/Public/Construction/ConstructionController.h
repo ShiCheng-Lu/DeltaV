@@ -10,7 +10,10 @@
 class UPart;
 class ACraft;
 class UConstructionHUD;
-class ATransformGadget;
+
+#define ECC_NoneHeldParts ECC_GameTraceChannel1
+#define ECC_AttachmentNodes ECC_GameTraceChannel2
+#define ECC_TransformGadget ECC_GameTraceChannel3
 
 /**
  * 
@@ -54,10 +57,12 @@ public:
 
 	void SwitchMode(Mode NewMode);
 
-	ATransformGadget* TransformGadget;
+	TObjectPtr<class ATransformGadget> TransformGadget;
+	TObjectPtr<class APartShapeEditor> PartShapeEditor;
 
 	FVector2f MousePosition;
-	FVector2f MousePosition2;
+	FVector2f PressedPosition;
+	FVector2f ReleasedPosition;
 
 	const static int SYMMETRY_NONE = 1;
 	const static int SYMMETRY_MIRROR = 0;

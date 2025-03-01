@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "TransformGadget.generated.h"
 
-class UPart;
+class USceneComponent;
 class UStaticMeshComponent;
 class AConstructionController;
 
@@ -44,7 +44,7 @@ public:
 	UStaticMeshComponent* ScaleY;
 	UStaticMeshComponent* ScaleZ;
 
-	UPart* Selected = nullptr;
+	USceneComponent* Selected = nullptr;
 
 	AConstructionController* Controller;
 
@@ -53,6 +53,8 @@ public:
 	void StartTracking();
 
 	void StopTracking();
+
+	void Select(USceneComponent* Object);
 
 	FRay TranslateRay;
 	FVector Offset;

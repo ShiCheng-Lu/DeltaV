@@ -60,7 +60,7 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		ACraft* Craft = Cast<ACraft>(GetOwner());
 		ASimulationController* Controller = Cast<ASimulationController>(Craft->Controller);
 
-		UFuelComponent* Fuel = Cast<UFuelComponent>(Part->Parent->GetComponent("fuel"));
+		UFuelComponent* Fuel = Part->Parent->GetComponent<UFuelComponent>("fuel");
 		FuelState TickDrain = Drain * DeltaTime;
 		
 		double Throttle = FMath::Min(Controller->ThrottleValue, Fuel->Current.CanDrain(TickDrain));

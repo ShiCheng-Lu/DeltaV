@@ -9,9 +9,6 @@ class UWorld;
 class ACraft;
 class AConstructionController;
 
-#define ECC_NoneHeldParts ECC_GameTraceChannel1
-#define ECC_AttachmentNodes ECC_GameTraceChannel2
-#define ECC_TransformGadget ECC_GameTraceChannel3
 
 /**
  * Controls building the craft, create, select, place

@@ -6,6 +6,10 @@
 #include "Common/Craft/EngineComponent.h"
 #include "Common/Part.h"
 
+// ========================
+// FuelState
+// ========================
+
 FuelState::FuelState() : TMap<FuelType, double>({
 	{ FuelType::LiquidFuel, 5 },
 	{ FuelType::Oxidizer, 5 },
@@ -95,6 +99,44 @@ TSharedPtr<FJsonObject> FuelState::ToJson() {
 	return Json;
 }
 
+
+
+
+// ========================
+// FuelGroup
+// ========================
+
+FuelState FuelGroup::TotalFuel() {
+	FuelState State;
+	for (UPart* Part : Fuels) {
+		auto* Fuel = Part->GetComponent<UFuelComponent>("fuel");
+		if (Fuel == nullptr) {
+			continue;
+		}
+		State.Fill(Fuel->Current);
+	}
+	return State;
+}
+
+FuelState FuelGroup::TotalDrain() {
+	FuelState State;
+	for (UPart* Part : Fuels) {
+		auto* Engine = Part->GetComponent<UEngineComponent>("engine");
+		if (Engine == nullptr) {
+			continue;
+		}
+		State.Fill(Engine->Drain);
+	}
+	return State;
+}
+
+
+// ========================
+// FuelComponent
+// ========================
+
+
+
 // Sets default values for this component's properties
 UFuelComponent::UFuelComponent() : Super()
 {
@@ -155,12 +197,12 @@ void UFuelComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 				Parts.Add(Child);
 			}
 		}
-		UFuelComponent* Fuel = Cast<UFuelComponent>(Parts[i]->GetComponent("fuel"));
+		UFuelComponent* Fuel = Parts[i]->GetComponent<UFuelComponent>("fuel");
 		if (Fuel) {
 			TotalCurrent.Fill(Fuel->Current);
 			TotalMax.Fill(Fuel->Max);
 		}
-		UEngineComponent* Engine = Cast<UEngineComponent>(Parts[i]->GetComponent("engine"));
+		UEngineComponent* Engine = Parts[i]->GetComponent<UEngineComponent>("engine");
 		if (Engine) {
 			Engines.Add(Engine);
 		}

@@ -19,6 +19,7 @@
 #include "Simulation/OrbitComponent.h"
 #include "Simulation/CelestialBody.h"
 #include "Simulation/ControlStabilizer.h"
+#include "Simulation/UI/Navball.h"
 
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
@@ -92,12 +93,6 @@ void ASimulationController::BeginPlay() {
 	HUD->SetNavballTarget(Craft, FVector(0, 0, 0));
 
 	UE_LOG(LogTemp, Warning, TEXT("craft location %s %f"), *Craft->GetActorLocation().ToString(), Earth->GetActorScale3D().Z);
-
-	
-	ControlStabilizer = NewObject<UControlStabilizer>(this); // CreateDefaultSubobject<UControlStabilizer>("Stabilizer");
-	ControlStabilizer->Controller = this;
-
-	ControlStabilizer->RegisterComponent();
 }
 
 
@@ -218,19 +213,19 @@ void ASimulationController::Zoom(float value) {
 void ASimulationController::Pitch(float value) {
 	if (value != 0 && GetPawn() == Craft) {
 		Craft->Rotate(FRotator(45, 0, 0), 1000000000 * value);
-		ControlStabilizer->TimeSinceLastInput = 0;
+		HUD->NavballActor->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Roll(float value) {
 	if (value != 0 && GetPawn() == Craft) {
 		Craft->Rotate(FRotator(0, 0, 45), 1000000000 * value);
-		ControlStabilizer->TimeSinceLastInput = 0;
+		HUD->NavballActor->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Yaw(float value) {
 	if (value != 0 && GetPawn() == Craft) {
 		Craft->Rotate(FRotator(0, 45, 0), 1000000000 * value);
-		ControlStabilizer->TimeSinceLastInput = 0;
+		HUD->NavballActor->TimeSinceLastInput = 0;
 	}
 }
 void ASimulationController::Stage() {

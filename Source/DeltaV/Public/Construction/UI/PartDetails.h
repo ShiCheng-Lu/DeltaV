@@ -71,5 +71,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Update(PartField Field);
 
+	UFUNCTION(BlueprintCallable)
+	void MakeDynamic();
+
 	void SetPart(UPart* InPart);
 };

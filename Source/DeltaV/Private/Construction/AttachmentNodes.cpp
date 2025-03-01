@@ -7,7 +7,8 @@
 #include "Common/Part.h"
 #include "Common/AssetLibrary.h"
 #include "Common/JsonUtil.h"
-#include "Construction/Constructor.h"
+#include "Construction/ConstructionController.h"
+
 
 // Sets default values for this component's properties
 UAttachmentNodes::UAttachmentNodes()
@@ -41,7 +42,7 @@ UAttachmentNodes::UAttachmentNodes()
 		AttachmentNodes.Add(Node);
 	}
 
-	if (PartDefinition->HasField("side_attachment")) {
+	if (PartDefinition->HasField(TEXT("side_attachment"))) {
 		SideAttachment = JsonUtil::Vector(PartDefinition, "side_attachment");
 	}
 	else {

@@ -24,6 +24,7 @@ UStaticMeshComponent* SetupTargetTexture(ANavball* Navball, FString Target, FVec
 
 	Mesh->SetRelativeRotation(FQuat(FVector::ZAxisVector, PI));
 	Mesh->SetRelativeLocation(FVector(-110, 0, 0));
+	Mesh->SetWorldScale3D(FVector(0.5));
 
 	Mesh->SetStaticMesh(Plane);
 	Mesh->SetMaterial(0, Material);
@@ -80,8 +81,7 @@ ANavball::ANavball()
 	Camera->ProjectionType = ECameraProjectionMode::Orthographic;
 	Camera->OrthoWidth = 200;
 
-
-	ProgradeTexture		= SetupTargetTexture(this, "Prograde", FVector(0, 0, 0));
+	ProgradeTexture		= SetupTargetTexture(this, "Prograde", FVector(1, 0, 0));
 	RetrogradeTexture	= SetupTargetTexture(this, "Retrograde", FVector(0, 0, 0));
 	NormalTexture		= SetupTargetTexture(this, "Normal", FVector(0, 0, 0));
 	AntiNormalTexture	= SetupTargetTexture(this, "AntiNormal", FVector(0, 0, 0));
@@ -127,12 +127,16 @@ void ANavball::Tick(float DeltaTime)
 	FQuat rot = (FQuat(rotation).Inverse() * Target->GetActorQuat()).Inverse();
 	Mesh->SetRelativeRotation(rot * FQuat(FVector(0, 1, 0), PI));
 
+
 	FVector Prograde = Target->GetVelocity().GetSafeNormal();
 	FVector Retrograde = -Prograde;
 	FVector Normal = Prograde.Cross(Target->GetActorLocation() - Origin).GetSafeNormal();
 	FVector AntiNormal = -Normal;
 	FVector RadialIn = Prograde.Cross(Normal);
 	FVector RadialOut = -RadialIn;
+
+	FVector Targets[EStabilizationMode::Num];
+	Targets[EStabilizationMode::Prograde] = Target->GetVelocity().GetSafeNormal();
 
 	FQuat TargetInverse = Target->GetActorQuat().Inverse() * FQuat(FVector::ZAxisVector, PI);
 	UpdateTexture(ProgradeTexture, TargetInverse.RotateVector(Prograde));
@@ -147,33 +151,38 @@ void ANavball::Tick(float DeltaTime)
 	FVector TargetOrientation;
 	switch (StabilizationMode)
 	{
-	case EStabilizationMode::NONE:
+	case EStabilizationMode::None:
 		return;
-	case EStabilizationMode::HOLD_ATTITUDE:
+	case EStabilizationMode::HoldAttitude:
+		TimeSinceLastInput += DeltaTime;
+		if (TimeSinceLastInput < TimeSinceLastInputThreshold) {
+			TargetOrientation = Target->GetActorQuat().Vector();
+			return;
+		}
 		break;
-	case EStabilizationMode::MANEUVER:
+	case EStabilizationMode::Maneuver:
 		break;
-	case EStabilizationMode::PROGRADE:
+	case EStabilizationMode::Prograde:
 		TargetOrientation = Prograde;
 		break;
-	case EStabilizationMode::RETROGRADE:
+	case EStabilizationMode::Retrograde:
 		TargetOrientation = Retrograde;
 		break;
-	case EStabilizationMode::RADIAL_IN:
+	case EStabilizationMode::RadialIn:
 		TargetOrientation = RadialIn;
 		break;
-	case EStabilizationMode::RADIAL_OUT:
+	case EStabilizationMode::RadialOut:
 		TargetOrientation = RadialOut;
 		break;
-	case EStabilizationMode::NORMAL:
+	case EStabilizationMode::Normal:
 		TargetOrientation = Normal;
 		break;
-	case EStabilizationMode::ANTI_NORMAL:
+	case EStabilizationMode::AntiNormal:
 		TargetOrientation = AntiNormal;
 		break;
-	case EStabilizationMode::TARGET:
+	case EStabilizationMode::Target:
 		break;
-	case EStabilizationMode::ANTI_TARGET:
+	case EStabilizationMode::AntiTarget:
 		break;
 	default:
 		break;
@@ -191,13 +200,13 @@ void ANavball::Tick(float DeltaTime)
 	Rotation.Yaw -= FMath::RadiansToDegrees(CurrentAngularVel.Z);
 	Rotation.Roll += FMath::RadiansToDegrees(CurrentAngularVel.X);
 
-	if (FMath::Abs(Rotation.Pitch) <= 0.1) {
+	if (FMath::Abs(Rotation.Pitch) <= 0.01) {
 		Rotation.Pitch = 0;
 	}
-	if (FMath::Abs(Rotation.Yaw) <= 0.1) {
+	if (FMath::Abs(Rotation.Yaw) <= 0.01) {
 		Rotation.Yaw = 0;
 	}
-	if (FMath::Abs(Rotation.Roll) <= 0.1) {
+	if (FMath::Abs(Rotation.Roll) <= 0.01) {
 		Rotation.Roll = 0;
 	}
 

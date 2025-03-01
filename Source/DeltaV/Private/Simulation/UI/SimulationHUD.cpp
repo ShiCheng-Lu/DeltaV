@@ -35,7 +35,7 @@ void USimulationHUD::NativeOnInitialized() {
 	Super::NativeOnInitialized();
 
 	Controller = Cast<ASimulationController>(GetOwningPlayer());
-
+	
 	NavballActor = GetWorld()->SpawnActor<ANavball>();
 
 	FScriptDelegate delegate;
@@ -73,37 +73,37 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 	FString ModeString;
 	switch (Mode)
 	{
-	case NONE:
+	case EStabilizationMode::None:
 		ModeString = "None";
 		break;
-	case HOLD_ATTITUDE:
+	case EStabilizationMode::HoldAttitude:
 		ModeString = "HoldAttitude";
 		break;
-	case MANEUVER:
+	case EStabilizationMode::Maneuver:
 		ModeString = "Maneuver";
 		break;
-	case PROGRADE:
+	case EStabilizationMode::Prograde:
 		ModeString = "Prograde";
 		break;
-	case RETROGRADE:
+	case EStabilizationMode::Retrograde:
 		ModeString = "Retrograde";
 		break;
-	case RADIAL_IN:
+	case EStabilizationMode::RadialIn:
 		ModeString = "RadialIn";
 		break;
-	case RADIAL_OUT:
+	case EStabilizationMode::RadialOut:
 		ModeString = "RadialOut";
 		break;
-	case NORMAL:
+	case EStabilizationMode::Normal:
 		ModeString = "Normal";
 		break;
-	case ANTI_NORMAL:
+	case EStabilizationMode::AntiNormal:
 		ModeString = "AntiNormal";
 		break;
-	case TARGET:
+	case EStabilizationMode::Target:
 		ModeString = "Target";
 		break;
-	case ANTI_TARGET:
+	case EStabilizationMode::AntiTarget:
 		ModeString = "AntiTarget";
 		break;
 	default:
@@ -118,7 +118,6 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 				Checkbox->SetCheckedState(ECheckBoxState::Unchecked);
 			}
 		}
-		Controller->ControlStabilizer->Mode = Mode;
 		NavballActor->StabilizationMode = Mode;
 	}
 	else {
@@ -130,8 +129,7 @@ void USimulationHUD::SetStabilizationMode(bool Checked, EStabilizationMode Mode)
 			}
 		}
 		// no other stabilization is checked, disable stabilization
-		Controller->ControlStabilizer->Mode = EStabilizationMode::NONE;
-		NavballActor->StabilizationMode = EStabilizationMode::NONE;
+		NavballActor->StabilizationMode = EStabilizationMode::None;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Stabilization %s"), *ModeString);
@@ -143,10 +141,10 @@ void USimulationHUD::ButtonClicked(UCheckBox* Checkbox) {
 	if (Checkbox->GetName() == "Stabilization") {
 		if (Checkbox->GetCheckedState() == ECheckBoxState::Checked) {
 			StabilizationPanel->SetVisibility(ESlateVisibility::Visible);
-			SetStabilizationMode(true, EStabilizationMode::HOLD_ATTITUDE);
+			SetStabilizationMode(true, EStabilizationMode::HoldAttitude);
 		} else {
 			StabilizationPanel->SetVisibility(ESlateVisibility::Hidden);
-			SetStabilizationMode(true, EStabilizationMode::NONE);
+			SetStabilizationMode(true, EStabilizationMode::None);
 		}
 	}
 	else if (Checkbox->GetName() == "RCS") {

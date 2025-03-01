@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Simulation/UI/Navball.h"
 #include "SimulationHUD.generated.h"
 
 
@@ -11,8 +12,6 @@ class ASimulationController;
 class ACraft;
 class UButton;
 class UCheckBox;
-enum EStabilizationMode : uint8;
-
 
 /**
  * 
@@ -34,6 +33,9 @@ public:
 	inline static TSubclassOf<UUserWidget> BlueprintClass;
 
 	ASimulationController* Controller;
+
+	UPROPERTY(EditAnywhere, meta = (ArraySizeEnum="EStabilizationMode"))
+	FColor TargetColour[(int)EStabilizationMode::Num];
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UImage> Navball;
