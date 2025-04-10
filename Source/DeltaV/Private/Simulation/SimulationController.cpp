@@ -64,25 +64,25 @@ void ASimulationController::BeginPlay() {
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
 
-	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z * 5;
+	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 1;
 	FVector CraftLocation = FVector(SpawnDistance, 0, 0);
-	Craft->SetActorLocation(CraftLocation);
-	Craft->SetActorRotation(FRotator(0, 0, 180));
+	Craft->SetLocation(CraftLocation);
+	Craft->SetRotation(FRotator(0, 0, 180).Quaternion());
 	
 	Craft->SetPhysicsEnabled(true);
 	// start the craft with the same rotational velocity as the planet
 	
-	double Velocity = -SpawnDistance * 2 * PI / 360;
+	double Velocity = -SpawnDistance * 2 * PI / Earth->RotationPeriod;
 	for (auto& PartKVP : Craft->Parts) {
 		UPart* Part = PartKVP.Value;
 		// Part->SetSimulatePhysics(true);
-		Part->AddImpulse(FVector(0, Velocity, 0), NAME_None, true);
+		Part->Mesh->AddImpulse(FVector(0, Velocity, 0), NAME_None, true);
 	}
 
 	Possess(Craft);
 	SetControlRotation(FRotator(90, 0, 0));
+
 	Craft->Orbit->CentralBody = Earth;
-	
 	Craft->Orbit->UpdateOrbit(CraftLocation, FVector(0, 0, 1000).Cross(CraftLocation.GetSafeNormal()), 0);
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
@@ -199,7 +199,7 @@ void ASimulationController::Tick(float DeltaSeconds) {
 		FVector Throttle = Craft->GetActorRotation().RotateVector(FVector(1000000 * ThrottleValue, 0, 0));
 
 		UE_LOG(LogTemp, Warning, TEXT("Throttle %f"), ThrottleValue);
-		Craft->RootPart()->AddForce(Throttle);
+		Craft->RootPart()->Mesh->AddForce(Throttle);
 	}
 
 }

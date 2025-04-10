@@ -48,7 +48,7 @@ UAttachmentNodes::UAttachmentNodes()
 	else {
 		SideAttachment = FVector(INFINITY);
 	}
-	SetupAttachment(Part);
+	SetupAttachment(Part->Mesh);
 }
 
 
@@ -77,7 +77,7 @@ void UAttachmentNodes::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 UAttachmentNodes* UAttachmentNodes::Get(UPart* Part) {
 	TArray<USceneComponent*> Components;
-	Part->GetChildrenComponents(false, Components);
+	Part->Mesh->GetChildrenComponents(false, Components);
 	for (USceneComponent* Component : Components) {
 		UAttachmentNodes* Node = Cast<UAttachmentNodes>(Component);
 		if (Node) {

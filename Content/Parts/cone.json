@@ -1,6 +1,7 @@
 {
   "name": "cone",
-  "mesh": "/Game/Shapes/Shape_Cone.Shape_Cone",
+  "mesh": "/Game/Shapes/Shape_Cone",
+  "type": "static",
   "attachment": [
     {
       "location": [ 0, 0, 0 ]

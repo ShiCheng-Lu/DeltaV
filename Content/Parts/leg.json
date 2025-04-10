@@ -1,6 +1,7 @@
 {
     "name": "leg",
     "mesh": "/Game/Shapes/leg",
+    "type": "static",
     "attachment": [
       {
         "location": [ 0, 0, 0 ]

@@ -1,6 +1,7 @@
 {
   "name": "cylinder",
-  "mesh": "/Game/Shapes/Shape_Engine.Shape_Engine",
+  "mesh": "/Game/Shapes/engine_2",
+  "type": "static",
   "attachment": [
     {
       "location": [ 50, 0, 0 ]

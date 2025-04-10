@@ -40,6 +40,8 @@ APartShapeEditor::APartShapeEditor(const FObjectInitializer& ObjectInitializer) 
 	Mesh = CreateDefaultSubobject<UDynamicMeshComponent>("Mesh");
 	SetRootComponent(Mesh);
 
+	// corners are in binary order, a 1 bit represent the upper bound, a 0 bit represent the lower bound,
+	// 0bXYZ 
 	for (int i = 0; i < 8; ++i) {
 		FName Name = FName(*FString::Printf(TEXT("Corner%i"), i));
 		auto* Corner = CreateDefaultSubobject<UStaticMeshComponent>(Name);
@@ -61,7 +63,8 @@ void APartShapeEditor::SetPart(UPart* Part) {
 	SelectedPart = Part;
 
 	FVector Min, Max;
-	Part->GetLocalBounds(Min, Max);
+	Max = Part->Mesh->GetLocalBounds().GetBoxExtrema(1);
+	Min = Part->Mesh->GetLocalBounds().GetBoxExtrema(0);
 	for (int i = 0; i < Corners.Num(); ++i) {
 		FVector Loc = FVector(
 			i & 0b100 ? Max.X : Min.X,
@@ -71,15 +74,14 @@ void APartShapeEditor::SetPart(UPart* Part) {
 		Corners[i]->SetRelativeLocation(Loc);
 	}
 
-	SetActorLocation(Part->GetComponentLocation());
+	SetActorLocation(Part->Mesh->GetComponentLocation());
 
 	// Make a dynamic mesh from the part
-	FGeometryScriptCopyMeshFromAssetOptions AssetOptions;
-	FGeometryScriptMeshReadLOD TargetLOD;
-	TargetLOD.LODIndex = 0;
-	EGeometryScriptOutcomePins OutResult;
-	UGeometryScriptLibrary_StaticMeshFunctions::CopyMeshFromStaticMesh(
-		Part->GetStaticMesh(), Mesh->GetDynamicMesh(), AssetOptions, TargetLOD, OutResult);
+	FBox Box;
+	Box.GetCenter();
+	Box.GetExtent();
+
+	Part->CopyMeshToDynamicMesh(Mesh->GetDynamicMesh());
 
 	Mesh->EditMesh([this](FDynamicMesh3& MeshInOut) {
 		UpdateMesh(MeshInOut);
@@ -130,17 +132,7 @@ void APartShapeEditor::Tick(float DeltaTime) {
 }
 
 void APartShapeEditor::UpdateMesh(FDynamicMesh3& MeshInOut) {
-	// Vertices[0] = TVector<T>(Min.X, Min.Y, Min.Z);
-	// Vertices[1] = TVector<T>(Min.X, Min.Y, Max.Z);
-	// Vertices[2] = TVector<T>(Min.X, Max.Y, Min.Z);
-	// Vertices[3] = TVector<T>(Min.X, Max.Y, Max.Z);
-	// Vertices[4] = TVector<T>(Max.X, Min.Y, Min.Z);
-	// Vertices[5] = TVector<T>(Max.X, Min.Y, Max.Z);
-	// Vertices[6] = TVector<T>(Max.X, Max.Y, Min.Z);
-	// Vertices[7] = TVector<T>(Max.X, Max.Y, Max.Z);
-	UStaticMesh* StaticMesh = SelectedPart->GetStaticMesh();
-
-	FMeshDescription* MeshDescription = StaticMesh->GetMeshDescription(0);
+	FMeshDescription* MeshDescription = SelectedPart->CopyMeshToDynamicMesh(nullptr);
 	FVertexArray vertices = MeshDescription->Vertices();
 
 	FVector TargetBound[8];
@@ -148,8 +140,9 @@ void APartShapeEditor::UpdateMesh(FDynamicMesh3& MeshInOut) {
 		TargetBound[i] = Corners[i]->GetRelativeLocation();
 	}
 	FVector BoundPosition, BoundSize;
-	SelectedPart->GetLocalBounds(BoundPosition, BoundSize);
-	BoundSize -= BoundPosition;
+	FBox BoundBox = SelectedPart->Mesh->GetLocalBounds().GetBox();
+	BoundSize = BoundBox.GetSize();
+	BoundPosition = BoundBox.GetCenter() - BoundSize / 2;
 
 	for (auto Id : vertices.GetElementIDs()) {
 	//for (auto Id : MeshInOut.VertexIndicesItr()) {
@@ -172,6 +165,5 @@ void APartShapeEditor::UpdateMesh(FDynamicMesh3& MeshInOut) {
 
 		MeshInOut.SetVertex(Id, transformed_position);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Generate mesh %d, %d"), vertices.Num(), MeshInOut.VertexCount());
 }
 

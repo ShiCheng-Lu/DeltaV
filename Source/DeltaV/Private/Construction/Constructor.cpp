@@ -26,20 +26,20 @@ void Constructor::SetController(AConstructionController* InController) {
 	World = Controller->GetWorld();
 }
 
-ACraft* Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
-	ACraft* Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
+TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
+	TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
 	Craft->FromJson(CraftJson);
 
 	// add attachment nodes
 	for (auto& PartKVP : Craft->Parts) {
 		UPart* Part = PartKVP.Value;
 
-		Part->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
-		Part->SetCollisionResponseToAllChannels(ECR_Ignore);
-		Part->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
-		Part->SetSimulatePhysics(false);
+		Part->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
+		Part->Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Part->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
+		Part->Mesh->SetSimulatePhysics(false);
 
-		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);\
+		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
 		AttachmentNodes->RegisterComponent();
 	}
 
@@ -49,6 +49,8 @@ ACraft* Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 }
 
 void Constructor::Select(UPart* Part) {
+	UE_LOG(LogTemp, Warning, TEXT("Constructor: Selecting %x"), Part);
+
 	bool SameOwner = (Part && Selected && (Part->GetOwner() == Selected->GetOwner()));
 
 	// both null, same part, or same owner, we don't need to update ray-trace settings
@@ -61,7 +63,7 @@ void Constructor::Select(UPart* Part) {
 	if (Selected != nullptr && !SameOwner) {
 		ACraft* Craft = Cast<ACraft>(Selected->GetOwner());
 		for (auto& PartKVP : Craft->Parts) {
-			PartKVP.Value->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
+			PartKVP.Value->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
 			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
 		}
 	}
@@ -70,7 +72,7 @@ void Constructor::Select(UPart* Part) {
 	if (Part != nullptr && !SameOwner) {
 		ACraft* Craft = Cast<ACraft>(Part->GetOwner());
 		for (auto& PartKVP : Craft->Parts) {
-			PartKVP.Value->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
+			PartKVP.Value->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
 			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
 		}
 	}
@@ -85,7 +87,12 @@ UPart* Constructor::Trace(FVector Position, FVector Direction) {
 UPart* Constructor::TraceMouse() {
 	FHitResult Result;
 	if (Controller->GetHitResultUnderCursor(ECC_NoneHeldParts, true, Result)) {
-		return Cast<UPart>(Result.GetComponent());
+		UMeshComponent* Mesh = Cast<UMeshComponent>(Result.GetComponent());
+		if (!Mesh) {
+			return nullptr;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Selected part"))
+		return Mesh->GetTypedOuter<UPart>();
 	}
 	return nullptr;
 }
@@ -109,10 +116,14 @@ void Constructor::Grab() {
 	FVector CameraLocation; FRotator _;
 	Controller->PlayerCameraManager->GetCameraViewPoint(CameraLocation, _);
 
-	Distance = FVector::Distance(CameraLocation, Part->GetComponentLocation());
+	Distance = FVector::Distance(CameraLocation, Part->Mesh->GetComponentLocation());
 }
 
 UPart* Constructor::Update() {
+	if (Selected == nullptr) {
+		return nullptr;
+	}
+
 	// update location of selected part
 	FVector CameraLocation;
 	FVector Direction;
@@ -129,7 +140,7 @@ UPart* Constructor::Update() {
 	FVector Start = CameraLocation;
 	FVector End;
 	// node attachment
-	FVector SelectedLocaction = Selected->GetComponentLocation();
+	FVector SelectedLocaction = Selected->Mesh->GetComponentLocation();
 
 	UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected);
 	for (auto& Node : Attachment->AttachmentNodes) {
@@ -147,7 +158,7 @@ UPart* Constructor::Update() {
 			}
 
 			PartLocation = TracedNode->GetComponentLocation() - RelativeLocation;
-			Selected->GetOwner()->SetActorLocation(PartLocation);
+			Selected->Mesh->SetWorldLocation(PartLocation);
 
 			// node attachment, destroy any symmetry parts
 			if (SymmetryCrafts.Num() > 0) {
@@ -173,20 +184,18 @@ UPart* Constructor::Update() {
 		PartLocation = HitResult.Location + Attachment->GetComponentRotation().RotateVector(Attachment->SideAttachment);
 		if (Selected) {
 			Selected->Physics->SetWorldLocation(HitResult.Location);
+			Selected->Mesh->SetWorldLocation(PartLocation);
 		}
-		
-		Selected->GetOwner()->SetActorLocation(PartLocation);
-		
 
 		// update each symmetry parts location and rotation
 		UpdateSymmetry(Symmetry);
 		if (SymmetryCrafts.Num() > 0) {
-			FQuat BaseRotation = Selected->GetComponentQuat();
-			FVector Axis = Part->GetComponentRotation().RotateVector(FVector(1, 0, 0));
+			FQuat BaseRotation = Selected->Mesh->GetComponentQuat();
+			FVector Axis = Part->Mesh->GetComponentRotation().RotateVector(FVector(1, 0, 0));
 			double Angle = 2 * PI / Symmetry;
 
-			FVector BaseLocation = Part->GetComponentLocation();
-			FVector Offset = Selected->GetComponentLocation() - BaseLocation;
+			FVector BaseLocation = Part->Mesh->GetComponentLocation();
+			FVector Offset = Selected->Mesh->GetComponentLocation() - BaseLocation;
 			
 			for (int i = 0; i < SymmetryCrafts.Num(); ++i) {
 				FQuat Rotation = FQuat(Axis, Angle * (i + 1));
@@ -199,7 +208,7 @@ UPart* Constructor::Update() {
 
 		return Part;
 	}
-	Selected->GetOwner()->SetActorLocation(PartLocation);
+	Selected->Mesh->SetWorldLocation(PartLocation);
 	
 	if (SymmetryCrafts.Num() > 0) {
 		for (ACraft* Craft : SymmetryCrafts) {
@@ -275,8 +284,8 @@ void Constructor::UpdateSymmetry(int InSymmetry) {
 
 void Constructor::RotatePart(FQuat Rotation) {
 	if (Selected) {
-		AActor* Actor = Selected->GetOwner();
-		Actor->SetActorRotation(Rotation * Actor->GetActorQuat());
+		FQuat Original = Selected->Mesh->GetComponentQuat();
+		Selected->Mesh->SetWorldRotation(Rotation * Original);
 	}
 }
 

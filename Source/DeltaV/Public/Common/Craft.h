@@ -19,7 +19,10 @@ class DELTAV_API ACraft : public APawn
 
 public:
 	// TSharedPtr<FJsonObject> Json;
+	TObjectPtr<UPart> Root;
+
 	TMap<FString, UPart*> Parts;
+	
 	bool PhysicsEnabled;
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
@@ -56,6 +59,10 @@ public:
 	// control
 	void Rotate(FRotator rotator, float strength);
 
+	void SetLocation(FVector Location);
+
+	void SetRotation(FQuat Rotation);
+
 	void SetPhysicsEnabled(bool enabled);
 
 	TArray<ACraft*> StageCraft();
@@ -66,7 +73,7 @@ public:
 
 	FVector GetWorldCoM();
 
-	UPart* RootPart() { return Cast<UPart>(GetRootComponent()); }
+	UPart* RootPart() { return Root; }
 
 
 	FCustomActorTick<ACraft> PostPhysics;

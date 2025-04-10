@@ -1,16 +1,12 @@
 {
-    "name": "adapter",
-    "mesh": "/Game/Shapes/adapter",
-    "type": "static",
+    "name": "wheel",
+    "mesh": "/Game/Shapes/wheel",
+    "type": "skeletal",
     "attachment": [
         {
-            "location": [ -50, 0, 0 ]
-        },
-        {
-            "location": [ 50, 0, 0 ]
+            "location": [ 0, -50, 100 ]
         }
     ],
-    "side_attachment": [0, 0, 50],
     "fields": [
         {
             "name": "width",
@@ -32,21 +28,24 @@
         }
     ],
     "craft": {
-        "name": "adapter",
+        "name": "wheel",
         "location": [ 0, 0, 0 ],
         "rotation": [ 0, 0, 0 ],
         "structure": {
-        "adapter": {}
+            "wheel": {}
         },
         "parts": {
-        "adapter": {
-            "type": "adapter",
-            "location": [ 0, 0, 0 ],
-            "rotation": [ 0, 0, 0 ],
-            "scale": [ 1, 1, 1 ],
-            "attached_at": 1,
-            "attach_location": [ 0, 0, 0]
-        }
+            "wheel": {
+                "type": "wheel",
+                "location": [ 0, 0, 0 ],
+                "rotation": [ 0, 0, 0 ],
+                "scale": [ 1, 1, 1 ],
+                "attached_at": 1,
+                "attach_location": [ 0, 0, 0],
+                "wheel": {
+                    "offset": [ 0, 0, 0 ]
+                }
+            }
         },
         "stages": []
     }

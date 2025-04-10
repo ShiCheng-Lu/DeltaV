@@ -35,7 +35,10 @@ public:
 
 	void SetController(AConstructionController* InController);
 
-	ACraft* CreateCraft(TSharedPtr<FJsonObject> CraftJson);
+	/*
+	Create a craft with json, and perform the necessary steps to make it workable in the construction editor
+	*/
+	TObjectPtr<ACraft> CreateCraft(TSharedPtr<FJsonObject> CraftJson);
 
 	UPart* Update();
 

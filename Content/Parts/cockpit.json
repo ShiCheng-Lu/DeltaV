@@ -1,6 +1,7 @@
 {
   "name": "cockpit",
-  "mesh": "/Game/Shapes/cockpit.cockpit",
+  "mesh": "/Game/Shapes/cockpit",
+  "type": "static",
   "attachment": [
     {
       "location": [ -100, 0, 0 ]

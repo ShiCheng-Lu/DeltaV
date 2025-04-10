@@ -67,7 +67,7 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		double ResThrust = Throttle * DeltaTime * (1 << 25);
 
 		// FVector ThrustVector = Part->GetComponentQuat().RotateVector();
-		Part->AddForceAtLocationLocal(FVector(Throttle, 0, 0), PivotOffset);
+		Part->Mesh->AddForceAtLocationLocal(FVector(Throttle, 0, 0), PivotOffset);
 		Fuel->Current.Drain(TickDrain);
 	}
 }

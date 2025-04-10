@@ -42,7 +42,7 @@ void UPartDetails::Update(PartField Field) {
 	if (Part == nullptr) {
 		return;
 	}
-	FVector Scale = Part->GetRelativeScale3D();
+	FVector Scale = Part->Mesh->GetRelativeScale3D();
 
 	switch (Field)
 	{
@@ -50,13 +50,13 @@ void UPartDetails::Update(PartField Field) {
 		break;
 	case PartField::SizeX:
 		Scale.X = SizeX->GetValue();
-		return Part->SetRelativeScale3D(Scale);
+		return Part->Mesh->SetRelativeScale3D(Scale);
 	case PartField::SizeY:
 		Scale.Y = SizeY->GetValue();
-		return Part->SetRelativeScale3D(Scale);
+		return Part->Mesh->SetRelativeScale3D(Scale);
 	case PartField::SizeZ:
 		Scale.Z = SizeZ->GetValue();
-		return Part->SetRelativeScale3D(Scale);
+		return Part->Mesh->SetRelativeScale3D(Scale);
 	case PartField::LiquidFuel:
 		break;
 	case PartField::Oxidizer:
@@ -69,22 +69,22 @@ void UPartDetails::Update(PartField Field) {
 
 void UPartDetails::SetPart(UPart* InPart) {
 	if (Part) {
-		Part->SetRenderCustomDepth(false);
-		Part->SetCustomDepthStencilValue(0);
+		Part->Mesh->SetRenderCustomDepth(false);
+		Part->Mesh->SetCustomDepthStencilValue(0);
 	}
 
 	Part = InPart;
 	if (Part) {
 		PartName->SetText(FText::FromString(Part->GetName()));
 
-		SizeX->SetValue(Part->GetRelativeScale3D().X);
-		SizeY->SetValue(Part->GetRelativeScale3D().Y);
-		SizeZ->SetValue(Part->GetRelativeScale3D().Z);
+		SizeX->SetValue(Part->Mesh->GetRelativeScale3D().X);
+		SizeY->SetValue(Part->Mesh->GetRelativeScale3D().Y);
+		SizeZ->SetValue(Part->Mesh->GetRelativeScale3D().Z);
 	
 		SetVisibility(ESlateVisibility::Visible);
 
-		Part->SetRenderCustomDepth(false);
-		Part->SetCustomDepthStencilValue(4);
+		Part->Mesh->SetRenderCustomDepth(false);
+		Part->Mesh->SetCustomDepthStencilValue(4);
 	}
 	else {
 		SetVisibility(ESlateVisibility::Hidden);

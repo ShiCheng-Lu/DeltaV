@@ -1,6 +1,7 @@
 {
   "name": "cylinder",
-  "mesh": "/Game/Shapes/Decoupler.Decoupler",
+  "mesh": "/Game/Shapes/Decoupler",
+  "type": "static",
   "attachment": [
     {
       "location": [ 5, 0, 0 ]

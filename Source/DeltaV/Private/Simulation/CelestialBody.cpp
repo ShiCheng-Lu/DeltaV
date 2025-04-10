@@ -67,7 +67,6 @@ void ACelestialBody::Tick(float DeltaTime)
 
 	// GetWorld()->GetGameState();
 	double Time = GetGameTimeSinceCreation();
-	double RotationPeriod = 360; // 60 seconds for a full rotation
 	Mesh->SetPhysicsAngularVelocityInRadians(FVector(0, 0, -2 * PI / RotationPeriod));
 	
 	if (Orbit->CentralBody) {

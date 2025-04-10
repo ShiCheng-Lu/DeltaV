@@ -1,6 +1,7 @@
 {
   "name": "wing",
-  "mesh": "/Game/Shapes/wing.wing",
+  "mesh": "/Game/Shapes/wing",
+  "type": "static",
   "attachment": [
     {
       "location": [ 0, 0, 0 ]
