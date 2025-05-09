@@ -67,8 +67,9 @@ void ASimulationController::BeginPlay() {
 	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 1;
 	FVector CraftLocation = FVector(SpawnDistance, 0, 0);
 	Craft->SetLocation(CraftLocation);
+
 	Craft->SetRotation(FRotator(0, 0, 180).Quaternion());
-	
+
 	Craft->SetPhysicsEnabled(true);
 	// start the craft with the same rotational velocity as the planet
 	
@@ -78,7 +79,6 @@ void ASimulationController::BeginPlay() {
 		// Part->SetSimulatePhysics(true);
 		Part->Mesh->AddImpulse(FVector(0, Velocity, 0), NAME_None, true);
 	}
-
 	Possess(Craft);
 	SetControlRotation(FRotator(90, 0, 0));
 
@@ -165,6 +165,8 @@ void ASimulationController::SetupInputComponent() {
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Pause", EKeys::Escape));
 
+	// PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::F1));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput).bExecuteWhenPaused = true;
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput).bExecuteWhenPaused = true;
 
@@ -186,6 +188,8 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAction("Action", IE_Pressed, this, &ASimulationController::Action);
 
 	InputComponent->BindAction("Pause", IE_Pressed, this, &ASimulationController::Exit);
+
+
 }
 
 void ASimulationController::Throttle(float value) {
@@ -203,7 +207,7 @@ void ASimulationController::Tick(float DeltaSeconds) {
 		FVector Throttle = Craft->GetActorRotation().RotateVector(FVector(1000000 * ThrottleValue, 0, 0));
 
 		UE_LOG(LogTemp, Warning, TEXT("Throttle %f"), ThrottleValue);
-		Craft->RootPart()->Mesh->AddForce(Throttle);
+		// Craft->RootPart()->Mesh->AddForce(Throttle);
 	}
 
 }
@@ -289,7 +293,8 @@ void ASimulationController::Action(FKey Key) {
 		Craft->SetPhysicsEnabled(true);
 	}
 	else if (Key == EKeys::Three) {
-		Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
+		Cast<UMainGameInstance>(GetGameInstance())->AeroArrows ^= 1;
+		// Craft->SetActorLocation(FVector(-501000, 0, 0), false, nullptr, ETeleportType::TeleportPhysics);
 	}
 	else if (Key == EKeys::Four) {
 		if (Craft->Orbit->CentralBody == nullptr) {

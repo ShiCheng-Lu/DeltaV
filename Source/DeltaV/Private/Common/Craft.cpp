@@ -206,7 +206,7 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 	}
 
 	FVector Position = GetWorldCoM();
-	FVector Velocity = (Position - GetActorLocation()) / DeltaTime;
+	FVector Velocity = Root->Mesh->GetComponentVelocity();
 
 	SetActorLocationAndRotation(Position, Root->Mesh->GetComponentQuat());
 

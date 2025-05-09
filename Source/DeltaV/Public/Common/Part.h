@@ -36,10 +36,13 @@ public:
 	UPart* Parent;
 
 	TArray<UAttachmentNode*> AttachmentNodes;
+
+	UPROPERTY(EditAnywhere)
 	TMap<FString, UPartComponent*> AdditionalComponents;
 
 	UPhysicsConstraintComponent* Physics;
 
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMeshComponent> Mesh;
 	FName Bone;
 

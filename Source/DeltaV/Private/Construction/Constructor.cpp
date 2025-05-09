@@ -87,12 +87,7 @@ UPart* Constructor::Trace(FVector Position, FVector Direction) {
 UPart* Constructor::TraceMouse() {
 	FHitResult Result;
 	if (Controller->GetHitResultUnderCursor(ECC_NoneHeldParts, true, Result)) {
-		UMeshComponent* Mesh = Cast<UMeshComponent>(Result.GetComponent());
-		if (!Mesh) {
-			return nullptr;
-		}
-		UE_LOG(LogTemp, Warning, TEXT("Selected part"))
-		return Mesh->GetTypedOuter<UPart>();
+		return Result.GetComponent()->GetTypedOuter<UPart>();
 	}
 	return nullptr;
 }
@@ -178,12 +173,15 @@ UPart* Constructor::Update() {
 	End = Start + Direction * Distance;
 	World->LineTraceMultiByChannel(Results, Start, End, ECC_NoneHeldParts);
 
-	for (auto& HitResult : Results) {
-		UPart* Part = Cast<UPart>(HitResult.GetComponent());
+	for (auto& Result : Results) {
+		UPart* Part = Result.GetComponent()->GetTypedOuter<UPart>();
+		if (!Part) {
+			continue;
+		}
 
-		PartLocation = HitResult.Location + Attachment->GetComponentRotation().RotateVector(Attachment->SideAttachment);
+		PartLocation = Result.Location + Attachment->GetComponentRotation().RotateVector(Attachment->SideAttachment);
 		if (Selected) {
-			Selected->Physics->SetWorldLocation(HitResult.Location);
+			Selected->Physics->SetWorldLocation(Result.Location);
 			Selected->Mesh->SetWorldLocation(PartLocation);
 		}
 

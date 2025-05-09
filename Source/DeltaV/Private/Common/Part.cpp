@@ -23,26 +23,25 @@
 
 #include "Common/Craft/FuelComponent.h"
 #include "Common/Craft/EngineComponent.h"
-#include "Common/Craft/AeroCompoenent.h"
+#include "Common/Craft/AeroComponent.h"
 #include "Common/Craft/WheelComponent.h"
 
 
 static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
 static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
 
-static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields;
+static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields = {
+	{"fuel", UFuelComponent::StaticClass()},
+	{"aero", UAeroComponent::StaticClass()},
+	{"engine", UEngineComponent::StaticClass()},
+	{"wheel", UWheelComponent::StaticClass()},
+};
 
 UPart::UPart(const FObjectInitializer& ObjectInitializer) : UActorComponent(ObjectInitializer) {
-	if (AdditionalFields.Num() == 0) {
-		AdditionalFields.Add("fuel", UFuelComponent::StaticClass());
-		AdditionalFields.Add("aero", UAeroCompoenent::StaticClass());
-		AdditionalFields.Add("engine", UEngineComponent::StaticClass());
-		AdditionalFields.Add("wheel", UWheelComponent::StaticClass());
-	}
-
 	Parent = nullptr;
 	Children = TArray<UPart*>();
 	FCollisionResponseContainer();
+
 
 	Craft = Cast<ACraft>(GetOwner());
 	
@@ -57,11 +56,11 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : UActorComponent(Obje
 	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0);
 
 	// controls how noodly the craft is
-	Physics->SetLinearDriveParams(1e2, 1e2, 1e6);
+	Physics->SetLinearDriveParams(1e6, 1e6, 1e6);
 	Physics->SetLinearPositionTarget(FVector(0));
 	Physics->SetLinearPositionDrive(true, true, true);
-	//Physics->SetLinearVelocityTarget(FVector(0));
-	//Physics->SetLinearVelocityDrive(true, true, true);
+	Physics->SetLinearVelocityTarget(FVector(0));
+	Physics->SetLinearVelocityDrive(true, true, true);
 
 	PhysicsEnabled = false;
 
@@ -142,7 +141,6 @@ void UPart::SetPhysicsEnabled(bool bSimulate) {
 	for (auto& FieldKVP : AdditionalComponents) {
 		FieldKVP.Value->SetPhysicsEnabled(bSimulate);
 	}
-
 	Mesh->SetSimulatePhysics(PhysicsEnabled);
 }
 

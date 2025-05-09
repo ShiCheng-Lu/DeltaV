@@ -22,7 +22,7 @@ UWheelComponent::UWheelComponent() {
 void UWheelComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	// ...
 
 	UE_LOG(LogTemp, Warning, TEXT("Wheel begin play"));

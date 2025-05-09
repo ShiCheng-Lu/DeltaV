@@ -19,8 +19,10 @@ class DELTAV_API ACraft : public APawn
 
 public:
 	// TSharedPtr<FJsonObject> Json;
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UPart> Root;
 
+	UPROPERTY(EditAnywhere)
 	TMap<FString, UPart*> Parts;
 	
 	bool PhysicsEnabled;

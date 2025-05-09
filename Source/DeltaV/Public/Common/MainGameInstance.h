@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "GameFramework/SaveGame.h"
 #include "MainGameInstance.generated.h"
 
 /**
@@ -17,5 +18,12 @@ class DELTAV_API UMainGameInstance : public UGameInstance
 public:
 	FString CraftPath;
 
+	void SaveSettings();
+	void LoadSettings();
 
+	TObjectPtr<USaveGame> Settings;
+
+	static void GetSettings();
+
+	bool AeroArrows = false;
 };
