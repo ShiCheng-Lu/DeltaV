@@ -4,10 +4,10 @@
   "type": "static",
   "attachment": [
     {
-      "location": [ -50, 0, 0 ]
+      "location": [-50, 0, 0]
     },
     {
-      "location": [ 50, 0, 0 ]
+      "location": [50, 0, 0]
     }
   ],
   "side_attachment": [0, 0, 50],
@@ -33,19 +33,19 @@
   ],
   "craft": {
     "name": "cylinder",
-    "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0 ],
+    "location": [0, 0, 0],
+    "rotation": [0, 0, 0],
     "structure": {
       "cylinder": {}
     },
     "parts": {
       "cylinder": {
         "type": "cylinder",
-        "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ],
+        "location": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0],
+        "attach_location": [0, 0, 0],
         "fuel": {
           "current": {
             "liquid_fuel": 1,

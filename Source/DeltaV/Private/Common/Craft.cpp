@@ -130,8 +130,6 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	SetActorLocationAndRotation(GetWorldCoM(), Root->Mesh->GetComponentQuat());
-
 	if (!PhysicsEnabled) {
 		if (Orbit->CentralBody != nullptr) { // simulation, but no physics
 			double Time = GetGameTimeSinceCreation();
@@ -207,20 +205,25 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 		return;
 	}
 
+	FVector Position = GetWorldCoM();
+	FVector Velocity = (Position - GetActorLocation()) / DeltaTime;
+
+	SetActorLocationAndRotation(Position, Root->Mesh->GetComponentQuat());
+
 	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
 
 	// Updating orbit
-	FVector PositionChange = GetWorldCoM() - TargetPosition;
-	FVector VelocityChange = GetVelocity() - TargetVelocity;
+	FVector PositionChange = Position - TargetPosition;
+	FVector VelocityChange = Velocity - TargetVelocity;
 	if (!VelocityChange.IsNearlyZero()) {
-		FVector Velocity;
+		FVector OrbitVelocity;
 		double Time = GetGameTimeSinceCreation() + DeltaTime;
 		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
-		Orbit->GetPositionAndVelocity(nullptr, &Velocity, TrueAnomaly);
+		Orbit->GetPositionAndVelocity(nullptr, &OrbitVelocity, TrueAnomaly);
 
 		//UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
 
-		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
+		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), Velocity, Time);
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
 	 

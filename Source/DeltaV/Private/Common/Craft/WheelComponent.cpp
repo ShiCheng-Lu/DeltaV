@@ -11,9 +11,6 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
-static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
-static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
-
 UWheelComponent::UWheelComponent() {
 	// create a physics contraint
 

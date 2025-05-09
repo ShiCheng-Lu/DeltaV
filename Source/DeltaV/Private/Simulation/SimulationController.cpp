@@ -163,6 +163,8 @@ void ASimulationController::SetupInputComponent() {
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Five));
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("Action", EKeys::Six));
 
+	PlayerInput->AddActionMapping(FInputActionKeyMapping("Pause", EKeys::Escape));
+
 	InputComponent->BindAxis("LookX", this, &ASimulationController::AddYawInput).bExecuteWhenPaused = true;
 	InputComponent->BindAxis("LookY", this, &ASimulationController::AddPitchInput).bExecuteWhenPaused = true;
 
@@ -182,6 +184,8 @@ void ASimulationController::SetupInputComponent() {
 	InputComponent->BindAction("TimeWarpReset", EInputEvent::IE_Pressed, this, &ASimulationController::TimeWarpReset).bExecuteWhenPaused = true;
 
 	InputComponent->BindAction("Action", IE_Pressed, this, &ASimulationController::Action);
+
+	InputComponent->BindAction("Pause", IE_Pressed, this, &ASimulationController::Exit);
 }
 
 void ASimulationController::Throttle(float value) {
@@ -316,4 +320,8 @@ void ASimulationController::Action(FKey Key) {
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("action %s"), *Key.GetFName().ToString());
+}
+
+void ASimulationController::Exit() {
+	UGameplayStatics::OpenLevel(GetWorld(), "MainLevel");
 }

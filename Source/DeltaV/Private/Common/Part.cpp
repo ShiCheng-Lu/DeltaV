@@ -52,16 +52,16 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : UActorComponent(Obje
 	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0);
 	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0);
 	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0);
-	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Free, 0);
-	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Free, 0);
-	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Free, 0);
+	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0);
+	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0);
+	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0);
 
 	// controls how noodly the craft is
-	Physics->SetLinearDriveParams(1e7, 1e7, 1e7);
+	Physics->SetLinearDriveParams(1e2, 1e2, 1e6);
 	Physics->SetLinearPositionTarget(FVector(0));
 	Physics->SetLinearPositionDrive(true, true, true);
-	Physics->SetLinearVelocityTarget(FVector(0));
-	Physics->SetLinearVelocityDrive(true, true, true);
+	//Physics->SetLinearVelocityTarget(FVector(0));
+	//Physics->SetLinearVelocityDrive(true, true, true);
 
 	PhysicsEnabled = false;
 
@@ -105,8 +105,8 @@ void UPart::BeginPlay() {
 	for (auto& FieldKVP : AdditionalComponents) {
 		FieldKVP.Value->RegisterComponent();
 	}
-	Physics->RegisterComponent();
 	Mesh->RegisterComponent();
+	Physics->RegisterComponent();
 }
 
 void UPart::Detach() {

@@ -4,10 +4,10 @@
   "type": "static",
   "attachment": [
     {
-      "location": [ 50, 0, 0 ]
+      "location": [50, 0, 0]
     },
     {
-      "location": [ -50, 0, 0 ]
+      "location": [-50, 0, 0]
     }
   ],
   "fields": [
@@ -32,21 +32,21 @@
   ],
   "craft": {
     "name": "engine",
-    "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0 ],
+    "location": [0, 0, 0],
+    "rotation": [0, 0, 0],
     "structure": {
       "engine": {}
     },
     "parts": {
       "engine": {
         "type": "engine",
-        "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ],
+        "location": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0],
+        "attach_location": [0, 0, 0],
         "engine": {
-          "pivot_offset": [ 0, 0, 0 ],
+          "pivot_offset": [0, 0, 0],
           "pivot_limit": 0,
           "thrust": 50000000,
           "fuel_drain": {
