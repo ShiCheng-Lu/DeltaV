@@ -8,6 +8,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/ListView.h"
 #include "Components/TreeView.h"
+#include "Common/Craft/StageManager.h"
 
 void UStagesList::NativeOnInitialized() {
 	Super::NativeOnInitialized();
@@ -42,7 +43,7 @@ UDragDropOperation* UStagesList::DragItem(UUserWidget* Widget) {
 
 	UPart* Part = Cast<UPart>(Object);
 	if (Part) {
-		for (UStage* Stage : Craft->Stages) {
+		for (UStage* Stage : Manager->Stages) {
 			if (Stage->Parts.Remove(Part) > 0) {
 				break;
 			}
@@ -74,7 +75,7 @@ void UStagesList::DropItem(UUserWidget* After, UDragDropOperation* Operation) {
 
 	if (Part) {
 		if (AfterPart) {
-			Tie(AfterStage, Index) = FindStageOfPart(Craft->Stages, AfterPart);
+			Tie(AfterStage, Index) = FindStageOfPart(Manager->Stages, AfterPart);
 			UE_LOG(LogTemp, Warning, TEXT("Dropped after part %d"), Index);
 		}
 		else {
@@ -109,12 +110,12 @@ TArray<UObject*> UStagesList::GetStageParts(UObject* Object) {
 void UStagesList::Reload() {
 	TreeView->ClearListItems();
 	TArray<UObject*> Stages;
-	for (UStage* Stage : Craft->Stages) {
+	for (UStage* Stage : Manager->Stages) {
 		Stages.Add(Stage);
 	}
 	TreeView->SetListItems(Stages);
 	
-	for (UStage* Stage : Craft->Stages) {
+	for (UStage* Stage : Manager->Stages) {
 		TreeView->SetItemExpansion(Stage, !HiddenStages.Contains(Stage));
 	}
 }
@@ -135,11 +136,11 @@ void UStagesList::ClickItem(UUserWidget* Widget) {
 }
 
 void UStagesList::AddStage(UStage* At, int Offset) {
-	int Index = Craft->Stages.Find(At);
+	int Index = Manager->Stages.Find(At);
 	if (Index == INDEX_NONE) {
 		return;
 	}
 	UStage* NewStage = NewObject<UStage>();
-	Craft->Stages.Insert(NewStage, Index + Offset);
+	Manager->Stages.Insert(NewStage, Index + Offset);
 	Reload();
 }

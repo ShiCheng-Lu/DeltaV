@@ -4,17 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "Common/Craft/PartComponent.h"
-#include "AeroCompoenent.generated.h"
+#include "AeroComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UAeroCompoenent : public UPartComponent
+class DELTAV_API UAeroComponent : public UPartComponent
 {
 	GENERATED_BODY()
 
 public:	
+
+	double Lift;
+	double Drag;
+
 	// Sets default values for this component's properties
-	UAeroCompoenent();
+	UAeroComponent();
 
 protected:
 	// Called when the game starts

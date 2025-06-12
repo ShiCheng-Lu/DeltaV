@@ -54,21 +54,30 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		return;
 	}
 
+	// FVector ThrustVector = Part->GetComponentQuat().RotateVector();
+	Part->Mesh->AddForceAtLocationLocal(FVector(1000000 * Thrust, 0, 0), PivotOffset);
+	if (Thrust > 0.01) {
+		UWorld* World = GetWorld();
+		FVector Start = Part->Mesh->GetComponentLocation();
+		FVector Throttle = Part->Mesh->GetComponentQuat().RotateVector(FVector(1000000 * Thrust, 0, 0));
+		DrawDebugDirectionalArrow(World, Start, Start + Throttle, 10, FColor::Yellow, false, -1, 1);
+	}
+	return;
 
 	// temp
 	if (Part->Parent && Part->Parent->Type == "cylinder") {
-		ACraft* Craft = Cast<ACraft>(GetOwner());
-		ASimulationController* Controller = Cast<ASimulationController>(Craft->Controller);
+		// ACraft* Craft = Cast<ACraft>(GetOwner());
+		// ASimulationController* Controller = Cast<ASimulationController>(Craft->Controller);
 
-		UFuelComponent* Fuel = Part->Parent->GetComponent<UFuelComponent>("fuel");
-		FuelState TickDrain = Drain * DeltaTime;
+		//UFuelComponent* Fuel = Part->Parent->GetComponent<UFuelComponent>("fuel");
+		//FuelState TickDrain = Drain * DeltaTime;
 		
-		double Throttle = FMath::Min(Controller->ThrottleValue, Fuel->Current.CanDrain(TickDrain));
-		double ResThrust = Throttle * DeltaTime * (1 << 25);
+		// double Throttle = FMath::Min(Controller->ThrottleValue, Fuel->Current.CanDrain(TickDrain));
+		//double ResThrust = Throttle * DeltaTime * (1 << 25);
 
 		// FVector ThrustVector = Part->GetComponentQuat().RotateVector();
-		Part->AddForceAtLocationLocal(FVector(Throttle, 0, 0), PivotOffset);
-		Fuel->Current.Drain(TickDrain);
+		//Part->Mesh->AddForceAtLocationLocal(FVector(Throttle, 0, 0), PivotOffset);
+		//Fuel->Current.Drain(TickDrain);
 	}
 }
 

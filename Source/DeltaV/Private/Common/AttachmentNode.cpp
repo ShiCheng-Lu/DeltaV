@@ -17,7 +17,7 @@ UAttachmentNode::UAttachmentNode(const FObjectInitializer& ObjectInitializer) : 
 	SetStaticMesh(SphereMeshAsset.Object);
 	SetRelativeScale3D(FVector(0.1f));
 
-	SetupAttachment(Cast<UPart>(GetOuter()));
+	// SetupAttachment(Cast<UPart>(GetOuter())->Mesh);
 }
 
 void UAttachmentNode::Initialize(FVector& InRelativeLocation) {

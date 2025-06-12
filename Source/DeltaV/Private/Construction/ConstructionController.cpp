@@ -289,7 +289,7 @@ void AConstructionController::Released(FKey Key) {
 		case AConstructionController::TranslateMode:
 			TransformGadget->StopTracking();
 			if (ReleasedPosition.Equals(PressedPosition)) {
-				TransformGadget->Select(Constructor.TraceMouse());
+				TransformGadget->Select(Constructor.TraceMouse()->Mesh);
 			}
 			break;
 		case AConstructionController::ScaleMode:
@@ -313,7 +313,7 @@ void AConstructionController::Released(FKey Key) {
 	else if (Key == EKeys::MiddleMouseButton) {
 		UPart* Part = Constructor.TraceMouse();
 		if (Part) {
-			GetPawn()->SetActorLocation(Part->GetComponentLocation());
+			GetPawn()->SetActorLocation(Part->Mesh->GetComponentLocation());
 		}
 	}
 }

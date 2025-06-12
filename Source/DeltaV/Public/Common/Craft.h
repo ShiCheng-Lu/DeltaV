@@ -6,7 +6,6 @@
 #include "GameFramework/Pawn.h"
 
 #include "Common/Part.h"
-#include "Common/Craft/Stage.h"
 #include "Components/SphereComponent.h"
 #include "Common/CustomTickFunction.h"
 
@@ -19,16 +18,24 @@ class DELTAV_API ACraft : public APawn
 
 public:
 	// TSharedPtr<FJsonObject> Json;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UPart> Root;
+
+	UPROPERTY(EditAnywhere)
 	TMap<FString, UPart*> Parts;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UFuelManager> FuelManager;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UStageManager> StageManager;
+
 	bool PhysicsEnabled;
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
 	TObjectPtr<class UOrbitComponent> Orbit;
 	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
 	FVector TargetPosition;
-
-	TArray<UStage*> Stages;
-	UStage* Active; // stage that is active
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
@@ -56,6 +63,10 @@ public:
 	// control
 	void Rotate(FRotator rotator, float strength);
 
+	void SetLocation(FVector Location);
+
+	void SetRotation(FQuat Rotation);
+
 	void SetPhysicsEnabled(bool enabled);
 
 	TArray<ACraft*> StageCraft();
@@ -66,7 +77,7 @@ public:
 
 	FVector GetWorldCoM();
 
-	UPart* RootPart() { return Cast<UPart>(GetRootComponent()); }
+	UPart* RootPart() { return Root; }
 
 
 	FCustomActorTick<ACraft> PostPhysics;

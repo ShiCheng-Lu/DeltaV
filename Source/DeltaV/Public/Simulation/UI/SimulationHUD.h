@@ -71,5 +71,8 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	TObjectPtr<class UTextBlock> Info;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	TObjectPtr<class UProgressBar> Fuel;
+
 	FVector VelocityValue = FVector(0);
 };

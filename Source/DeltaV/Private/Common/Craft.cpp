@@ -11,6 +11,8 @@
 #include "Simulation/OrbitComponent.h"
 #include "Simulation/SimulationController.h"
 #include "Common/Craft/FuelComponent.h"
+#include "Common/Craft/StageManager.h"
+#include "Common/Craft/FuelManager.h"
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -26,6 +28,11 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
 
 	Orbit = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
+
+	SetRootComponent(CreateDefaultSubobject<USceneComponent>("CraftComponent"));
+
+	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
+	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -33,32 +40,31 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 
 	// Array of (Parent, ChildJson[])
 	auto& PartListJson = Json->GetObjectField(TEXT("parts"));
-	TArray<TPair<UPart*, TSharedPtr<FJsonObject>>> PartStructures = { { nullptr, Json->GetObjectField(TEXT("structure")) } };
-	for (int i = 0; i < PartStructures.Num(); ++i) {
-		for (auto& PartKVP : PartStructures[i].Value->Values) {
+	TArray<TPair<TObjectPtr<UPart>, TSharedPtr<FJsonObject>>> Structures = { 
+		{ nullptr, Json->GetObjectField(TEXT("structure")) } 
+	};
+	for (int i = 0; i < Structures.Num(); ++i) {
+		for (auto& PartKVP : Structures[i].Value->Values) {
 			UPart* Part = NewObject<UPart>(this, FName(PartKVP.Key));
 
 			auto& PartJson = PartListJson->GetObjectField(PartKVP.Key);
-			Part->Initialize(PartKVP.Key, PartKVP.Value->AsObject(), PartJson);
-			Part->SetParent(PartStructures[i].Key);
+			Part->FromJson(PartJson);
+			Part->SetParent(Structures[i].Key);
 
 			Parts.Add(PartKVP.Key, Part);
 
-			PartStructures.Add({ Part, PartKVP.Value->AsObject() });
+			Structures.Add({ Part, PartKVP.Value->AsObject() });
 			UE_LOG(LogTemp, Warning, TEXT("created: %s"), *PartKVP.Key);
 		}
 	}
+	if (Structures.Num() > 1) {
+		Root = Structures[1].Key;
+	}
 
-	for (auto& PartKVP : PartStructures[0].Value->Values) {
-		SetRootComponent(*Parts.Find(PartKVP.Key));
-		break;
-	}
 	// stages
-	for (auto& StageJson : Json->GetArrayField(TEXT("stages"))) {
-		UStage* Stage = NewObject<UStage>(this);
-		Stage->FromJson(StageJson);
-		Stages.Add(Stage);
-	}
+	StageManager->FromJson(Json->GetArrayField(TEXT("stages")));
+	FuelManager->FromJson();
+
 
 	for (auto& PartKVP : Parts) {
 		PartKVP.Value->RegisterComponent();
@@ -96,11 +102,7 @@ TSharedPtr<FJsonObject> ACraft::ToJson() {
 	Json->SetObjectField(TEXT("parts"), PartsJson);
 
 	// stages
-	TArray<TSharedPtr<FJsonValue>> StagesJson;
-	for (UStage* Stage : Stages) {
-		StagesJson.Add(Stage->ToJson());
-	}
-	Json->SetArrayField(TEXT("stages"), StagesJson);
+	Json->SetArrayField(TEXT("stages"), StageManager->ToJson());
 
 	return Json;
 }
@@ -145,7 +147,7 @@ void ACraft::Tick(float DeltaTime)
 		FVector Gravity = RelativeLocation.GetSafeNormal() * Orbit->CentralBody->Mu / RelativeLocation.SquaredLength();
 		for (auto& PartKVP : Parts) {
 			UPart* Part = PartKVP.Value;
-			Part->AddForce(Gravity, NAME_None, true);
+			Part->Mesh->AddForce(Gravity, NAME_None, true);
 		}
 	}
 	
@@ -202,20 +204,25 @@ void ACraft::TickPostPhysics(float DeltaTime) {
 		return;
 	}
 
+	FVector Position = GetWorldCoM();
+	FVector Velocity = Root->Mesh->GetComponentVelocity();
+
+	SetActorLocationAndRotation(Position, Root->Mesh->GetComponentQuat());
+
 	// TODO: Optimize, call Orbit->GetTrueAnomaly less as it's a loop
 
 	// Updating orbit
-	FVector PositionChange = GetWorldCoM() - TargetPosition;
-	FVector VelocityChange = GetVelocity() - TargetVelocity;
+	FVector PositionChange = Position - TargetPosition;
+	FVector VelocityChange = Velocity - TargetVelocity;
 	if (!VelocityChange.IsNearlyZero()) {
-		FVector Velocity;
+		FVector OrbitVelocity;
 		double Time = GetGameTimeSinceCreation() + DeltaTime;
 		double TrueAnomaly = Orbit->GetTrueAnomaly(Time);
-		Orbit->GetPositionAndVelocity(nullptr, &Velocity, TrueAnomaly);
+		Orbit->GetPositionAndVelocity(nullptr, &OrbitVelocity, TrueAnomaly);
 
 		//UE_LOG(LogTemp, Warning, TEXT("Velocity didn't get there - %f"), VelocityChange.Length());
 
-		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), GetVelocity(), Time);
+		Orbit->UpdateOrbit(GetWorldCoM() - Orbit->CentralBody->GetActorLocation(), Velocity, Time);
 		// Orbit->UpdateOrbit(GetActorLocation() - Orbit->CentralBody->GetActorLocation(), VelocityChange + Velocity, Time);
 	}
 	 
@@ -287,7 +294,7 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 		return;
 	}
 	NewCraft->FromJson(CraftJson);
-	NewCraft->SetActorLocation(Part->GetComponentLocation());
+	NewCraft->SetActorLocation(Part->Mesh->GetComponentLocation());
 
 	// transfer
 	TransferPart(Part, this, NewCraft);
@@ -300,7 +307,7 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 		PartKVP.Value->Attach();
 	}
 
-	NewCraft->SetRootComponent(Part);
+	// NewCraft->SetRootComponent(Part->Mesh);
 	NewCraft->PhysicsEnabled = PhysicsEnabled;
 }
 
@@ -320,22 +327,22 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 		PartKVP.Value->Attach();
 	}
 
-	// transfer stages
-	for (auto& Stage : SourceCraft->Stages) {
-		Stages.Add(Stage);
-	}
+	// TODO: transfer stages
+	//for (auto& Stage : SourceCraft->Stages) {
+	//	Stages.Add(Stage);
+	//}
 
 	SourceCraft->Parts.Empty();
 	SourceCraft->SetRootComponent(nullptr);
 	SourceCraft->Destroy();
 }
 
-void ACraft::Rotate(FRotator rotator, float strength) {
+void ACraft::Rotate(FRotator Rotator, float Strength) {
 	UPart* Engine = RootPart();
-	if (PhysicsEnabled && Engine && !rotator.IsZero()) {
-		FVector rotation_axis = GetActorRotation().RotateVector(rotator.Quaternion().GetRotationAxis());
+	if (PhysicsEnabled && Engine && !Rotator.IsZero()) {
+		FVector Axis = GetActorRotation().RotateVector(Rotator.Quaternion().GetRotationAxis());
 
-		Engine->AddTorqueInDegrees(rotation_axis * strength);
+		Engine->Mesh->AddTorqueInDegrees(Axis * Strength);
 	}
 }
 
@@ -358,8 +365,8 @@ FVector ACraft::CalculateCoM() {
 	FVector CenterOfMass = FVector(0);
 	for (auto PartKVP : Parts) {
 		auto Part = PartKVP.Value;
-		CenterOfMass += Part->GetRelativeLocation() * Part->CalculateMass();
-		Mass += Part->CalculateMass();
+		CenterOfMass += Part->Mesh->GetRelativeLocation() * Part->Mesh->CalculateMass();
+		Mass += Part->Mesh->CalculateMass();
 	}
 	return CenterOfMass / Mass;
 }
@@ -371,20 +378,45 @@ FVector ACraft::GetWorldCoM() {
 	FVector CenterOfMass = FVector(0);
 	for (auto PartKVP : Parts) {
 		auto Part = PartKVP.Value;
-		CenterOfMass += Part->GetComponentLocation() * Part->CalculateMass();
-		Mass += Part->CalculateMass();
+		CenterOfMass += Part->Mesh->GetComponentLocation() * Part->Mesh->CalculateMass();
+		Mass += Part->Mesh->CalculateMass();
 	}
 	return CenterOfMass / Mass;
 }
 
 TArray<ACraft*> ACraft::StageCraft() {
-	UStage* Stage = Stages.Pop();
-	if (!Stage) {
-		return TArray<ACraft*>();
-	}
-	return Stage->Activate();
+	// TODO: 
+	return TArray<ACraft*>();
 }
 
 FVector ACraft::GetAngularVelocity() {
-	return RootPart()->GetPhysicsAngularVelocityInRadians();
+	return RootPart()->Mesh->GetPhysicsAngularVelocityInRadians();
+}
+
+void ACraft::SetLocation(FVector Location) {
+	if (PhysicsEnabled) { // need to set every part
+		ForEachComponent<UMeshComponent>(true, [](UMeshComponent* Mesh) {
+
+		});
+	}
+	else { // all parts attached to root, so only need to set root
+		RootPart()->Mesh->SetWorldLocation(Location);
+	}
+
+	SetActorLocation(Location);
+
+	return;
+}
+
+void ACraft::SetRotation(FQuat Rotation) {
+	if (PhysicsEnabled) {
+		ForEachComponent<UMeshComponent>(true, [](UMeshComponent* Mesh) {
+
+		});
+	}
+	else {
+		RootPart()->Mesh->SetWorldRotation(Rotation);
+	}
+
+	return;
 }

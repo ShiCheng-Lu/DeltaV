@@ -19,6 +19,7 @@
 #include "Simulation/SimulationController.h"
 #include "Simulation/ControlStabilizer.h"
 #include "Simulation/OrbitComponent.h"
+#include "Common/Craft/FuelManager.h"
 
 USimulationHUD::USimulationHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -61,11 +62,18 @@ void USimulationHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) 
 		Controller->Craft->GetVelocity().Length() * 0.01));
 
 	Throttle->SetPercent(Controller->ThrottleValue);
+
+	{
+		UFuelManager* FuelManager = Controller->Craft->FuelManager;
+		FuelState FuelPercent = FuelManager->TotalFuel / FuelManager->TotalMax;
+
+		Fuel->SetPercent(FuelPercent.FindChecked(FuelType::LiquidFuel));
+	}
 }
 
 void USimulationHUD::SetNavballTarget(ACraft* Craft, FVector PlanetCenter) const {
 	NavballActor->SetTarget(Craft, PlanetCenter);
-	StagesList->Craft = Craft;
+	StagesList->Manager = Craft->StageManager;
 	StagesList->Reload();
 }
 

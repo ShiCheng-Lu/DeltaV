@@ -1,9 +1,10 @@
 {
   "name": "cone",
-  "mesh": "/Game/Shapes/Shape_Cone.Shape_Cone",
+  "mesh": "/Game/Shapes/Shape_Cone",
+  "type": "static",
   "attachment": [
     {
-      "location": [ 0, 0, 0 ]
+      "location": [0, 0, 0]
     }
   ],
   "side_attachment": [0, 25, 0],
@@ -29,19 +30,19 @@
   ],
   "craft": {
     "name": "cone",
-    "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0 ],
+    "location": [0, 0, 0],
+    "rotation": [0, 0, 0],
     "structure": {
       "cone": {}
     },
     "parts": {
       "cone": {
         "type": "cone",
-        "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ],
+        "location": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0]
+        "attach_location": [0, 0, 0]
       }
     },
     "stages": []

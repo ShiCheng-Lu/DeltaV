@@ -3,33 +3,48 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/DynamicMeshComponent.h"
+#include "Components/ActorComponent.h"
 #include "Part.generated.h"
 
 class UAttachmentNode;
 class UPhysicsConstraintComponent;
 class UPartComponent;
+class ACraft;
+class UDynamicMesh;
+struct FMeshDescription;
 
 /**
  * 
  */
 UCLASS()
-class UPart : public UStaticMeshComponent
+class UPart : public UActorComponent
 {
 	GENERATED_BODY()
 	
 public:
-	virtual void SetSimulatePhysics(bool bSimulate) override;
+	enum EMeshType {
+		STATIC_MESH,
+		SKELETAL_MESH,
+	};
+
+	EMeshType MeshType;
 
 	FString Id;
+	ACraft* Craft;
+	// probably don't need these two, handled by component hierachy
 	TArray<UPart*> Children;
 	UPart* Parent;
 
 	TArray<UAttachmentNode*> AttachmentNodes;
+
+	UPROPERTY(EditAnywhere)
 	TMap<FString, UPartComponent*> AdditionalComponents;
 
 	UPhysicsConstraintComponent* Physics;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMeshComponent> Mesh;
+	FName Bone;
 
 	int AttachedAt = -1; // parent location
 	// AttachLocation = Physics.RelativeLocation
@@ -38,8 +53,6 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void Initialize(FString Id, TSharedPtr<FJsonObject> Structure, TSharedPtr<FJsonObject> Json);
-	
 	void SetAttachmentNodeVisibility(bool visibility);
 
 	void SetParent(UPart* Part);
@@ -47,14 +60,14 @@ public:
 	/*
 	Json serialization
 	{
-	  "type": <part type>,
+	  "type": <part type>, 
 	  "location": [x, y, z],
 	  "rotation": [x, y, z, w],
 	  "scale": [x, y, z],
-	  "attached_at": <int>
-	  "attach_location": [rel_x, rel_y, rel_z]
+	  "attached_at": <string>,
+	  "attach_location": [rel_x, rel_y, rel_z],
 
-	  // optional?
+	  // maybe optional?
 	  "dynamic_warp": [matrix of some sort]
 	}
 	*/
@@ -72,13 +85,6 @@ public:
 			}
 		}
 		return nullptr;
-		/*
-		UPartComponent** Component = AdditionalComponents.Find(Name);
-		if (Component == nullptr) {
-			return nullptr;
-		}
-		return Cast<T>(*Component);
-		*/
 	}
 
 	bool PhysicsEnabled;
@@ -86,4 +92,6 @@ public:
 
 	void Attach();
 	void Detach();
+
+	FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
 };

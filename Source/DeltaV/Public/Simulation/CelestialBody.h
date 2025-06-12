@@ -36,6 +36,9 @@ public:
 	UPROPERTY()
 	TObjectPtr<class UOrbitComponent> Orbit;
 
+	UPROPERTY(EditAnywhere)
+	double RotationPeriod = 360;
+
 	// UPROPERTY()
 	TObjectPtr<ACelestialBody> Parent;
 

@@ -71,5 +71,7 @@ public:
 
 	void Action(FKey Key);
 
+	void Exit();
+
 	AStaticMeshActor* TestActor;
 };

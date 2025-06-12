@@ -27,6 +27,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	virtual void SetPhysicsEnabled(bool bSimulate) {}
+
 
 	virtual void FromJson(TSharedPtr<FJsonObject> Json) {};
 	virtual TSharedPtr<FJsonObject> ToJson() { return MakeShareable(new FJsonObject()); };

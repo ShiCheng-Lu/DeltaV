@@ -1,9 +1,10 @@
 {
   "name": "wing",
-  "mesh": "/Game/Shapes/wing.wing",
+  "mesh": "/Game/Shapes/wing",
+  "type": "static",
   "attachment": [
     {
-      "location": [ 0, 0, 0 ]
+      "location": [0, 0, 0]
     }
   ],
   "fields": [
@@ -28,19 +29,23 @@
   ],
   "craft": {
     "name": "wing",
-    "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0 ],
+    "location": [0, 0, 0],
+    "rotation": [0, 0, 0],
     "structure": {
       "wing": {}
     },
     "parts": {
       "wing": {
         "type": "wing",
-        "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ],
+        "location": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0]
+        "attach_location": [0, 0, 0],
+        "aero": {
+          "lift": 1,
+          "drag": 1
+        }
       }
     },
     "stages": []

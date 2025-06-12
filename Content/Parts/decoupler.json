@@ -1,12 +1,13 @@
 {
   "name": "cylinder",
-  "mesh": "/Game/Shapes/Decoupler.Decoupler",
+  "mesh": "/Game/Shapes/Decoupler",
+  "type": "static",
   "attachment": [
     {
-      "location": [ 5, 0, 0 ]
+      "location": [5, 0, 0]
     },
     {
-      "location": [ -5, 0, 0 ]
+      "location": [-5, 0, 0]
     }
   ],
   "fields": [
@@ -31,23 +32,25 @@
   ],
   "craft": {
     "name": "decoupler",
-    "location": [ 0, 0, 0 ],
-    "rotation": [ 0, 0, 0 ],
+    "location": [0, 0, 0],
+    "rotation": [0, 0, 0],
     "structure": {
       "decoupler": {}
     },
     "parts": {
       "decoupler": {
         "type": "decoupler",
-        "location": [ 0, 0, 0 ],
-        "rotation": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ],
+        "location": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
         "attached_at": 1,
-        "attach_location": [ 0, 0, 0]
+        "attach_location": [0, 0, 0]
       }
     },
-    "stages": [{
-      "parts": ["decoupler"]
-    }]
+    "stages": [
+      {
+        "parts": ["decoupler"]
+      }
+    ]
   }
 }

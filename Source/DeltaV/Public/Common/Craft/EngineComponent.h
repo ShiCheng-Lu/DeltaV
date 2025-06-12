@@ -20,7 +20,6 @@ public:
 	FVector PivotOffset;
 	double PivotLimit;
 	double Thrust;
-	double AvailableThrust;
 
 public:
 	// Sets default values for this component's properties

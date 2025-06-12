@@ -77,7 +77,7 @@ void UOrbitComponent::UpdateOrbit(FVector OrbitRelativeLocation, FVector Relativ
 
 	TimeAtPeriapsis = Time - GetTime(Angle);
 
-	UE_LOG(LogTemp, Warning, TEXT("values %f %s %f %f %f %f"), AngularMomentum.Length(), *RelativeVelocity.ToString(), Eccentricity, Angle, OrbitDuration, SemiMajorAxis * SemiMinorAxis);
+	// UE_LOG(LogTemp, Warning, TEXT("values %f %s %f %f %f %f"), AngularMomentum.Length(), *RelativeVelocity.ToString(), Eccentricity, Angle, OrbitDuration, SemiMajorAxis * SemiMinorAxis);
 
 	if (IsVisible()) {
 		UpdateSplineWithOrbit();
