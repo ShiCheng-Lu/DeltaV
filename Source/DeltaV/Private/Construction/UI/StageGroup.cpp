@@ -8,7 +8,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 #include "Common/UI/StagesList.h"
-#include "Common/Craft/Stage.h"
+#include "Common/Craft/StageManager.h"
 #include "Common/Part.h"
 
 UStageGroup::UStageGroup(const FObjectInitializer& ObjectInitializer)

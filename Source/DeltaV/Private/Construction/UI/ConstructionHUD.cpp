@@ -17,7 +17,7 @@
 #include "Construction/UI/StageGroup.h"
 #include "Common/MainGameInstance.h"
 #include "Common/Craft.h"
-#include "Common/Craft/Stage.h"
+#include "Common/Craft/StageManager.h"
 #include "Common/UI/StagesList.h"
 
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
@@ -76,7 +76,7 @@ void UConstructionHUD::PartClicked(UObject* Object) {
 	}
 
 	auto Craft = Controller->Constructor.CreateCraft(Data->CraftJson);
-	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->Stages.Num());
+	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->StageManager->Stages.Num());
 
 	if (Controller->Constructor.Selected) {
 		Controller->Constructor.Selected->GetOwner()->Destroy();
@@ -88,6 +88,6 @@ void UConstructionHUD::PartClicked(UObject* Object) {
 
 void UConstructionHUD::SetCraft(ACraft* Craft) const {
 	UStagesList* StagesList = Cast<UStagesList>(StagesListWidget);
-	StagesList->Craft = Craft;
+	StagesList->Manager = Craft->StageManager;
 	StagesList->Reload();
 }

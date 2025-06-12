@@ -11,6 +11,8 @@
 #include "Simulation/OrbitComponent.h"
 #include "Simulation/SimulationController.h"
 #include "Common/Craft/FuelComponent.h"
+#include "Common/Craft/StageManager.h"
+#include "Common/Craft/FuelManager.h"
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -28,6 +30,9 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	Orbit = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
 
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>("CraftComponent"));
+
+	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
+	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -57,11 +62,9 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	}
 
 	// stages
-	for (auto& StageJson : Json->GetArrayField(TEXT("stages"))) {
-		UStage* Stage = NewObject<UStage>(this);
-		Stage->FromJson(StageJson);
-		Stages.Add(Stage);
-	}
+	StageManager->FromJson(Json->GetArrayField(TEXT("stages")));
+	FuelManager->FromJson();
+
 
 	for (auto& PartKVP : Parts) {
 		PartKVP.Value->RegisterComponent();
@@ -99,11 +102,7 @@ TSharedPtr<FJsonObject> ACraft::ToJson() {
 	Json->SetObjectField(TEXT("parts"), PartsJson);
 
 	// stages
-	TArray<TSharedPtr<FJsonValue>> StagesJson;
-	for (UStage* Stage : Stages) {
-		StagesJson.Add(Stage->ToJson());
-	}
-	Json->SetArrayField(TEXT("stages"), StagesJson);
+	Json->SetArrayField(TEXT("stages"), StageManager->ToJson());
 
 	return Json;
 }
@@ -328,10 +327,10 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 		PartKVP.Value->Attach();
 	}
 
-	// transfer stages
-	for (auto& Stage : SourceCraft->Stages) {
-		Stages.Add(Stage);
-	}
+	// TODO: transfer stages
+	//for (auto& Stage : SourceCraft->Stages) {
+	//	Stages.Add(Stage);
+	//}
 
 	SourceCraft->Parts.Empty();
 	SourceCraft->SetRootComponent(nullptr);
@@ -386,11 +385,8 @@ FVector ACraft::GetWorldCoM() {
 }
 
 TArray<ACraft*> ACraft::StageCraft() {
-	UStage* Stage = Stages.Pop();
-	if (!Stage) {
-		return TArray<ACraft*>();
-	}
-	return Stage->Activate();
+	// TODO: 
+	return TArray<ACraft*>();
 }
 
 FVector ACraft::GetAngularVelocity() {

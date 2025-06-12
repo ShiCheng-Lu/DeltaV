@@ -6,7 +6,6 @@
 #include "GameFramework/Pawn.h"
 
 #include "Common/Part.h"
-#include "Common/Craft/Stage.h"
 #include "Components/SphereComponent.h"
 #include "Common/CustomTickFunction.h"
 
@@ -25,15 +24,18 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<FString, UPart*> Parts;
 	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UFuelManager> FuelManager;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UStageManager> StageManager;
+
 	bool PhysicsEnabled;
 	TMap<FString, TArray<UPart*>> SymmetryGroups;
 
 	TObjectPtr<class UOrbitComponent> Orbit;
 	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
 	FVector TargetPosition;
-
-	TArray<UStage*> Stages;
-	UStage* Active; // stage that is active
 
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();

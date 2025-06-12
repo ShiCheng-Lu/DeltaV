@@ -23,8 +23,6 @@ void UPartComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-
-	UE_LOG(LogTemp, Warning, TEXT("Begin Play"));
 }
 
 

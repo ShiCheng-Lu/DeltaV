@@ -54,15 +54,12 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		return;
 	}
 
-	ACraft* Craft = Cast<ACraft>(GetOwner());
-	ASimulationController* Controller = Cast<ASimulationController>(Craft->Controller);
-	FVector Throttle = Part->Mesh->GetComponentQuat().RotateVector(FVector(1000000 * Controller->ThrottleValue, 0, 0));;
-
 	// FVector ThrustVector = Part->GetComponentQuat().RotateVector();
-	Part->Mesh->AddForceAtLocationLocal(FVector(1000000 * Controller->ThrottleValue, 0, 0), PivotOffset);
-	if (Controller->ThrottleValue > 0.01) {
+	Part->Mesh->AddForceAtLocationLocal(FVector(1000000 * Thrust, 0, 0), PivotOffset);
+	if (Thrust > 0.01) {
 		UWorld* World = GetWorld();
 		FVector Start = Part->Mesh->GetComponentLocation();
+		FVector Throttle = Part->Mesh->GetComponentQuat().RotateVector(FVector(1000000 * Thrust, 0, 0));
 		DrawDebugDirectionalArrow(World, Start, Start + Throttle, 10, FColor::Yellow, false, -1, 1);
 	}
 	return;

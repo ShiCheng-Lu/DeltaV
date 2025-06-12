@@ -12,6 +12,7 @@ class UDragDropOperation;
 
 class ACraft;
 class UStage;
+class UStageManager;
 
 /**
  * 
@@ -25,7 +26,7 @@ protected:
 	virtual void NativeOnInitialized() override;
 
 public:
-	ACraft* Craft;
+	UStageManager* Manager;
 
 	UTreeView* TreeView;
 

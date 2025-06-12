@@ -12,6 +12,7 @@ enum class FuelType {
 	Oxidizer,
 	SolidFuel,
 	Monopropellant,
+	NUM,
 };
 
 class FuelState : public TMap<FuelType, double> {
@@ -25,21 +26,11 @@ public:
 	TSharedPtr<FJsonObject> ToJson();
 
 	FuelState operator*(double Mult);
-	FuelState operator/(FuelState Other);
+	FuelState operator*(FuelState& Other);
+	FuelState operator/(FuelState& Other);
 	
 	double CanDrain(FuelState FuelDrain);
 };
-
-class FuelGroup {
-public:
-	TArray<UPart*> Fuels;
-	TArray<UPart*> Engines;
-
-	FuelState TotalFuel();
-	FuelState TotalDrain();
-
-};
-
 
 /*
 Fuel can hold any combination of fuel types
@@ -67,9 +58,6 @@ public:
 	
 	FuelState Current;
 	FuelState Max;
-
-
-	
 
 	/*
 	{

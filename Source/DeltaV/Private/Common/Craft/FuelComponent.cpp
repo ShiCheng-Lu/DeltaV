@@ -11,10 +11,10 @@
 // ========================
 
 FuelState::FuelState() : TMap<FuelType, double>({
-	{ FuelType::LiquidFuel, 5 },
-	{ FuelType::Oxidizer, 5 },
-	{ FuelType::SolidFuel, 5 },
-	{ FuelType::Monopropellant, 5 },
+	{ FuelType::LiquidFuel, 0 },
+	{ FuelType::Oxidizer, 0 },
+	{ FuelType::SolidFuel, 0 },
+	{ FuelType::Monopropellant, 0 },
 }) {}
 
 double FuelState::Drain(FuelState Fuel) {
@@ -36,16 +36,24 @@ double FuelState::Fill(FuelState Fuel) {
 }
 
 FuelState FuelState::operator*(double Mult) {
-	FuelState State;
+	FuelState State = FuelState();
 	for (auto& KVP : *this) {
 		State.FindChecked(KVP.Key) = KVP.Value * Mult;
 	}
 	return State;
 }
 
+FuelState FuelState::operator*(FuelState& Other) {
+	FuelState State = FuelState();
+	for (auto& KVP : *this) {
+		double Mul = Other.FindChecked(KVP.Key);
+		State.FindChecked(KVP.Key) = KVP.Value * Mul;
+	}
+	return State;
+}
 
-FuelState FuelState::operator/(FuelState Other) {
-	FuelState State;
+FuelState FuelState::operator/(FuelState& Other) {
+	FuelState State = FuelState();
 	for (auto& KVP : *this) {
 		double Div = Other.FindChecked(KVP.Key);
 		State.FindChecked(KVP.Key) = Div != 0 ? KVP.Value / Div : 0;
@@ -56,7 +64,8 @@ FuelState FuelState::operator/(FuelState Other) {
 double FuelState::CanDrain(FuelState Fuel) {
 	double MaxDrain = 1;
 	for (auto& KVP : *this) {
-		MaxDrain = FMath::Min(MaxDrain, KVP.Value / Fuel.FindChecked(KVP.Key));
+		double Drain = Fuel.FindChecked(KVP.Key);
+		MaxDrain = FMath::Min(MaxDrain, Drain > 0 ? KVP.Value / Drain : 1);
 	}
 	return MaxDrain;
 }
@@ -99,38 +108,6 @@ TSharedPtr<FJsonObject> FuelState::ToJson() {
 	return Json;
 }
 
-
-
-
-// ========================
-// FuelGroup
-// ========================
-
-FuelState FuelGroup::TotalFuel() {
-	FuelState State;
-	for (UPart* Part : Fuels) {
-		auto* Fuel = Part->GetComponent<UFuelComponent>("fuel");
-		if (Fuel == nullptr) {
-			continue;
-		}
-		State.Fill(Fuel->Current);
-	}
-	return State;
-}
-
-FuelState FuelGroup::TotalDrain() {
-	FuelState State;
-	for (UPart* Part : Fuels) {
-		auto* Engine = Part->GetComponent<UEngineComponent>("engine");
-		if (Engine == nullptr) {
-			continue;
-		}
-		State.Fill(Engine->Drain);
-	}
-	return State;
-}
-
-
 // ========================
 // FuelComponent
 // ========================
@@ -142,9 +119,11 @@ UFuelComponent::UFuelComponent() : Super()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.TickGroup = ETickingGroup::TG_DuringPhysics; // can be during physics or post physics
+	// PrimaryComponentTick.bCanEverTick = true;
+	// PrimaryComponentTick.TickGroup = ETickingGroup::TG_DuringPhysics; // can be during physics or post physics
 	// ...
+	Current = FuelState();
+	Max = FuelState();
 }
 
 void UFuelComponent::FromJson(TSharedPtr<FJsonObject> Json) {
