@@ -23,6 +23,7 @@ https://spencermortensen.com/articles/bezier-circle/
 
 Craft structure:
 
+```
 root
  |- part_mesh_0
  |   |- part_mesh_1
@@ -32,4 +33,4 @@ root
  |   |- part_def_1
  |   |- part_def_2
  |       |- part_def_3
-
+```
