@@ -34,3 +34,7 @@ root
  |   |- part_def_2
  |       |- part_def_3
 ```
+
+@self: Read this
+https://dev.epicgames.com/documentation/en-us/unreal-engine/chaos-modular-vehicles-quickstart
+
