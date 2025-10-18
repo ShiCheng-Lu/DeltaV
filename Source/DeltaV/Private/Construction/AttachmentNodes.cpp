@@ -27,13 +27,35 @@ UAttachmentNodes::UAttachmentNodes()
 	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
 	for (auto& LocationJson : PartDefinition->GetArrayField(TEXT("attachment"))) {
 		FVector Location = JsonUtil::Vector(LocationJson->AsObject(), "location");
-
+		/*
 		auto Node = CreateDefaultSubobject<UStaticMeshComponent>(*Location.ToString());
 		Node->SetStaticMesh(SphereMeshAsset.Object);
 		Node->SetRelativeScale3D(FVector(0.1f));
 
 		Node->SetupAttachment(this);
 		Node->SetRelativeLocation(Location);
+		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
+		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Node->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
+		Node->SetAbsolute(false, false, true);
+
+		AttachmentNodes.Add(Node);
+		*/
+	}
+
+	for (FName& SocketName : Part->Mesh->GetAllSocketNames()) {
+		if (!SocketName.ToString().StartsWith("node")) {
+			continue;
+		}
+		FTransform SocketTransform = Part->Mesh->GetSocketTransform(SocketName, RTS_Component);
+
+		auto Node = CreateDefaultSubobject<UStaticMeshComponent>(SocketName);
+		Node->SetStaticMesh(SphereMeshAsset.Object);
+		Node->SetRelativeScale3D(FVector(0.1f));
+
+		Node->SetupAttachment(this, SocketName);
+		Node->SetRelativeLocation(SocketTransform.GetLocation());
+
 		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
 		Node->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);

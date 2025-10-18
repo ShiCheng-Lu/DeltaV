@@ -13,6 +13,16 @@
 #include "Common/Craft/FuelComponent.h"
 #include "Common/Craft/StageManager.h"
 #include "Common/Craft/FuelManager.h"
+#include "Common/AssetLibrary.h"
+
+#include "GeometryCollection/GeometryCollection.h"
+#include "GeometryCollection/GeometryCollectionClusteringUtility.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
+
+#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
+
+#include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
+#include "ChaosModularVehicle/VehicleSimComponentsInclude.h"
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -25,20 +35,52 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	BaseEyeHeight = 0;
 	PhysicsEnabled = false;
 
-	JsonUtil::ReadFile(FPaths::ProjectDir() + "Content/Crafts/empty.json");
-
 	Orbit = CreateDefaultSubobject<UOrbitComponent>("OrbitComponent");
-
-	SetRootComponent(CreateDefaultSubobject<USceneComponent>("CraftComponent"));
 
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
+
+	
+
+	UGeometryCollection* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit");
+	auto* Chassis = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("chassis"));
+	Chassis->SetRestCollection(GC_Chassis);
+
+	UGeometryCollection* GC_Wheel = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
+	auto* Wheel_FL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fl"));
+	Wheel_FL->SetRestCollection(GC_Wheel);
+	Wheel_FL->SetRelativeLocation(FVector(200, -150, -50));
+
+	auto* Wheel_FR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fr"));
+	Wheel_FR->SetRestCollection(GC_Wheel);
+	Wheel_FR->SetRelativeLocation(FVector(200, 150, -50));
+
+	auto* Wheel_RL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rl"));
+	Wheel_RL->SetRestCollection(GC_Wheel);
+	Wheel_RL->SetRelativeLocation(FVector(-200, -150, -50));
+
+	auto* Wheel_RR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rr"));
+	Wheel_RR->SetRestCollection(GC_Wheel);
+	Wheel_RR->SetRelativeLocation(FVector(-200, 150, -50));
+
+	auto* Suspension_FL = NewObject<UVehicleSimSuspensionComponent>(Wheel_FL, FName("suspension_fl"));
+
+	GetVehicleSimulationComponent();
+
+	
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	// structure + parts
 
 	// Array of (Parent, ChildJson[])
+
+	// temp just make a craft lmao
+
+
+
+
+	/**
 	auto& PartListJson = Json->GetObjectField(TEXT("parts"));
 	TArray<TPair<TObjectPtr<UPart>, TSharedPtr<FJsonObject>>> Structures = { 
 		{ nullptr, Json->GetObjectField(TEXT("structure")) } 
@@ -70,6 +112,7 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 		PartKVP.Value->RegisterComponent();
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Finished loading craft"));
+	*/
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
@@ -129,6 +172,7 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/*
 	if (!PhysicsEnabled) {
 		if (Orbit->CentralBody != nullptr) { // simulation, but no physics
 			double Time = GetGameTimeSinceCreation();
@@ -147,9 +191,10 @@ void ACraft::Tick(float DeltaTime)
 		FVector Gravity = RelativeLocation.GetSafeNormal() * Orbit->CentralBody->Mu / RelativeLocation.SquaredLength();
 		for (auto& PartKVP : Parts) {
 			UPart* Part = PartKVP.Value;
-			Part->Mesh->AddForce(Gravity, NAME_None, true);
+			Part->Mesh->AddForce(Gravity, Part->Bone, true);
 		}
 	}
+	*/
 	
 	/*
 	FVector Position, Velocity;
@@ -195,7 +240,8 @@ void ACraft::Tick(float DeltaTime)
 }
 
 void ACraft::TickPostPhysics(float DeltaTime) {
-
+	return;
+	/*
 	if (!PhysicsEnabled && Orbit->CentralBody == nullptr) {
 		return; // In build mode
 	}

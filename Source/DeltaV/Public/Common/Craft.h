@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "ChaosModularVehicle/ModularVehicleClusterPawn.h"
 
 #include "Common/Part.h"
 #include "Components/SphereComponent.h"
@@ -12,7 +13,7 @@
 #include "Craft.generated.h"
 
 UCLASS()
-class DELTAV_API ACraft : public APawn
+class DELTAV_API ACraft : public AModularVehicleClusterPawn
 {
 	GENERATED_BODY()
 

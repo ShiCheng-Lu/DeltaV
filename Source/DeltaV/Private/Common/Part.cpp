@@ -166,7 +166,10 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		TObjectPtr<USkeletalMeshComponent> MeshObj = NewObject<USkeletalMeshComponent>(this);
 		MeshObj->SetSkeletalMesh(SkeletalMesh);
 		Mesh = MeshObj;
-		Bone = MeshObj->GetBoneName(0);
+		Bone = MeshObj->GetBoneName(1);
+
+		FString BoneName = Bone.ToString();
+		UE_LOG(LogTemp, Warning, TEXT("Bone: %s"), *BoneName);
 		MeshType = SKELETAL_MESH;
 	}
 

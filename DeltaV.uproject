@@ -14,7 +14,8 @@
 				"SlateCore",
 				"UMG",
 				"GeometryFramework",
-				"CoreUObject"
+				"CoreUObject",
+				"ChaosModularVehicleEngine"
 			]
 		}
 	],
@@ -36,6 +37,14 @@
 		},
 		{
 			"Name": "GeometryScripting",
+			"Enabled": true
+		},
+		{
+			"Name": "SkeletalMeshModelingTools",
+			"Enabled": true
+		},
+		{
+			"Name": "ChaosModularVehicle",
 			"Enabled": true
 		}
 	]

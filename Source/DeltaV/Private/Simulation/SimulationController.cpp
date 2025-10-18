@@ -64,7 +64,7 @@ void ASimulationController::BeginPlay() {
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
 
-	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 1;
+	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 100;
 	FVector CraftLocation = FVector(SpawnDistance, 0, 0);
 	Craft->SetLocation(CraftLocation);
 

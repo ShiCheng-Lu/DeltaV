@@ -42,6 +42,7 @@ void UWheelComponent::SetPhysicsEnabled(bool bSimulate) {
 		//Mesh->DetachFromComponent(DetachmentRule);
 		//Physics->SetConstrainedComponents(Part, "", Mesh, "");
 		//Mesh->SetSimulatePhysics(true);
+
 	}
 	else {
 

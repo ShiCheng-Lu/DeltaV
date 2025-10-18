@@ -35,6 +35,12 @@ public:
 	UPROPERTY()
 	TMap<int, double> HeightMap;
 
+	UPROPERTY()
+	TMap<int, FVector> PositionMap;
+
+	UPROPERTY()
+	TMap<int, FVector> GradientMap;
+
 public:
 	UMeshGeneration();
 	~UMeshGeneration();
@@ -46,6 +52,7 @@ public:
 	void Initialize(FDynamicMesh3& MeshInOut);
 
 
+	void Iterate3(FDynamicMesh3& MeshInOut);
 	void ComputeDrainageArea(TArray<Node>& Tree, int Node);
 	void Iterate2(FDynamicMesh3& MeshInOut);
 	void Iterate(FDynamicMesh3& MeshInOut);
