@@ -30,7 +30,7 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
-	inline static TSubclassOf<UUserWidget> BlueprintClass;
+	static TSubclassOf<UUserWidget> BlueprintClass();
 
 	ASimulationController* Controller;
 

@@ -24,13 +24,20 @@
 USimulationHUD::USimulationHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!USimulationHUD::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<USimulationHUD> Widget(TEXT("WidgetBlueprint'/Game/Simulation/UI/WBP_SimulationHUD'"));
-		if (Widget.Succeeded()) {
-			USimulationHUD::BlueprintClass = Widget.Class;
-		}
-	}
 }
+
+TSubclassOf<UUserWidget> USimulationHUD::BlueprintClass() {
+	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("WidgetBlueprint'/Game/Simulation/UI/WBP_SimulationHUD'"));
+	if (Widget.IsValid()) {
+		return Widget.Get();
+	}
+	auto Loaded = Widget.LoadSynchronous();
+	if (Loaded) {
+		return Loaded;
+	}
+	throw "Blueprint class not found";
+}
+
 
 void USimulationHUD::NativeOnInitialized() {
 	Super::NativeOnInitialized();

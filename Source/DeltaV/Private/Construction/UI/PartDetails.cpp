@@ -13,14 +13,19 @@
 UPartDetails::UPartDetails(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!UPartDetails::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<UPartDetails> Widget(TEXT("WidgetBlueprint'/Game/Construction/UI/WBP_PartDetails'"));
-		if (Widget.Succeeded()) {
-			UPartDetails::BlueprintClass = Widget.Class;
-		}
-	}
-
 	SetVisibility(ESlateVisibility::Hidden);
+}
+
+TSubclassOf<UUserWidget> UPartDetails::BlueprintClass() {
+	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("/Game/Construction/UI/WBP_PartDetails.WBP_PartDetails_C"));
+	if (Widget.IsValid()) {
+		return Widget.Get();
+	}
+	auto Loaded = Widget.LoadSynchronous();
+	if (Loaded) {
+		return Loaded;
+	}
+	throw "Blueprint class not found";
 }
 
 void UPartDetails::NativeOnInitialized() {

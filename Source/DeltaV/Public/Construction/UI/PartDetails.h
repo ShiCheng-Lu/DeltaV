@@ -48,7 +48,7 @@ protected:
 public:
 	AConstructionController* Controller;
 
-	inline static TSubclassOf<UUserWidget> BlueprintClass;
+	static TSubclassOf<UUserWidget> BlueprintClass();
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UEditableTextBox* PartName;

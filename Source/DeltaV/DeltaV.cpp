@@ -4,8 +4,6 @@
 #include "Modules/ModuleManager.h"
 
 #include "Modules/ModuleInterface.h"
-#include "Editor/UnrealEdEngine.h"
-#include "ClassIconFinder.h"
 #include "Styling/SlateStyle.h"
 #include "Styling/SlateStyleRegistry.h"
 

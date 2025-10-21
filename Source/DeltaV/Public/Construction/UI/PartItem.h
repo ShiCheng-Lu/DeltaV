@@ -41,7 +41,7 @@ public:
 	UPartItem(const FObjectInitializer& ObjectInitializer);
 
 public:
-	inline static TSubclassOf<UUserWidget> BlueprintClass;
+	static TSubclassOf<UUserWidget> BlueprintClass();
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UTextBlock* PartLabel;

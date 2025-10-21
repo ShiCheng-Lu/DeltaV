@@ -104,7 +104,7 @@ void UMeshGeneration::Iterate3(FDynamicMesh3& MeshInOut) {
 
 		TMap<int, float> Contribution;
 		for (auto OtherVertexId : MeshInOut.VtxVerticesItr(VertexId)) {
-			PositionMap[OtherVertexId];
+			// PositionMap[OtherVertexId];
 
 		}
 	}
@@ -171,6 +171,7 @@ void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 
 	FlushPersistentDebugLines(GetWorld());
 	return;
+	/*
 	for (int Node = 0; Node < HeightMap.Num(); ++Node) {
 		FVector A = MeshInOut.GetVertex(Node);
 		
@@ -186,6 +187,7 @@ void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 			}
 		}
 	}
+	*/
 }
 
 void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {

@@ -34,12 +34,18 @@ UPartItemData* UPartItemData::Create(FString Name) {
 UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) 
 {
-	if (!UPartItem::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<UPartItem> Widget(TEXT("WidgetBlueprint'/Game/Construction/UI/WBP_PartItem'"));
-		if (Widget.Succeeded()) {
-			UPartItem::BlueprintClass = Widget.Class;
-		}
+}
+
+TSubclassOf<UUserWidget> UPartItem::BlueprintClass() {
+	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("WidgetBlueprint'/Game/Construction/UI/WBP_PartItem'"));
+	if (Widget.IsValid()) {
+		return Widget.Get();
 	}
+	auto Loaded = Widget.LoadSynchronous();
+	if (Loaded) {
+		return Loaded;
+	}
+	throw "Blueprint class not found";
 }
 
 void UPartItem::Init(UObject* ListItemObject) {

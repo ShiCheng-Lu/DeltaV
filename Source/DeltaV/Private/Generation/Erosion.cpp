@@ -27,6 +27,7 @@ void Erosion::CalculateGradient() {
 void Erosion::Step() {
 	CalculateGradient();
 
+	/*
 	for (const auto& [Edge, VertexA, VertexB] : Edges) {
 		Gradient[VertexA];
 		EdgeDirection[Edge];
@@ -46,6 +47,6 @@ void Erosion::Step() {
 		// compute errosion
 
 	}
-
+	*/
 
 }

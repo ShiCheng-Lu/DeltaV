@@ -22,6 +22,8 @@
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Common/AssetLibrary.h"
+
 AConstructionController::AConstructionController() {
 
 	bEnableClickEvents = true;
@@ -42,7 +44,7 @@ void AConstructionController::BeginPlay() {
 	SetShowMouseCursor(true);
 	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
-	HUD = CreateWidget<UConstructionHUD>(this, UConstructionHUD::BlueprintClass);
+	HUD = CreateWidget<UConstructionHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(UConstructionHUDClass));
 	HUD->AddToPlayerScreen();
 
 	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();

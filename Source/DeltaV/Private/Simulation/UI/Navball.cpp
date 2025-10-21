@@ -148,7 +148,7 @@ void ANavball::Tick(float DeltaTime)
 
 	// Stabilization
 
-	FVector TargetOrientation;
+	FVector TargetOrientation = FVector(0, 1, 0);
 	switch (StabilizationMode)
 	{
 	case EStabilizationMode::None:

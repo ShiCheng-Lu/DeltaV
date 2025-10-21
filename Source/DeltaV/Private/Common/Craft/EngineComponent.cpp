@@ -62,7 +62,6 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		FVector Throttle = Part->Mesh->GetComponentQuat().RotateVector(FVector(1000000 * Thrust, 0, 0));
 		DrawDebugDirectionalArrow(World, Start, Start + Throttle, 10, FColor::Yellow, false, -1, 1);
 	}
-	return;
 
 	// temp
 	if (Part->Parent && Part->Parent->Type == "cylinder") {

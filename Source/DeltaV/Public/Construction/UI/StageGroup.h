@@ -20,7 +20,7 @@ class DELTAV_API UStageGroup : public UUserWidget
 public:
 	UStageGroup(const FObjectInitializer& ObjectInitializer);
 
-	inline static TSubclassOf<UUserWidget> BlueprintClass;
+	static TSubclassOf<UUserWidget> BlueprintClass();
 
 	UFUNCTION(BlueprintCallable)
 	void Init(UObject* Object);

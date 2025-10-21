@@ -93,5 +93,5 @@ public:
 	void Attach();
 	void Detach();
 
-	FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
+	// FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
 };

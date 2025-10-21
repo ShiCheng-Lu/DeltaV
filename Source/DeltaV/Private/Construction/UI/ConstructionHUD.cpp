@@ -23,12 +23,6 @@
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!UConstructionHUD::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<UConstructionHUD> Widget(TEXT("WidgetBlueprint'/Game/Construction/UI/WBP_ConstructionHUD'"));
-		if (Widget.Succeeded()) {
-			UConstructionHUD::BlueprintClass = Widget.Class;
-		}
-	}
 }
 
 void UConstructionHUD::NativeOnInitialized() {

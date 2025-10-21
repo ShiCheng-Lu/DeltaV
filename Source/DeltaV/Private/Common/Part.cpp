@@ -225,7 +225,7 @@ UPartComponent* UPart::GetComponent(FString Name) {
 	}
 }*/
 
-
+/*
 FMeshDescription* UPart::CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD) {
 	FGeometryScriptCopyMeshFromAssetOptions AssetOptions;
 	FGeometryScriptMeshReadLOD TargetLOD;
@@ -255,3 +255,4 @@ FMeshDescription* UPart::CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicM
 	}
 	return nullptr;
 }
+*/

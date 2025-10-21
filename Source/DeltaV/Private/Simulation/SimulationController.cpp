@@ -87,7 +87,7 @@ void ASimulationController::BeginPlay() {
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
 
-	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
+	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass());
 	HUD->AddToPlayerScreen();
 
 	HUD->SetNavballTarget(Craft, FVector(0, 0, 0));

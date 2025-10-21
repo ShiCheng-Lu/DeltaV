@@ -178,23 +178,23 @@ void UOrbitComponent::UpdateSpline() {
 	// update spline meshes
 	
 	// remove extra spline mesh components
-	for (int i = Spline.Num() - GetNumberOfSplineSegments(); i > 0; --i) {
-		USplineMeshComponent* SplineComponent = Spline.Pop();
+	for (int i = Spline1.Num() - GetNumberOfSplineSegments(); i > 0; --i) {
+		USplineMeshComponent* SplineComponent = Spline1.Pop();
 		SplineComponent->UnregisterComponent();
 		SplineComponent->DestroyComponent();
 	}
 	// add missing spline mesh components
-	for (int i = GetNumberOfSplineSegments() - Spline.Num(); i > 0; --i) {
+	for (int i = GetNumberOfSplineSegments() - Spline1.Num(); i > 0; --i) {
 		USplineMeshComponent* SplineComponent = NewObject<USplineMeshComponent>(this);
 		SplineComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		SplineComponent->SetStaticMesh(SplineMesh);
 		SplineComponent->SetForwardAxis(ESplineMeshAxis::Z);
 		SplineComponent->SetMobility(EComponentMobility::Movable);
 		SplineComponent->RegisterComponent();
-		Spline.Add(SplineComponent);
+		Spline1.Add(SplineComponent);
 	}
 
-	if (GetNumberOfSplineSegments() != Spline.Num()) {
+	if (GetNumberOfSplineSegments() != Spline1.Num()) {
 		UE_LOG(LogTemp, Warning, TEXT("Something went terribly wrong, spline component length mismatch"));
 	}
 
@@ -202,7 +202,7 @@ void UOrbitComponent::UpdateSpline() {
 	FInterpCurveVector SplinePoints = GetSplinePointsPosition();
 
 	for (int i = 0; i < GetNumberOfSplinePoints() - 1; ++i) {
-		Spline[i]->SetStartAndEnd(
+		Spline1[i]->SetStartAndEnd(
 			SplinePoints.Points[i].OutVal + CentralBody->GetActorLocation(),
 			SplinePoints.Points[i].LeaveTangent,
 			SplinePoints.Points[i + 1].OutVal + CentralBody->GetActorLocation(),
@@ -211,7 +211,7 @@ void UOrbitComponent::UpdateSpline() {
 	}
 	if (IsClosedLoop()) {
 		int i = GetNumberOfSplinePoints() - 1;
-		Spline[i]->SetStartAndEnd(
+		Spline1[i]->SetStartAndEnd(
 			SplinePoints.Points[i].OutVal + CentralBody->GetActorLocation(),
 			SplinePoints.Points[i].LeaveTangent,
 			SplinePoints.Points[0].OutVal + CentralBody->GetActorLocation(),

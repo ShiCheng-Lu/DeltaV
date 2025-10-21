@@ -19,10 +19,9 @@
 #include "GeometryCollection/GeometryCollectionClusteringUtility.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 
-#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
-
 #include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
 #include "ChaosModularVehicle/VehicleSimComponentsInclude.h"
+
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -39,35 +38,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
-
-	
-
-	UGeometryCollection* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit");
-	auto* Chassis = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("chassis"));
-	Chassis->SetRestCollection(GC_Chassis);
-
-	UGeometryCollection* GC_Wheel = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
-	auto* Wheel_FL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fl"));
-	Wheel_FL->SetRestCollection(GC_Wheel);
-	Wheel_FL->SetRelativeLocation(FVector(200, -150, -50));
-
-	auto* Wheel_FR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fr"));
-	Wheel_FR->SetRestCollection(GC_Wheel);
-	Wheel_FR->SetRelativeLocation(FVector(200, 150, -50));
-
-	auto* Wheel_RL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rl"));
-	Wheel_RL->SetRestCollection(GC_Wheel);
-	Wheel_RL->SetRelativeLocation(FVector(-200, -150, -50));
-
-	auto* Wheel_RR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rr"));
-	Wheel_RR->SetRestCollection(GC_Wheel);
-	Wheel_RR->SetRelativeLocation(FVector(-200, 150, -50));
-
-	auto* Suspension_FL = NewObject<UVehicleSimSuspensionComponent>(Wheel_FL, FName("suspension_fl"));
-
-	GetVehicleSimulationComponent();
-
-	
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -165,6 +135,50 @@ ACraft* ACraft::Clone() {
 void ACraft::BeginPlay()
 {
 	Super::BeginPlay();
+
+
+	UGeometryCollection* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit");
+	auto* Chassis = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("chassis"));
+	Chassis->SetRestCollection(GC_Chassis);
+	Chassis->AttachToComponent(GetClusterUnionComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	Chassis->SetRelativeLocation(FVector(0, 0, 100));
+	GetClusterUnionComponent()->AddToCluster(Chassis);
+	Chassis->RegisterComponent();
+
+	UGeometryCollection* GC_Wheel = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
+	auto* Wheel_FL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fl"));
+	Wheel_FL->SetRestCollection(GC_Wheel);
+	Wheel_FL->AttachToComponent(GetClusterUnionComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	Wheel_FL->SetRelativeLocation(FVector(200, -150, -50));
+	GetClusterUnionComponent()->AddToCluster(Wheel_FL);
+	Wheel_FL->RegisterComponent();
+
+	auto* Wheel_FR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_fr"));
+	Wheel_FR->SetRestCollection(GC_Wheel);
+	Wheel_FR->AttachToComponent(GetClusterUnionComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	Wheel_FR->SetRelativeLocation(FVector(200, 150, -50));
+	GetClusterUnionComponent()->AddToCluster(Wheel_FR);
+	Wheel_FR->RegisterComponent();
+
+	auto* Wheel_RL = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rl"));
+	Wheel_RL->SetRestCollection(GC_Wheel);
+	Wheel_RL->AttachToComponent(GetClusterUnionComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	Wheel_RL->SetRelativeLocation(FVector(-200, -150, -50));
+	GetClusterUnionComponent()->AddToCluster(Wheel_RL);
+	Wheel_RL->RegisterComponent();
+
+	auto* Wheel_RR = NewObject<UGeometryCollectionComponent>(GetClusterUnionComponent(), FName("wheel_rr"));
+	Wheel_RR->SetRestCollection(GC_Wheel);
+	Wheel_RR->AttachToComponent(GetClusterUnionComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	Wheel_RR->SetRelativeLocation(FVector(-200, 150, -50));
+	GetClusterUnionComponent()->AddToCluster(Wheel_RR);
+	Wheel_RR->RegisterComponent();
+
+	auto* Suspension_FL = NewObject<UVehicleSimSuspensionComponent>(Wheel_FL, FName("suspension_fl"));
+
+	GetClusterUnionComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+	UE_LOG(LogTemp, Warning, TEXT("Damage threshold is %d"), Wheel_FL->DamageThreshold.Num());
 }
 
 // Called every frame
