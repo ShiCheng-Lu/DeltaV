@@ -14,8 +14,6 @@
 UWheelComponent::UWheelComponent() {
 	// create a physics contraint
 
-
-	UE_LOG(LogTemp, Warning, TEXT("Wheel created"));
 }
 
 // Called when the game starts

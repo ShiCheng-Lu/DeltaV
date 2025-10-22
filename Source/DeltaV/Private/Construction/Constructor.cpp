@@ -27,10 +27,15 @@ void Constructor::SetController(AConstructionController* InController) {
 }
 
 TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
-	TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
+	// TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
+	FTransform SpawnTransform;
+	TObjectPtr<ACraft> Craft = World->SpawnActorDeferred<ACraft>(ACraft::StaticClass(), 
+		SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	Craft->FromJson(CraftJson);
+	Craft->FinishSpawning(SpawnTransform);
 
 	// add attachment nodes
+	/*
 	for (auto& PartKVP : Craft->Parts) {
 		UPart* Part = PartKVP.Value;
 
@@ -42,8 +47,8 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
 		AttachmentNodes->RegisterComponent();
 	}
-
-	Craft->SetActorRotation(DefaultOrientation);
+	*/
+	// Craft->SetActorRotation(DefaultOrientation);
 
 	return Craft;
 }
@@ -242,7 +247,7 @@ void Constructor::Tick() {
 		return;
 	}
 	// update location of selected part
-	Update();
+	// Update();
 }
 
 void Constructor::UpdateSymmetry(int InSymmetry) {
