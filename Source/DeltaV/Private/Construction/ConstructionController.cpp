@@ -23,6 +23,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Common/AssetLibrary.h"
+#include "EnhancedInputSubsystems.h"
 
 AConstructionController::AConstructionController() {
 
@@ -59,7 +60,21 @@ void AConstructionController::BeginPlay() {
 void AConstructionController::SetupInputComponent() {
 	Super::SetupInputComponent();
 
+	
+	if (ULocalPlayer* LocalPlayer = GetLocalPlayer()) {
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) {
+			UInputMappingContext* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/Default");
+			Subsystem->AddMappingContext(InputMappingContext, 1);
 
+			UE_LOG(LogTemp, Warning, TEXT("Added mapping context"));
+		}
+	}
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent)) {
+		UInputAction* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Construction/Move");
+		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
+
+		UE_LOG(LogTemp, Warning, TEXT("Added input"));
+	}
 	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::W, 1.f));
@@ -191,6 +206,16 @@ void AConstructionController::DisableMovement() {
 	SetIgnoreLookInput(true);
 }
 
+void AConstructionController::Move(const FInputActionValue& Movement) {
+	UE_LOG(LogTemp, Warning, TEXT("Moved: %s"), *Movement.ToString());
+
+	FRotator ControlSpaceRot = GetControlRotation();
+	ControlSpaceRot.Pitch = 0;
+	FVector2D Input = Movement.Get<FVector2D>();
+	FVector Move = FVector(Input.Y, Input.X, 0);
+	FVector Direction = ControlSpaceRot.RotateVector(Move);
+	GetPawn()->AddMovementInput(Direction);
+}
 
 void AConstructionController::Zoom(float value) {
 	if (value != 0) {

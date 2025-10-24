@@ -39,11 +39,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
-	
-	///
-	///
-	/// 
-	UE_LOG(LogTemp, Warning, TEXT("ClusterUnionComponent HasBegun status: %d %d"), GetClusterUnionComponent()->HasBegunPlay(), GetClusterUnionComponent()->IsRegistered());
 
 	UClusterUnionComponent* Cluster = GetClusterUnionComponent();
 
@@ -57,12 +52,12 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	auto* ChassisSim = CreateDefaultSubobject<UVehicleSimChassisComponent>("chassis_sim");
 	ChassisSim->SetupAttachment(Chassis);
 
-	UGeometryCollection* GC_Wheel = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
-	auto CreateWheel = [this, GC_Wheel](FString Name, FVector Location) {
+	UGeometryCollection* TireMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
+	auto CreateWheel = [this, TireMesh](FString Name, FVector Location) {
 		auto* Cluster = GetClusterUnionComponent();
 
 		auto* Wheel = CreateDefaultSubobject<UGeometryCollectionComponent>(FName(Name+"w"));
-		Wheel->SetRestCollection(GC_Wheel);
+		Wheel->SetRestCollection(TireMesh);
 		Wheel->SetRelativeLocation(Location);
 		Wheel->DamageThreshold = { 1e8 };
 		Wheel->SetupAttachment(Cluster);
@@ -83,6 +78,8 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	CreateWheel("wheel_fr", FVector(200, 150, -50));
 	CreateWheel("wheel_rl", FVector(-200, -150, -50));
 	CreateWheel("wheel_rr", FVector(-200, 150, -50));
+
+	UE_LOG(LogTemp, Warning, TEXT("Name: %s"), *GetName());
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -91,8 +88,6 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	// Array of (Parent, ChildJson[])
 
 	// temp just make a craft lmao
-
-	
 
 	/**
 	auto& PartListJson = Json->GetObjectField(TEXT("parts"));

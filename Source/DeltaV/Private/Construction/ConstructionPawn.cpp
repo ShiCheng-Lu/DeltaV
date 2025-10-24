@@ -12,6 +12,11 @@
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/PlayerInput.h"
 #include "Construction/ConstructionController.h"
+#include "Common/AssetLibrary.h"
+
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "InputMappingContext.h"
 
 // Sets default values
 AConstructionPawn::AConstructionPawn()
@@ -68,11 +73,44 @@ void AConstructionPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 	check(PlayerInputComponent);
 
+
+	/*
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				UInputMappingContext* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/Default");
+				Subsystem->AddMappingContext(InputMappingContext, 1);
+				UE_LOG(LogTemp, Warning, TEXT("pawn input added mapping context"));
+			}
+		}
+	}
+
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
+		UInputAction* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Construction/Move");
+		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionPawn::Move);
+
+		UE_LOG(LogTemp, Warning, TEXT("Player added input"));
+	}
 	PlayerInputComponent->BindAxis("MoveForwardBackward", this, &AConstructionPawn::MoveForward);
 	PlayerInputComponent->BindAxis("MoveLeftRight", this, &AConstructionPawn::MoveRight);
 	PlayerInputComponent->BindAxis("MoveUpDown", this, &AConstructionPawn::MoveUp);
-
+	*/
 	UE_LOG(LogTemp, Warning, TEXT("PlayerInput Setup"));
+}
+
+void AConstructionPawn::Move(const FInputActionValue& Movement) {
+	UE_LOG(LogTemp, Warning, TEXT("Moved: %s"), *Movement.ToString());
+	if (Controller) {
+		FRotator ControlSpaceRot = Controller->GetControlRotation();
+		ControlSpaceRot.Pitch = 0;
+
+		FVector Move = FVector(Movement.Get<FVector2D>(), 0);
+
+		AddMovementInput(ControlSpaceRot.RotateVector(Move));
+	}
 }
 
 void AConstructionPawn::MoveRight(float Val)

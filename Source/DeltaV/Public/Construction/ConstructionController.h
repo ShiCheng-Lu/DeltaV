@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Constructor.h"
+#include "InputActionValue.h"
 #include "ConstructionController.generated.h"
 
 class UPart;
@@ -28,6 +29,8 @@ public:
 
 	void Pressed(FKey Key);
 	void Released(FKey Key);
+
+	void Move(const FInputActionValue& Movement);
 
 	virtual void SetupInputComponent() override;
 

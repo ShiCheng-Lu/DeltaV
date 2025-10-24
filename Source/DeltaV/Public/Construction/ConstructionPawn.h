@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 
 #include "Components/SphereComponent.h"
+#include "InputActionValue.h"
 
 #include "ConstructionPawn.generated.h"
 
@@ -33,6 +34,14 @@ public:
 	// Begin Pawn overrides
 	virtual UPawnMovementComponent* GetMovementComponent() const override;
 	// End Pawn overrides
+
+
+	/**
+	 * Input callback to move forward in local space (or backward if Val is negative).
+	 * @param Val Amount of movement in the forward direction (or backward if negative).
+	 * @see APawn::AddMovementInput()
+	 */
+	void Move(const FInputActionValue& Movement);
 
 	/**
 	 * Input callback to move forward in local space (or backward if Val is negative).

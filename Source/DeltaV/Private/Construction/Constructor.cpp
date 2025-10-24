@@ -28,11 +28,10 @@ void Constructor::SetController(AConstructionController* InController) {
 
 TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	// TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
-	FTransform SpawnTransform;
-	TObjectPtr<ACraft> Craft = World->SpawnActorDeferred<ACraft>(ACraft::StaticClass(), 
-		SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-	Craft->FromJson(CraftJson);
-	Craft->FinishSpawning(SpawnTransform);
+	FActorSpawnParameters Params = FActorSpawnParameters();
+	Params.Name = "custom-craft-name";
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(Params);
 
 	// add attachment nodes
 	/*
@@ -49,7 +48,7 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	}
 	*/
 	// Craft->SetActorRotation(DefaultOrientation);
-
+	
 	return Craft;
 }
 

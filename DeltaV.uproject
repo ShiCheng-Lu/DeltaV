@@ -15,7 +15,8 @@
 				"UMG",
 				"GeometryFramework",
 				"CoreUObject",
-				"ChaosModularVehicleEngine"
+				"ChaosModularVehicleEngine",
+				"EnhancedInput"
 			]
 		}
 	],
