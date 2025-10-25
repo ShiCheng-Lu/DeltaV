@@ -47,6 +47,10 @@
 		{
 			"Name": "ChaosModularVehicle",
 			"Enabled": true
+		},
+		{
+			"Name": "ChaosModularVehicleExamples",
+			"Enabled": true
 		}
 	]
 }

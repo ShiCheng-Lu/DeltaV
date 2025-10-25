@@ -13,6 +13,8 @@ class ACraft;
 class UButton;
 class UCheckBox;
 
+#define USimulationHUDClass "/Game/Simulation/UI/WBP_SimulationHUD.WBP_SimulationHUD_C"
+
 /**
  * 
  */
@@ -30,8 +32,6 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
-	static TSubclassOf<UUserWidget> BlueprintClass();
-
 	ASimulationController* Controller;
 
 	UPROPERTY(EditAnywhere, meta = (ArraySizeEnum="EStabilizationMode"))

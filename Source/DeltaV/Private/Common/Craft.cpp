@@ -21,8 +21,11 @@
 
 #include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
 #include "ChaosModularVehicle/VehicleSimComponentsInclude.h"
+#include "ModularVehicle/VehicleSimThruster2DComponent.h"
 
 #include "GameFramework/PawnMovementComponent.h"
+
+#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
 
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
@@ -40,46 +43,105 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
 
-	UClusterUnionComponent* Cluster = GetClusterUnionComponent();
+	if (GetName() == "Default__Craft") {
+		
+	}
+	// Name = name.random-int
+	// name is the saved craft file name, appended .random-int is an instance of the craft
 
-	UGeometryCollection* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit");
-	auto* Chassis = CreateDefaultSubobject<UGeometryCollectionComponent>("chassis");
-	Chassis->SetRestCollection(GC_Chassis);
-	Chassis->SetRelativeLocation(FVector(0, 0, 0));
-	Chassis->DamageThreshold = { 1e8 };
-	Chassis->SetupAttachment(Cluster);
 
-	auto* ChassisSim = CreateDefaultSubobject<UVehicleSimChassisComponent>("chassis_sim");
-	ChassisSim->SetupAttachment(Chassis);
+	if (auto* Cluster = GetClusterUnionComponent()) {
+		if (auto* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit")) {
+			auto* Chassis = CreateDefaultSubobject<UGeometryCollectionComponent>("chassis");
+			if (Chassis) {
+				Chassis->SetRestCollection(GC_Chassis);
+				Chassis->SetRelativeLocation(FVector(0, 0, 0));
+				Chassis->DamageThreshold = { 1e8 };
+				Chassis->SetupAttachment(Cluster);
+			}
 
-	UGeometryCollection* TireMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/Shape_Sphere_Shape_Sphere/GC_Shape_Sphere");
-	auto CreateWheel = [this, TireMesh](FString Name, FVector Location) {
-		auto* Cluster = GetClusterUnionComponent();
+			auto* ChassisSim = CreateDefaultSubobject<UVehicleSimChassisComponent>("chassis_sim");
+			ChassisSim->SetupAttachment(Chassis);
+			/*
+			auto* EngineSim = CreateDefaultSubobject<UVehicleSimEngineComponent>("engine_sim");
+			EngineSim->MaxTorque = 2000;
+			EngineSim->EngineBrakeEffect = 750;
+			EngineSim->SetupAttachment(ChassisSim);
 
-		auto* Wheel = CreateDefaultSubobject<UGeometryCollectionComponent>(FName(Name+"w"));
-		Wheel->SetRestCollection(TireMesh);
-		Wheel->SetRelativeLocation(Location);
-		Wheel->DamageThreshold = { 1e8 };
-		Wheel->SetupAttachment(Cluster);
+			auto* ClutchSim = CreateDefaultSubobject<UVehicleSimClutchComponent>("clutch_sim");
+			ClutchSim->SetupAttachment(EngineSim);
 
-		auto* Suspension = CreateDefaultSubobject<UVehicleSimSuspensionComponent>(FName(Name + "sus"));
-		Suspension->SuspensionMaxDrop = 50;
-		Suspension->SuspensionMaxRaise = 50;
-		Suspension->SetupAttachment(Wheel);
+			auto* TransSim = CreateDefaultSubobject<UVehicleSimTransmissionComponent>("trans_sim");
+			TransSim->SetupAttachment(ClutchSim);
+			*/
+		}
 
-		auto* WheelSim = CreateDefaultSubobject<UVehicleSimWheelComponent>(FName(Name + "sim"));
-		WheelSim->WheelRadius = 100;
-		WheelSim->SetupAttachment(Suspension);
+		auto* TireMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/tire_tire/GC_tire");
+		auto CreateWheel = [this, TireMesh](FString Name, FVector Location, bool Steering) {
+			auto* Cluster = GetClusterUnionComponent();
 
-		return Wheel;
-	};
+			auto* Wheel = CreateDefaultSubobject<UGeometryCollectionComponent>(FName(Name + "w"));
+			Wheel->SetRestCollection(TireMesh);
+			Wheel->SetRelativeLocation(Location);
+			Wheel->DamageThreshold = { 1e8 };
+			Wheel->SetupAttachment(Cluster);
 
-	CreateWheel("wheel_fl", FVector(200, -150, -50));
-	CreateWheel("wheel_fr", FVector(200, 150, -50));
-	CreateWheel("wheel_rl", FVector(-200, -150, -50));
-	CreateWheel("wheel_rr", FVector(-200, 150, -50));
+			auto* Suspension = CreateDefaultSubobject<UVehicleSimSuspensionComponent>(FName(Name + "sus"));
+			Suspension->SuspensionMaxDrop = 50;
+			Suspension->SuspensionMaxRaise = 50;
+			Suspension->SpringRate = 500;
+			Suspension->SpringPreload = 100;
+			Suspension->SetupAttachment(Wheel);
 
-	UE_LOG(LogTemp, Warning, TEXT("Name: %s"), *GetName());
+			auto* WheelSim = CreateDefaultSubobject<UVehicleSimWheelComponent>(FName(Name + "sim"));
+			WheelSim->WheelRadius = 100;
+			WheelSim->AxisType = EWheelAxisType::X;
+			WheelSim->MaxSteeringAngle *= -1;
+			WheelSim->bSteeringEnabled = Steering;
+			WheelSim->SetupAttachment(Suspension);
+
+			return Wheel;
+		};
+
+		CreateWheel("wheel_fl", FVector(200, -150, -50), false);
+		CreateWheel("wheel_fr", FVector(200, 150, -50), false);
+		CreateWheel("wheel_rl", FVector(-200, -150, -50), false);
+		CreateWheel("wheel_rr", FVector(-200, 150, -50), false);
+
+		if (auto* ThrusterMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/engine_engine/GC_engine")) {
+			auto* Thruster = CreateDefaultSubobject<UGeometryCollectionComponent>(FName("thruster"));
+			Thruster->SetRestCollection(ThrusterMesh);
+			Thruster->SetRelativeLocation(FVector(-150, 0, 0));
+			Thruster->SetupAttachment(Cluster);
+
+			auto* ThrusterSim = CreateDefaultSubobject<UVehicleSimThruster2DComponent>(FName("thruster_sim"));
+			ThrusterSim->bSteeringEnabled = true;
+			ThrusterSim->MaxThrustForce = 2000000.0f;
+			ThrusterSim->SteeringForceEffect = 1;
+			ThrusterSim->SetupAttachment(Thruster);
+
+
+			auto* Thruster2 = CreateDefaultSubobject<UGeometryCollectionComponent>(FName("thruster2"));
+			Thruster2->SetRestCollection(ThrusterMesh);
+			Thruster2->SetRelativeLocation(FVector(150, 0, 0));
+			Thruster2->SetRelativeRotation(FRotator(0, 180, 0));
+			Thruster2->SetupAttachment(Cluster);
+
+			auto* ThrusterSim2 = CreateDefaultSubobject<UVehicleSimThrusterComponent>(FName("thruster_sim2"));
+			ThrusterSim2->bSteeringEnabled = true;
+			ThrusterSim2->MaxThrustForce = 2000000.0f;
+			ThrusterSim2->SteeringForceEffect = 1;
+			ThrusterSim2->SetupAttachment(Thruster2);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("Name: %s"), *GetName());
+	}
+
+	if (auto* BaseSim = GetVehicleSimulationComponent()) {
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Steering"), EModuleInputValueType::MAxis2D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Throttle"), EModuleInputValueType::MAxis1D));
+		UE_LOG(LogTemp, Warning, TEXT("Setup inputs"));
+	}
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -450,7 +512,7 @@ TArray<ACraft*> ACraft::StageCraft() {
 }
 
 FVector ACraft::GetAngularVelocity() {
-	return RootPart()->Mesh->GetPhysicsAngularVelocityInRadians();
+	return FVector();// RootPart()->Mesh->GetPhysicsAngularVelocityInRadians();
 }
 
 void ACraft::SetLocation(FVector Location) {
@@ -460,10 +522,10 @@ void ACraft::SetLocation(FVector Location) {
 		});
 	}
 	else { // all parts attached to root, so only need to set root
-		RootPart()->Mesh->SetWorldLocation(Location);
+		// RootPart()->Mesh->SetWorldLocation(Location);
 	}
 
-	SetActorLocation(Location);
+	// SetActorLocation(Location);
 
 	return;
 }
@@ -475,7 +537,7 @@ void ACraft::SetRotation(FQuat Rotation) {
 		});
 	}
 	else {
-		RootPart()->Mesh->SetWorldRotation(Rotation);
+		// RootPart()->Mesh->SetWorldRotation(Rotation);
 	}
 
 	return;

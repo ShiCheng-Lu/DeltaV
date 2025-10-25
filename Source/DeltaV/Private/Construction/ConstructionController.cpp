@@ -24,6 +24,7 @@
 
 #include "Common/AssetLibrary.h"
 #include "EnhancedInputSubsystems.h"
+#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
 
 AConstructionController::AConstructionController() {
 
@@ -61,12 +62,13 @@ void AConstructionController::SetupInputComponent() {
 	Super::SetupInputComponent();
 
 	
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer()) {
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) {
-			UInputMappingContext* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/Default");
-			Subsystem->AddMappingContext(InputMappingContext, 1);
+	if (auto* LocalPlayer = GetLocalPlayer()) {
+		if (auto* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) {
+			//auto* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/Default");
+			//Subsystem->AddMappingContext(InputMappingContext, 1);
 
-			UE_LOG(LogTemp, Warning, TEXT("Added mapping context"));
+			auto* SimContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/SimulationInputContext");
+			Subsystem->AddMappingContext(SimContext, 0);
 		}
 	}
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent)) {
@@ -74,17 +76,31 @@ void AConstructionController::SetupInputComponent() {
 		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
 
 		UE_LOG(LogTemp, Warning, TEXT("Added input"));
+
+		UInputAction* Steering = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Steering");
+		EnhancedInput->BindActionValueLambda(Steering, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			FVector2D Value = Input.Get<FVector2D>();
+			if (OwnedCraft != nullptr) {
+				if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
+					UE_LOG(LogTemp, Warning, TEXT("Steering input %s"), *Value.ToString());
+					Sim->SetInputAxis2D(FName("Steering"), Value);
+				}
+			}
+		});
+
+
+		UInputAction* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Throttle");
+		EnhancedInput->BindActionValueLambda(Throttle, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			float Value = Input.Get<float>();
+			if (OwnedCraft != nullptr) {
+				if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
+					UE_LOG(LogTemp, Warning, TEXT("Throttle input %f"), Value);
+					Sim->SetInputAxis1D(FName("Throttle"), Value);
+				}
+			}
+		});
 	}
 	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
-
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::W, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::S, -1.f));
-
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveLeftRight", EKeys::A, -1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveLeftRight", EKeys::D, 1.f));
-
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveUpDown", EKeys::SpaceBar, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveUpDown", EKeys::LeftShift, -1.f));
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
@@ -211,9 +227,10 @@ void AConstructionController::Move(const FInputActionValue& Movement) {
 
 	FRotator ControlSpaceRot = GetControlRotation();
 	ControlSpaceRot.Pitch = 0;
-	FVector2D Input = Movement.Get<FVector2D>();
+	FVector Input = Movement.Get<FVector>();
 	FVector Move = FVector(Input.Y, Input.X, 0);
 	FVector Direction = ControlSpaceRot.RotateVector(Move);
+	Direction.Z = Input.Z;
 	GetPawn()->AddMovementInput(Direction);
 }
 
@@ -358,8 +375,9 @@ void AConstructionController::Save() {
 void AConstructionController::Load() {
 	FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
-	ACraft* Craft = Constructor.CreateCraft(CraftJson);
-	HUD->SetCraft(Craft);
+	OwnedCraft = Constructor.CreateCraft(CraftJson);
+	HUD->SetCraft(OwnedCraft);
+	Possess(OwnedCraft);
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {

@@ -36,6 +36,8 @@ public:
 
 	virtual void PlayerTick(float DeltaTime) override;
 
+
+	ACraft* OwnedCraft;
 protected:
 	virtual void BeginPlay() override;
 
