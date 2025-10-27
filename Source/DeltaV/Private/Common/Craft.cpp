@@ -43,7 +43,10 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
 
-	if (GetName() == "Default__Craft") {
+
+
+	static const FName Default__Craft(TEXT("Default__Craft"));
+	if (GetFName() == Default__Craft) {
 		
 	}
 	// Name = name.random-int
@@ -62,7 +65,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 			auto* ChassisSim = CreateDefaultSubobject<UVehicleSimChassisComponent>("chassis_sim");
 			ChassisSim->SetupAttachment(Chassis);
-			/*
+
 			auto* EngineSim = CreateDefaultSubobject<UVehicleSimEngineComponent>("engine_sim");
 			EngineSim->MaxTorque = 2000;
 			EngineSim->EngineBrakeEffect = 750;
@@ -73,13 +76,11 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 			auto* TransSim = CreateDefaultSubobject<UVehicleSimTransmissionComponent>("trans_sim");
 			TransSim->SetupAttachment(ClutchSim);
-			*/
 		}
 
 		auto* TireMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/tire_tire/GC_tire");
-		auto CreateWheel = [this, TireMesh](FString Name, FVector Location, bool Steering) {
-			auto* Cluster = GetClusterUnionComponent();
-
+		auto* TireStaticMesh = UAssetLibrary::LoadAsset<UStaticMesh>("/Game/Shapes/tire");
+		auto CreateWheel = [this, TireMesh, Cluster](FString Name, FVector Location, bool Steering) {
 			auto* Wheel = CreateDefaultSubobject<UGeometryCollectionComponent>(FName(Name + "w"));
 			Wheel->SetRestCollection(TireMesh);
 			Wheel->SetRelativeLocation(Location);
@@ -87,9 +88,9 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 			Wheel->SetupAttachment(Cluster);
 
 			auto* Suspension = CreateDefaultSubobject<UVehicleSimSuspensionComponent>(FName(Name + "sus"));
-			Suspension->SuspensionMaxDrop = 50;
-			Suspension->SuspensionMaxRaise = 50;
-			Suspension->SpringRate = 500;
+			Suspension->SuspensionMaxDrop = 100;
+			Suspension->SuspensionMaxRaise = 100;
+			Suspension->SpringRate = 200;
 			Suspension->SpringPreload = 100;
 			Suspension->SetupAttachment(Wheel);
 
@@ -103,8 +104,8 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 			return Wheel;
 		};
 
-		CreateWheel("wheel_fl", FVector(200, -150, -50), false);
-		CreateWheel("wheel_fr", FVector(200, 150, -50), false);
+		CreateWheel("wheel_fl", FVector(200, -150, -50), true);
+		CreateWheel("wheel_fr", FVector(200, 150, -50), true);
 		CreateWheel("wheel_rl", FVector(-200, -150, -50), false);
 		CreateWheel("wheel_rr", FVector(-200, 150, -50), false);
 
@@ -117,29 +118,20 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 			auto* ThrusterSim = CreateDefaultSubobject<UVehicleSimThruster2DComponent>(FName("thruster_sim"));
 			ThrusterSim->bSteeringEnabled = true;
 			ThrusterSim->MaxThrustForce = 2000000.0f;
-			ThrusterSim->SteeringForceEffect = 1;
+			ThrusterSim->MaxSteeringAngle = 20;
 			ThrusterSim->SetupAttachment(Thruster);
-
-
-			auto* Thruster2 = CreateDefaultSubobject<UGeometryCollectionComponent>(FName("thruster2"));
-			Thruster2->SetRestCollection(ThrusterMesh);
-			Thruster2->SetRelativeLocation(FVector(150, 0, 0));
-			Thruster2->SetRelativeRotation(FRotator(0, 180, 0));
-			Thruster2->SetupAttachment(Cluster);
-
-			auto* ThrusterSim2 = CreateDefaultSubobject<UVehicleSimThrusterComponent>(FName("thruster_sim2"));
-			ThrusterSim2->bSteeringEnabled = true;
-			ThrusterSim2->MaxThrustForce = 2000000.0f;
-			ThrusterSim2->SteeringForceEffect = 1;
-			ThrusterSim2->SetupAttachment(Thruster2);
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Name: %s"), *GetName());
 	}
 
 	if (auto* BaseSim = GetVehicleSimulationComponent()) {
-		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Steering"), EModuleInputValueType::MAxis2D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Steering"), EModuleInputValueType::MAxis1D));
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Throttle"), EModuleInputValueType::MAxis1D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Thrust"), EModuleInputValueType::MAxis1D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Pitch"), EModuleInputValueType::MAxis1D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Roll"), EModuleInputValueType::MAxis1D));
+		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Yaw"), EModuleInputValueType::MAxis1D));
 		UE_LOG(LogTemp, Warning, TEXT("Setup inputs"));
 	}
 }

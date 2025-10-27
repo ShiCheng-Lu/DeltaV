@@ -12,23 +12,37 @@ namespace Chaos {
 
 	void FThruster2DSimModule::Simulate(float DeltaTime, const FAllInputs& Inputs, FSimModuleTree& VehicleModuleSystem)
 	{
-		SteerAngleDegrees = 0.0f;
-		if (Setup().SteeringEnabled)
-		{
-			SteerAngleDegrees = Setup().SteeringEnabled ? Inputs.GetControls().GetMagnitude(TEXT("Steering")) * Setup().MaxSteeringAngle : 0.0f;
+		double Pitch = Inputs.GetControls().GetMagnitude(PitchControlName);
+		double Roll = Inputs.GetControls().GetMagnitude(RollControlName);
+		double Yaw = Inputs.GetControls().GetMagnitude(YawControlName);
+
+		SteerAngle = Pitch * Setup().Pitch + Roll * Setup().Roll + Yaw * Setup().Yaw;
+		if (SteerAngle.SizeSquared() > 1) {
+			SteerAngle.Normalize();
+		}
+		// = Response x Vector(0, 0, 1) (thrust direction)
+		FVector RotationAxis = FVector(0, SteerAngle.Y, -SteerAngle.X);
+	
+		if (RotationAxis.SizeSquared() > UE_SMALL_NUMBER) {
+			Steer = FQuat(RotationAxis, SteerAngle.Size() * FMath::DegreesToRadians(Setup().MaxSteeringAngle));
+			Steer.Normalize();
+		}
+		else {
+			Steer = FQuat(FVector(0, 0, 1), 0);
 		}
 
 		// applies continuous force
-		float BoostEffect = Inputs.GetControls().GetMagnitude(BoostControlName) * Setup().BoostMultiplier;
-		FVector Force = Setup().ForceAxis * Setup().MaxThrustForce * Inputs.GetControls().GetMagnitude(ThrottleControlName) * (1.0f + BoostEffect);
-		FQuat Steer = FQuat(Setup().SteeringAxis, FMath::DegreesToRadians(SteerAngleDegrees) * Setup().SteeringForceEffect);
+		FVector Force = Setup().ForceAxis * Setup().MaxThrustForce * Inputs.GetControls().GetMagnitude("Thrust");
 		AddLocalForceAtPosition(Steer.RotateVector(Force), Setup().ForceOffset, true, false, false, FColor::Magenta);
 	}
 
 	void FThruster2DSimModule::Animate()
 	{
 		AnimationData.AnimFlags = EAnimationFlags::AnimateRotation;
-		AnimationData.AnimationRotOffset.Yaw = SteerAngleDegrees;
+		AnimationData.AnimationRotOffset.Pitch = SteerAngle.X;
+		AnimationData.AnimationRotOffset.Yaw = SteerAngle.Y;
 		// TODO: Animate rotation like wheel steering
+
+		AnimationData.CombinedRotation = Steer;
 	}
 }

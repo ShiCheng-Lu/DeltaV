@@ -43,7 +43,7 @@ void AGenerationController::BeginPlay() {
 
 void AGenerationController::Tick(float DeltaSeconds) {
 	if (Progress) {
-		ShapeEditor->Iterate2(Mesh);
+		ShapeEditor->Iterate(Mesh);
 		ShapeEditor->Generate(Mesh);
 		DynamicMesh->SetMesh(Mesh);
 		NewActor->GetDynamicMeshComponent()->NotifyMeshUpdated();

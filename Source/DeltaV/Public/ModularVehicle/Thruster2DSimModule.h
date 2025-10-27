@@ -10,6 +10,8 @@ namespace Chaos
 	struct FAllInputs;
 	class FSimModuleTree;
 
+	const FName ThrustControl("Thrust");
+
 	/// <summary>
 	/// Thruster2D settings
 	/// </summary>
@@ -18,8 +20,14 @@ namespace Chaos
 		FThruster2DSettings()
 			: FThrusterSettings()
 		{
-
+			Pitch = FVector2D(0, -1);
+			Roll = FVector2D(1, 0);
+			Yaw = FVector2D(1, 0);
 		}
+
+		FVector2D Pitch;
+		FVector2D Roll;
+		FVector2D Yaw;
 	};
 
 	/// <summary>
@@ -34,7 +42,7 @@ namespace Chaos
 
 		virtual TSharedPtr<FModuleNetData> GenerateNetData(const int32 NodeArrayIndex) const override { return nullptr; }
 
-		virtual const FString GetDebugName() const { return TEXT("Thruster"); }
+		virtual const FString GetDebugName() const { return TEXT("Thruster2D"); }
 
 		virtual bool IsBehaviourType(eSimModuleTypeFlags InType) const override { return (InType & NonFunctional); }
 
@@ -42,10 +50,9 @@ namespace Chaos
 
 		virtual void Animate() override;
 
-		float GetSteerAngleDegrees() const { return SteerAngleDegrees; }
-
 	private:
-		float SteerAngleDegrees;
+		FVector2D SteerAngle;
+		FQuat Steer;
 	};
 
 

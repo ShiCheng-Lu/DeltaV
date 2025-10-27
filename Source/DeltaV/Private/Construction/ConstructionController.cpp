@@ -79,24 +79,38 @@ void AConstructionController::SetupInputComponent() {
 
 		UInputAction* Steering = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Steering");
 		EnhancedInput->BindActionValueLambda(Steering, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			FVector2D Value = Input.Get<FVector2D>();
-			if (OwnedCraft != nullptr) {
-				if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
-					UE_LOG(LogTemp, Warning, TEXT("Steering input %s"), *Value.ToString());
-					Sim->SetInputAxis2D(FName("Steering"), Value);
-				}
-			}
-		});
-
-
-		UInputAction* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Throttle");
-		EnhancedInput->BindActionValueLambda(Throttle, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			float Value = Input.Get<float>();
 			if (OwnedCraft != nullptr) {
 				if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
-					UE_LOG(LogTemp, Warning, TEXT("Throttle input %f"), Value);
-					Sim->SetInputAxis1D(FName("Throttle"), Value);
+					UE_LOG(LogTemp, Warning, TEXT("Steering input %f"), Value);
+					Sim->SetInputAxis1D(FName("Steering"), Value);
 				}
+			}
+		});
+		
+		UInputAction* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Throttle");
+		EnhancedInput->BindActionValueLambda(Throttle, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Throttle"), Input.Get<float>());
+			}
+		});
+
+		UInputAction* Pitch = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Pitch");
+		EnhancedInput->BindActionValueLambda(Pitch, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Pitch"), Input.Get<float>());
+			}
+		});
+		UInputAction* Roll = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Roll");
+		EnhancedInput->BindActionValueLambda(Roll, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Roll"), Input.Get<float>());
+			}
+		});
+		UInputAction* Yaw = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Yaw");
+		EnhancedInput->BindActionValueLambda(Yaw, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Yaw"), Input.Get<float>());
 			}
 		});
 	}
@@ -157,8 +171,6 @@ void AConstructionController::SetupInputComponent() {
 	InputComponent->BindAction("Save", IE_Pressed, this, &AConstructionController::Save);
 	InputComponent->BindAction("Load", IE_Pressed, this, &AConstructionController::Load);
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::I, 0.1f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::K, -0.1f));
 	// InputComponent->BindAxis("Throttle", this, &AConstructionController::Throttle);
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
@@ -382,6 +394,14 @@ void AConstructionController::Load() {
 
 void AConstructionController::PlayerTick(float DeltaTime) {
 	Super::PlayerTick(DeltaTime);
+
+	/*
+	if (OwnedCraft != nullptr) {
+		if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
+			Sim->SetInputAxis1D(FName("Throttle"), 1);
+		}
+	}
+	*/
 
 	// UE_LOG(LogTemp, Warning, TEXT("tick"));
 
