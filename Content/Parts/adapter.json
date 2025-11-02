@@ -1,6 +1,6 @@
 {
   "name": "adapter",
-  "mesh": "/Game/Shapes/adapter",
+  "mesh": "/Game/Shapes/GC/GC_adapter",
   "type": "static",
   "attachment": [
     {

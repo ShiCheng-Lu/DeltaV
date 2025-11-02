@@ -1,0 +1,79 @@
+{
+    "name": "car",
+    "location": [ 0, 0, 0 ],
+    "rotation": [ 0, 0, 0, 1 ],
+    "structure": {
+      "cockpit": {
+        "thruster": {
+        },
+        "tire_fl": {
+        },
+        "tire_fr": {
+        },
+        "tire_rl": {
+        },
+        "tire_rr": {
+        }
+      }
+    },
+    "parts": {
+      "cockpit": {
+        "type": "cockpit",
+        "location": [ 0, 0, 0 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "attached_with": 1
+      },
+      "thruster": {
+        "type": "engine",
+        "location": [ -150, 0, 0 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "engine": {
+
+        }
+      },
+      "tire_fl": {
+        "type": "tire",
+        "location": [ 200, -150, -50 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "wheel": {
+          "max_steering": 30
+        }
+      },
+      "tire_fr": {
+        "type": "tire",
+        "location": [ 200, 150, -50 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "wheel": {
+          "max_steering": 30
+        }
+      },
+      "tire_rl": {
+        "type": "tire",
+        "location": [ -200, -150, -50 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "wheel": {
+          "max_steering": 0
+        }
+      },
+      "tire_rr": {
+        "type": "tire",
+        "location": [ -200, 150, -50 ],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ],
+        "attached_at": 1,
+        "wheel": {
+          "max_steering": 0
+        }
+      }
+    }
+  }

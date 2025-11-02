@@ -27,6 +27,13 @@
 
 #include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
 
+
+class Part {
+	UGeometryCollectionComponent* Component;
+
+	TArray<Part> Children;
+};
+
 // Sets default values
 ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
@@ -65,17 +72,24 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 }
 
 void ACraft::OnConstruction(const FTransform& Transform) {
+
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
+	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
+
+	FromJson(CraftJson);
+
 	if (auto* Cluster = GetClusterUnionComponent()) {
-		if (auto* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/cockpit_cockpit/GC_cockpit")) {
-			auto* Chassis = NewObject<UGeometryCollectionComponent>(this, "chassis");
+		UGeometryCollectionComponent* Chassis = nullptr;
+		if (auto* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/GC/GC_cockpit")) {
+			Chassis = NewObject<UGeometryCollectionComponent>(this, "chassis");
 			if (Chassis) {
 				Chassis->SetRestCollection(GC_Chassis);
 				Chassis->SetRelativeLocation(FVector(0, 0, 0));
 				Chassis->DamageThreshold = { 1e8 };
 				Chassis->SetupAttachment(Cluster);
-				Chassis->RegisterComponent();
+				// Chassis->RegisterComponent();
 			}
-
+			/*
 			auto* ChassisSim = NewObject<UVehicleSimChassisComponent>(this, "chassis_sim");
 			ChassisSim->SetupAttachment(Chassis);
 			ChassisSim->RegisterComponent();
@@ -93,56 +107,7 @@ void ACraft::OnConstruction(const FTransform& Transform) {
 			auto* TransSim = NewObject<UVehicleSimTransmissionComponent>(this, "trans_sim");
 			TransSim->SetupAttachment(ClutchSim);
 			TransSim->RegisterComponent();
-		}
-
-		auto* TireMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/tire_tire/GC_tire");
-		auto* TireStaticMesh = UAssetLibrary::LoadAsset<UStaticMesh>("/Game/Shapes/tire");
-		auto CreateWheel = [this, TireMesh, Cluster](FString Name, FVector Location, bool Steering) {
-			auto* Wheel = NewObject<UGeometryCollectionComponent>(this, FName(Name + "w"));
-			Wheel->SetRestCollection(TireMesh);
-			Wheel->SetRelativeLocation(Location);
-			Wheel->DamageThreshold = { 1e8 };
-			Wheel->AttachToComponent(Cluster, FAttachmentTransformRules::KeepRelativeTransform);
-			Wheel->RegisterComponent();
-
-			auto* Suspension = NewObject<UVehicleSimSuspensionComponent>(this, FName(Name + "sus"));
-			Suspension->SuspensionMaxDrop = 100;
-			Suspension->SuspensionMaxRaise = 100;
-			Suspension->SpringRate = 200;
-			Suspension->SpringPreload = 100;
-			Suspension->AttachToComponent(Wheel, FAttachmentTransformRules::KeepRelativeTransform);
-			Suspension->RegisterComponent();
-
-			auto* WheelSim = NewObject<UVehicleSimWheelComponent>(this, FName(Name + "sim"));
-			WheelSim->MaxSteeringAngle = 30;
-			WheelSim->WheelRadius = 100;
-			WheelSim->AxisType = EWheelAxisType::X;
-			WheelSim->MaxSteeringAngle *= -1;
-			WheelSim->bSteeringEnabled = Steering;
-			WheelSim->AttachToComponent(Suspension, FAttachmentTransformRules::KeepRelativeTransform);
-			WheelSim->RegisterComponent();
-
-			return Wheel;
-		};
-
-		CreateWheel("wheel_fl", FVector(200, -150, -50), true);
-		CreateWheel("wheel_fr", FVector(200, 150, -50), true);
-		CreateWheel("wheel_rl", FVector(-200, -150, -50), false);
-		CreateWheel("wheel_rr", FVector(-200, 150, -50), false);
-
-		if (auto* ThrusterMesh = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/engine_engine/GC_engine")) {
-			auto* Thruster = NewObject<UGeometryCollectionComponent>(this, FName("thruster"));
-			Thruster->SetRestCollection(ThrusterMesh);
-			Thruster->SetRelativeLocation(FVector(-150, 0, 0));
-			Thruster->AttachToComponent(Cluster, FAttachmentTransformRules::KeepRelativeTransform);
-			Thruster->RegisterComponent();
-
-			auto* ThrusterSim = NewObject<UVehicleSimThruster2DComponent>(this, FName("thruster_sim"));
-			ThrusterSim->bSteeringEnabled = true;
-			ThrusterSim->MaxThrustForce = 2000000.0f;
-			ThrusterSim->MaxSteeringAngle = 20;
-			ThrusterSim->AttachToComponent(Thruster, FAttachmentTransformRules::KeepRelativeTransform);
-			ThrusterSim->RegisterComponent();
+			*/
 		}
 	}
 }
@@ -154,39 +119,24 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 
 	// temp just make a craft lmao
 
-	/**
-	auto& PartListJson = Json->GetObjectField(TEXT("parts"));
-	TArray<TPair<TObjectPtr<UPart>, TSharedPtr<FJsonObject>>> Structures = { 
-		{ nullptr, Json->GetObjectField(TEXT("structure")) } 
+	for (auto& [Name, Definition] : Json->GetObjectField(TEXT("parts"))->Values) {
+		auto* Part = NewObject<UPart>(this, FName(Name));
+		Part->FromJson(Definition->AsObject());
+		Parts.Add({ Name, Part });
+	}
+
+	// depth first traversal through the tree via array (avoid recursion)
+	TArray<TPair<UPrimitiveComponent*, TSharedPtr<FJsonObject>>> Structures = {
+		{ GetClusterUnionComponent(), Json->GetObjectField(TEXT("structure")) }
 	};
-	for (int i = 0; i < Structures.Num(); ++i) {
-		for (auto& PartKVP : Structures[i].Value->Values) {
-			UPart* Part = NewObject<UPart>(this, FName(PartKVP.Key));
-
-			auto& PartJson = PartListJson->GetObjectField(PartKVP.Key);
-			Part->FromJson(PartJson);
-			Part->SetParent(Structures[i].Key);
-
-			Parts.Add(PartKVP.Key, Part);
-
-			Structures.Add({ Part, PartKVP.Value->AsObject() });
-			UE_LOG(LogTemp, Warning, TEXT("created: %s"), *PartKVP.Key);
+	while (Structures.Num() > 0) {
+		auto [Parent, ChildJson] = Structures.Pop();
+		for (auto& [Name, GrandChildrenJson] : ChildJson->Values) {
+			auto Part = Parts.FindChecked(Name);
+			Part->Mesh->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
+			Structures.Add({ Part->Mesh, GrandChildrenJson->AsObject()});
 		}
 	}
-	if (Structures.Num() > 1) {
-		Root = Structures[1].Key;
-	}
-
-	// stages
-	StageManager->FromJson(Json->GetArrayField(TEXT("stages")));
-	FuelManager->FromJson();
-
-
-	for (auto& PartKVP : Parts) {
-		PartKVP.Value->RegisterComponent();
-	}
-	UE_LOG(LogTemp, Warning, TEXT("Finished loading craft"));
-	*/
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
@@ -389,7 +339,7 @@ static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 		return;
 	}
 
-	Part->Detach();
+	// Part->Detach();
 
 	for (auto& Child : Part->Children) {
 		TransferPart(Child, FromCraft, ToCraft);
@@ -429,7 +379,7 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 	// complete
 	for (auto& PartKVP : NewCraft->Parts) {
 		Parts.Remove(PartKVP.Key);
-		PartKVP.Value->Attach();
+		// PartKVP.Value->Attach();
 	}
 
 	// NewCraft->SetRootComponent(Part->Mesh);
@@ -446,10 +396,10 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 	UPart* Part = SourceCraft->RootPart();
 	TransferPart(Part, SourceCraft, this);
 
-	Part->SetParent(AttachToPart);
+	// Part->SetParent(AttachToPart);
 
 	for (auto& PartKVP : SourceCraft->Parts) {
-		PartKVP.Value->Attach();
+		// PartKVP.Value->Attach();
 	}
 
 	// TODO: transfer stages
@@ -479,7 +429,7 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 
 	for (auto& PartKVP : Parts) {
 		auto Part = PartKVP.Value;
-		Part->SetPhysicsEnabled(PhysicsEnabled);
+		// Part->SetPhysicsEnabled(PhysicsEnabled);
 		// Part->SetSimulatePhysics(PhysicsEnabled);
 	}
 }
@@ -510,6 +460,40 @@ FVector ACraft::GetWorldCoM() {
 }
 
 TArray<ACraft*> ACraft::StageCraft() {
+	// Temp try to lock the wheels
+
+	int WheelGuid = 0;
+	UPart* Part = Parts.FindChecked(FString("tire_fr"));
+	for (auto& Child : Part->Mesh->GetAttachChildren()) {
+		if (auto* Suspension = Cast<UVehicleSimSuspensionComponent>(Child)) {
+			auto& SuspensionChildren = Suspension->GetAttachChildren();
+			UE_LOG(LogTemp, Warning, TEXT("Found wheel has %d children"), SuspensionChildren.Num());
+			if (SuspensionChildren.Num() > 0) {
+				if (auto* Wheel = Cast<UVehicleSimWheelComponent>(SuspensionChildren[0])) {
+					Wheel->bSteeringEnabled = false;
+
+					const auto& Data = GetVehicleSimulationComponent()->ComponentToPhysicsObjects.Find(Wheel);
+
+					WheelGuid = Data->Guid;
+					UE_LOG(LogTemp, Warning, TEXT("Found wheel sim, tree index is %d"), WheelGuid);
+				}
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Tire children is "));
+	}
+	// Probably can only update the sim component, then in place replace it at the tree index, and hope there is no other reference
+	for (auto& Node : GetVehicleSimulationComponent()->VehicleSimulationPT->AccessSimComponentTree()->GetSimulationModuleTree()) {
+		if (Node.SimModule->GetGuid() == WheelGuid) {
+			if (Chaos::FWheelSimModule* Wheel = static_cast<Chaos::FWheelSimModule*>(Node.SimModule)) {
+				float MaxSteering = Wheel->AccessSetup().MaxSteeringAngle;
+				UE_LOG(LogTemp, Warning, TEXT("Wow it's a wheel, steering %f"), MaxSteering);
+				Wheel->AccessSetup().MaxSteeringAngle = 0;
+			}
+		}
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("---"));
+
 	// TODO: 
 	return TArray<ACraft*>();
 }

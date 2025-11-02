@@ -64,60 +64,75 @@ void AConstructionController::SetupInputComponent() {
 	
 	if (auto* LocalPlayer = GetLocalPlayer()) {
 		if (auto* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) {
-			//auto* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/Default");
+			//auto* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/IMC_Construction");
 			//Subsystem->AddMappingContext(InputMappingContext, 1);
 
-			auto* SimContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/SimulationInputContext");
-			Subsystem->AddMappingContext(SimContext, 0);
+			auto* IMC_Common = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Common");
+			Subsystem->AddMappingContext(IMC_Common, 2);
+
+			auto* IMC_Simulation = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Simulation");
+			Subsystem->AddMappingContext(IMC_Simulation, 0);
 		}
 	}
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent)) {
-		UInputAction* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Construction/Move");
+		auto* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Move");
 		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
 
 		UE_LOG(LogTemp, Warning, TEXT("Added input"));
 
-		UInputAction* Steering = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Steering");
+		auto* Steering = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Steering");
 		EnhancedInput->BindActionValueLambda(Steering, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			float Value = Input.Get<float>();
 			if (OwnedCraft != nullptr) {
-				if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
-					UE_LOG(LogTemp, Warning, TEXT("Steering input %f"), Value);
-					Sim->SetInputAxis1D(FName("Steering"), Value);
-				}
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Steering"), Input.Get<float>());
 			}
 		});
-		
-		UInputAction* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Throttle");
+
+		auto* Thrust = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Thrust");
+		EnhancedInput->BindActionValueLambda(Thrust, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Thrust"), Input.Get<float>());
+			}
+		});
+
+		auto* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Throttle");
 		EnhancedInput->BindActionValueLambda(Throttle, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			if (OwnedCraft != nullptr) {
 				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Throttle"), Input.Get<float>());
 			}
 		});
 
-		UInputAction* Pitch = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Pitch");
+		auto* Pitch = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Pitch");
 		EnhancedInput->BindActionValueLambda(Pitch, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			if (OwnedCraft != nullptr) {
 				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Pitch"), Input.Get<float>());
 			}
 		});
-		UInputAction* Roll = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Roll");
+		auto* Roll = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Roll");
 		EnhancedInput->BindActionValueLambda(Roll, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			if (OwnedCraft != nullptr) {
 				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Roll"), Input.Get<float>());
 			}
 		});
-		UInputAction* Yaw = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/Yaw");
+		auto* Yaw = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Yaw");
 		EnhancedInput->BindActionValueLambda(Yaw, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			if (OwnedCraft != nullptr) {
 				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Yaw"), Input.Get<float>());
 			}
 		});
-	}
-	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
+		auto* Look = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Look");
+		EnhancedInput->BindActionValueLambda(Look, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			AddPitchInput(Input.Get<FVector2D>().Y * 0.1);
+			AddYawInput(Input.Get<FVector2D>().X * 0.1);
+		});
+
+		auto* Stage = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Stage");
+		EnhancedInput->BindActionValueLambda(Stage, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->StageCraft();
+			}
+		});
+	}
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
@@ -149,12 +164,6 @@ void AConstructionController::SetupInputComponent() {
 
 
 	InputComponent->BindAxis("CameraZoom", this, &AConstructionController::Zoom);
-
-	InputComponent->BindAction("RightClick", EInputEvent::IE_Pressed, this, &AConstructionController::EnableMovement);
-	InputComponent->BindAction("RightClick", EInputEvent::IE_Released, this, &AConstructionController::DisableMovement);
-
-	InputComponent->BindAxis("LookX", this, &AConstructionController::AddYawInput);
-	InputComponent->BindAxis("LookY", this, &AConstructionController::AddPitchInput);
 
 	InputComponent->BindAction("LeftClick", IE_Pressed, this, &AConstructionController::Pressed);
 	InputComponent->BindAction("RightClick", IE_Pressed, this, &AConstructionController::Pressed);
@@ -385,7 +394,8 @@ void AConstructionController::Save() {
 }
 
 void AConstructionController::Load() {
-	FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+	// FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
 	OwnedCraft = Constructor.CreateCraft(CraftJson);
 	HUD->SetCraft(OwnedCraft);

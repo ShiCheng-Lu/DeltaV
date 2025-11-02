@@ -14,6 +14,9 @@
 #include "MeshDescriptionToDynamicMesh.h"
 #include "DynamicMeshToMeshDescription.h" // can always use this
 
+#include "GeometryCollection/GeometryCollection.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
+
 #include "Common/AssetLibrary.h"
 #include "Common/AttachmentNode.h"
 #include "Common/JsonUtil.h"
@@ -26,9 +29,8 @@
 #include "Common/Craft/AeroComponent.h"
 #include "Common/Craft/WheelComponent.h"
 
-
-static auto DetachmentRule = FDetachmentTransformRules(EDetachmentRule::KeepWorld, false);
-static auto AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepWorld, true);
+#include "ChaosModularVehicle/VehicleSimComponentsInclude.h"
+#include "ModularVehicle/VehicleSimThruster2DComponent.h"
 
 static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields = {
 	{"fuel", UFuelComponent::StaticClass()},
@@ -40,35 +42,9 @@ static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields = {
 UPart::UPart(const FObjectInitializer& ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	Parent = nullptr;
 	Children = TArray<UPart*>();
-	FCollisionResponseContainer();
 
-
-	Craft = Cast<ACraft>(GetOwner());
+	Craft = GetOwner<ACraft>();
 	
-	// TODO: this should be at the position of the attachment node, maybe then the limit can be smaller
-	// and also add a drive to push the connection back towards to default position
-	Physics = CreateDefaultSubobject<UPhysicsConstraintComponent>("Link");
-	Physics->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0);
-	Physics->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0);
-	Physics->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0);
-	Physics->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0);
-	Physics->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0);
-	Physics->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0);
-
-	// controls how noodly the craft is
-	Physics->SetLinearDriveParams(1e6, 1e6, 1e6);
-	Physics->SetLinearPositionTarget(FVector(0));
-	Physics->SetLinearPositionDrive(true, true, true);
-	Physics->SetLinearVelocityTarget(FVector(0));
-	Physics->SetLinearVelocityDrive(true, true, true);
-
-	PhysicsEnabled = false;
-
-	// static ConstructorHelpers::FObjectFinder<UPhysicalMaterial> PhysMaterial(TEXT("/Game/Simulation/Rubber"));
-	// UPhysicalMaterial* PhysMaterial = NewObject<UPhysicalMaterial>();
-	// PhysMaterial->Friction = 1;
-
-	// SetPhysMaterialOverride(PhysMaterial);
 	Id = GetName();
 }
 
@@ -78,24 +54,27 @@ void UPart::SetAttachmentNodeVisibility(bool visibility) {
 	}
 }
 
-void UPart::SetParent(UPart* NewParent) {
-	if (NewParent == this) {
+void UPart::SetParent(UPrimitiveComponent* NewParent) {
+	
+	UPart* PartParent = nullptr;// Cast<UPart>(NewParent);
+	if (PartParent == this) {
 		UE_LOG(LogTemp, Warning, TEXT("Parenting self, not allowed"));
 		return;
 	}
 
 	if (Parent != nullptr) {
 		Parent->Children.Remove(this);
+
+		Mesh->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 	}
 
-	Detach();
-
-	Parent = NewParent;
+	Parent = PartParent;
 	if (Parent != nullptr) {
 		Parent->Children.Add(this);
+
+		Mesh->AttachToComponent(Parent->Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 	}
 
-	Attach();
 }
 
 void UPart::BeginPlay() {
@@ -108,46 +87,8 @@ void UPart::BeginPlay() {
 	Physics->RegisterComponent();
 }
 
-void UPart::Detach() {
-	if (PhysicsEnabled) {
-		Physics->BreakConstraint();
-	}
-	else {
-		Mesh->DetachFromComponent(DetachmentRule);
-	}
-}
-
-void UPart::Attach() {
-	if (Parent == nullptr) {
-		return;
-	}
-
-	if (PhysicsEnabled) {
-		Physics->SetConstrainedComponents(Mesh, Bone, Parent->Mesh, Parent->Bone);
-	}
-	else {
-		Mesh->AttachToComponent(Parent->Mesh, AttachmentRule);
-	}
-}
-
-void UPart::SetPhysicsEnabled(bool bSimulate) {
-	if (PhysicsEnabled == bSimulate) {
-		return;
-	}
-	Detach();
-	PhysicsEnabled = bSimulate;
-	Attach();
-	
-	for (auto& FieldKVP : AdditionalComponents) {
-		FieldKVP.Value->SetPhysicsEnabled(bSimulate);
-	}
-	Mesh->SetSimulatePhysics(PhysicsEnabled);
-}
-
 void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	Type = Json->GetStringField(TEXT("type"));
-
-	Physics->SetRelativeLocation(JsonUtil::Vector(Json, "attach_location"));
 
 	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Type);
 	FString MeshPath = PartDefinition->GetStringField(TEXT("mesh"));
@@ -172,21 +113,38 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		UE_LOG(LogTemp, Warning, TEXT("Bone: %s"), *BoneName);
 		MeshType = SKELETAL_MESH;
 	}
+	else if (MeshTypeString == "geometry_collection") {
+		auto* GeometryCollection = UAssetLibrary::LoadAsset<UGeometryCollection>(*MeshPath);
+		auto* Component = NewObject<UGeometryCollectionComponent>(GetOwner());
+		Component->SetRestCollection(GeometryCollection);
+		Component->DamageThreshold = { 1e8 };
 
-	Physics->AttachToComponent(Mesh, AttachmentRule);
+		UE_LOG(LogTemp, Warning, TEXT("Creating geometry collection"));
+
+		Mesh = Component;
+		Bone = FName("");
+
+		MeshType = GEOMETRY_COLLECTION;
+	}
+
+	// Physics->AttachToComponent(Mesh, AttachmentRule);
 	// TODO: add custom collision channel for each craft, no intervessel collision
+	/*
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Mesh->SetLinearDamping(0);
 	Mesh->SetAngularDamping(0);
+	*/
+
 	Mesh->SetAbsolute(false, false, true);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel11, ECR_Ignore);
 	Mesh->SetCollisionObjectType(ECC_GameTraceChannel11);
-
+	
 	Mesh->SetRelativeLocation(JsonUtil::Vector(Json, "location"));
 	Mesh->SetWorldRotation(JsonUtil::Rotator(Json, "rotation"));
 	Mesh->SetWorldScale3D(JsonUtil::Vector(Json, "scale"));
 
+	/*
 	for (auto& FieldKVP : AdditionalFields) {
 		if (Json->HasTypedField(FieldKVP.Key, EJson::Object)) {
 			UPartComponent* AdditionalComponent = NewObject<UPartComponent>(this, FieldKVP.Value, FName(FieldKVP.Key));
@@ -194,6 +152,42 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 			AdditionalComponents.Add(FieldKVP.Key, AdditionalComponent);
 		}
 	}
+	*/
+	const TSharedPtr<FJsonObject>* SpecialJson;
+	if (Json->TryGetObjectField(TEXT("wheel"), SpecialJson)) {
+		auto& WheelJson = *SpecialJson;
+
+		auto* Suspension = NewObject<UVehicleSimSuspensionComponent>(GetOwner());
+		Suspension->SuspensionMaxDrop = 100;
+		Suspension->SuspensionMaxRaise = 100;
+		Suspension->SpringRate = 200;
+		Suspension->SpringPreload = 100;
+		Suspension->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
+		Suspension->RegisterComponent();
+
+		auto* Wheel = NewObject<UVehicleSimWheelComponent>(GetOwner());
+		Wheel->MaxSteeringAngle = WheelJson->GetNumberField(TEXT("max_steering"));
+		Wheel->WheelRadius = 100;
+		Wheel->AxisType = EWheelAxisType::X;
+		Wheel->MaxSteeringAngle *= -1;
+		Wheel->bSteeringEnabled = true;
+		Wheel->AttachToComponent(Suspension, FAttachmentTransformRules::KeepRelativeTransform);
+		Wheel->RegisterComponent();
+	}
+
+	if (Json->TryGetObjectField(TEXT("thruster"), SpecialJson)) {
+		auto& ThrusterJson = *SpecialJson;
+
+		auto* Thruster = NewObject<UVehicleSimThruster2DComponent>(GetOwner());
+		Thruster->bSteeringEnabled = true;
+		Thruster->MaxThrustForce = 2000000.0f;
+		Thruster->MaxSteeringAngle = 20;
+		Thruster->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
+		Thruster->RegisterComponent();
+	}
+
+	// extract to an overriden RegisterComponent that registers the mesh
+	Mesh->RegisterComponent();
 }
 
 TSharedPtr<FJsonObject> UPart::ToJson() {

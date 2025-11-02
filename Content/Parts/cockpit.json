@@ -1,7 +1,7 @@
 {
   "name": "cockpit",
-  "mesh": "/Game/Shapes/cockpit",
-  "type": "static",
+  "mesh": "/Game/Shapes/GC/GC_cockpit",
+  "type": "geometry_collection",
   "attachment": [
     {
       "location": [-100, 0, 0]

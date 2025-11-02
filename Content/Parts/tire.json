@@ -1,7 +1,7 @@
 {
-    "name": "car",
-    "mesh": "/Game/Shapes/car",
-    "type": "skeletal",
+    "name": "tire",
+    "mesh": "/Game/Shapes/GC/GC_tire",
+    "type": "geometry_collection",
     "attachment": [
       {
         "location": [0, 0, 0]
@@ -28,20 +28,29 @@
       }
     ],
     "craft": {
-      "name": "car",
+      "name": "part",
       "location": [0, 0, 0],
       "rotation": [0, 0, 0],
       "structure": {
-        "car": {}
+        "part": {}
       },
       "parts": {
-        "car": {
-          "type": "car",
+        "part": {
+          "type": "part",
           "location": [0, 0, 0],
           "rotation": [0, 0, 0],
           "scale": [1, 1, 1],
           "attached_at": 1,
-          "attach_location": [0, 0, 0]
+          "attach_location": [0, 0, 0],
+  
+          "wheel": {
+            "offset": [0, 0, 0],
+            "mesh": "/Game/Shapes/GC/GC_tire"
+          },
+          "aero": {
+            "lift": 1,
+            "drag": 1
+          }
         }
       },
       "stages": []

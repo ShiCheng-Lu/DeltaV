@@ -50,9 +50,6 @@ void UEngineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 	// do engine stuff, get input, this component should also handle particles from the engine
 	
-	if (!Part->PhysicsEnabled) {
-		return;
-	}
 
 	// FVector ThrustVector = Part->GetComponentQuat().RotateVector();
 	Part->Mesh->AddForceAtLocationLocal(FVector(1000000 * Thrust, 0, 0), PivotOffset);

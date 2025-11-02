@@ -38,6 +38,7 @@ public:
 	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
 	FVector TargetPosition;
 
+	// must be called before BeginPlay() on simulation paths
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 	ACraft* Clone();

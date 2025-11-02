@@ -25,6 +25,7 @@ public:
 	enum EMeshType {
 		STATIC_MESH,
 		SKELETAL_MESH,
+		GEOMETRY_COLLECTION,
 	};
 
 	EMeshType MeshType;
@@ -55,7 +56,7 @@ public:
 
 	void SetAttachmentNodeVisibility(bool visibility);
 
-	void SetParent(UPart* Part);
+	void SetParent(UPrimitiveComponent* Parent);
 
 	/*
 	Json serialization
@@ -86,12 +87,5 @@ public:
 		}
 		return nullptr;
 	}
-
-	bool PhysicsEnabled;
-	void SetPhysicsEnabled(bool bSimulate);
-
-	void Attach();
-	void Detach();
-
 	// FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
 };
