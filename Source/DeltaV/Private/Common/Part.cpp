@@ -153,6 +153,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		}
 	}
 	*/
+
 	const TSharedPtr<FJsonObject>* SpecialJson;
 	if (Json->TryGetObjectField(TEXT("wheel"), SpecialJson)) {
 		auto& WheelJson = *SpecialJson;
@@ -162,6 +163,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		Suspension->SuspensionMaxRaise = 100;
 		Suspension->SpringRate = 200;
 		Suspension->SpringPreload = 100;
+		// Suspension->SuspensionForceEffect = 0;
 		Suspension->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 		Suspension->RegisterComponent();
 
@@ -173,9 +175,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		Wheel->bSteeringEnabled = true;
 		Wheel->AttachToComponent(Suspension, FAttachmentTransformRules::KeepRelativeTransform);
 		Wheel->RegisterComponent();
-	}
-
-	if (Json->TryGetObjectField(TEXT("thruster"), SpecialJson)) {
+	} else if (Json->TryGetObjectField(TEXT("thruster"), SpecialJson)) {
 		auto& ThrusterJson = *SpecialJson;
 
 		auto* Thruster = NewObject<UVehicleSimThruster2DComponent>(GetOwner());
@@ -184,6 +184,11 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		Thruster->MaxSteeringAngle = 20;
 		Thruster->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 		Thruster->RegisterComponent();
+	}
+	else {
+		auto* Chassis = NewObject<UVehicleSimChassisComponent>(GetOwner());
+		Chassis->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
+		Chassis->RegisterComponent();
 	}
 
 	// extract to an overriden RegisterComponent that registers the mesh

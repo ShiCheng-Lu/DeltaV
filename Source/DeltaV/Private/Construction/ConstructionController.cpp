@@ -79,51 +79,30 @@ void AConstructionController::SetupInputComponent() {
 		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
 
 		UE_LOG(LogTemp, Warning, TEXT("Added input"));
+		if (OwnedCraft != nullptr) {
 
-		auto* Steering = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Steering");
-		EnhancedInput->BindActionValueLambda(Steering, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Steering"), Input.Get<float>());
-			}
-		});
+		}
 
-		auto* Thrust = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Thrust");
-		EnhancedInput->BindActionValueLambda(Thrust, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Thrust"), Input.Get<float>());
-			}
-		});
+		auto SetupCraftInput = [this, EnhancedInput](const FString Name) {
+			auto* Input = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_" + Name);
+			EnhancedInput->BindActionValueLambda(Input, ETriggerEvent::Triggered, [this, Name](const FInputActionValue& Input) {
+				if (OwnedCraft != nullptr) {
+					OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName(Name), Input.Get<float>());
+				}
+			});
+		};
 
-		auto* Throttle = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Throttle");
-		EnhancedInput->BindActionValueLambda(Throttle, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Throttle"), Input.Get<float>());
-			}
-		});
-
-		auto* Pitch = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Pitch");
-		EnhancedInput->BindActionValueLambda(Pitch, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Pitch"), Input.Get<float>());
-			}
-		});
-		auto* Roll = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Roll");
-		EnhancedInput->BindActionValueLambda(Roll, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Roll"), Input.Get<float>());
-			}
-		});
-		auto* Yaw = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Yaw");
-		EnhancedInput->BindActionValueLambda(Yaw, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			if (OwnedCraft != nullptr) {
-				OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName("Yaw"), Input.Get<float>());
-			}
-		});
+		SetupCraftInput("Steering");
+		SetupCraftInput("Thrust");
+		SetupCraftInput("Throttle");
+		SetupCraftInput("Pitch");
+		SetupCraftInput("Roll");
+		SetupCraftInput("Yaw");
 
 		auto* Look = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Look");
 		EnhancedInput->BindActionValueLambda(Look, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
-			AddPitchInput(Input.Get<FVector2D>().Y * 0.1);
-			AddYawInput(Input.Get<FVector2D>().X * 0.1);
+			AddPitchInput(Input.Get<FVector2D>().Y);
+			AddYawInput(Input.Get<FVector2D>().X);
 		});
 
 		auto* Stage = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Stage");
@@ -306,6 +285,7 @@ void AConstructionController::Pressed(FKey Key) {
 		switch (ConstructionMode)
 		{
 		case AConstructionController::EditMode:
+			/*
 			if (Constructor.Selected) {
 				UPart* Part = Constructor.Selected;
 				Constructor.Place();
@@ -316,16 +296,21 @@ void AConstructionController::Pressed(FKey Key) {
 			}
 			else {
 				Constructor.Grab();
-			}
+			}*/
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode"));
 			break;
 		case AConstructionController::RotateMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton RotateMode"));
 			break;
 		case AConstructionController::TranslateMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton TranslateMode"));
 			TransformGadget->StartTracking();
 			break;
 		case AConstructionController::ScaleMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton ScaleMode"));
 			break;
 		case AConstructionController::WarpMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton WarpMode"));
 			PartShapeEditor->Pressed(Key);
 			break;
 		default:
@@ -398,6 +383,8 @@ void AConstructionController::Load() {
 	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
 	OwnedCraft = Constructor.CreateCraft(CraftJson);
+	OwnedCraft->SetActorLocation(FVector(0, -100, 0));
+
 	HUD->SetCraft(OwnedCraft);
 	Possess(OwnedCraft);
 }

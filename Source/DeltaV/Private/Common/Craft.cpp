@@ -72,52 +72,12 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 }
 
 void ACraft::OnConstruction(const FTransform& Transform) {
-
-	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
-	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
-
-	FromJson(CraftJson);
-
-	if (auto* Cluster = GetClusterUnionComponent()) {
-		UGeometryCollectionComponent* Chassis = nullptr;
-		if (auto* GC_Chassis = UAssetLibrary::LoadAsset<UGeometryCollection>("/Game/Shapes/GC/GC_cockpit")) {
-			Chassis = NewObject<UGeometryCollectionComponent>(this, "chassis");
-			if (Chassis) {
-				Chassis->SetRestCollection(GC_Chassis);
-				Chassis->SetRelativeLocation(FVector(0, 0, 0));
-				Chassis->DamageThreshold = { 1e8 };
-				Chassis->SetupAttachment(Cluster);
-				// Chassis->RegisterComponent();
-			}
-			/*
-			auto* ChassisSim = NewObject<UVehicleSimChassisComponent>(this, "chassis_sim");
-			ChassisSim->SetupAttachment(Chassis);
-			ChassisSim->RegisterComponent();
-
-			auto* EngineSim = NewObject<UVehicleSimEngineComponent>(this, "engine_sim");
-			EngineSim->MaxTorque = 2000;
-			EngineSim->EngineBrakeEffect = 750;
-			EngineSim->SetupAttachment(ChassisSim);
-			EngineSim->RegisterComponent();
-
-			auto* ClutchSim = NewObject<UVehicleSimClutchComponent>(this, "clutch_sim");
-			ClutchSim->SetupAttachment(EngineSim);
-			ClutchSim->RegisterComponent();
-
-			auto* TransSim = NewObject<UVehicleSimTransmissionComponent>(this, "trans_sim");
-			TransSim->SetupAttachment(ClutchSim);
-			TransSim->RegisterComponent();
-			*/
-		}
-	}
 }
 
 void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	// structure + parts
 
 	// Array of (Parent, ChildJson[])
-
-	// temp just make a craft lmao
 
 	for (auto& [Name, Definition] : Json->GetObjectField(TEXT("parts"))->Values) {
 		auto* Part = NewObject<UPart>(this, FName(Name));
@@ -422,16 +382,18 @@ void ACraft::Rotate(FRotator Rotator, float Strength) {
 }
 
 void ACraft::SetPhysicsEnabled(bool enabled) {
+	for (UActorComponent* Component : GetComponents())
+	{
+		if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Component))
+		{
+			PrimComp->SetSimulatePhysics(enabled);
+		}
+	}
+
 	if (enabled == PhysicsEnabled) {
 		return;
 	}
 	PhysicsEnabled = enabled;
-
-	for (auto& PartKVP : Parts) {
-		auto Part = PartKVP.Value;
-		// Part->SetPhysicsEnabled(PhysicsEnabled);
-		// Part->SetSimulatePhysics(PhysicsEnabled);
-	}
 }
 
 FVector ACraft::CalculateCoM() {
@@ -461,7 +423,8 @@ FVector ACraft::GetWorldCoM() {
 
 TArray<ACraft*> ACraft::StageCraft() {
 	// Temp try to lock the wheels
-
+	GetVehicleSimulationComponent()->RecreatePhysicsState();
+	/** Code for getting the active chaos simulation component from the cluster union sim component 
 	int WheelGuid = 0;
 	UPart* Part = Parts.FindChecked(FString("tire_fr"));
 	for (auto& Child : Part->Mesh->GetAttachChildren()) {
@@ -491,6 +454,7 @@ TArray<ACraft*> ACraft::StageCraft() {
 			}
 		}
 	}
+	*/
 	
 	UE_LOG(LogTemp, Warning, TEXT("---"));
 

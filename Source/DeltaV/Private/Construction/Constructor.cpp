@@ -31,8 +31,11 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	FActorSpawnParameters Params = FActorSpawnParameters();
 	Params.Name = "custom-craft-name";
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(Params);
-
+	FTransform Transform;
+	TObjectPtr<ACraft> Craft = World->SpawnActorDeferred<ACraft>(ACraft::StaticClass(), Transform);
+	Craft->FromJson(CraftJson);
+	Craft->FinishSpawning(Transform);
+	Craft->SetPhysicsEnabled(false);
 	// add attachment nodes
 	/*
 	for (auto& PartKVP : Craft->Parts) {
@@ -58,29 +61,32 @@ void Constructor::Select(UPart* Part) {
 	bool SameOwner = (Part && Selected && (Part->GetOwner() == Selected->GetOwner()));
 
 	// both null, same part, or same owner, we don't need to update ray-trace settings
-	if (Part == Selected || SameOwner) {
+	if ((Part == Selected) || SameOwner) {
 		Selected = Part;
 		return;
 	}
 
 	// Set previously selected part to respond to ECC_Construct
-	if (Selected != nullptr && !SameOwner) {
+	if (Selected != nullptr) {
+		/*
 		ACraft* Craft = Cast<ACraft>(Selected->GetOwner());
 		for (auto& PartKVP : Craft->Parts) {
 			PartKVP.Value->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
 			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
-		}
+		}*/
 	}
 
 	// Set newly selected part to respond ignore to ECC_Construct
-	if (Part != nullptr && !SameOwner) {
+	if (Part != nullptr) {
+		/*
 		ACraft* Craft = Cast<ACraft>(Part->GetOwner());
 		for (auto& PartKVP : Craft->Parts) {
 			PartKVP.Value->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
 			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
-		}
+		}*/
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("Set selected"));
 	Selected = Part;
 }
 
@@ -120,6 +126,7 @@ void Constructor::Grab() {
 
 UPart* Constructor::Update() {
 	if (Selected == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("Update called but no selected"));
 		return nullptr;
 	}
 
@@ -137,10 +144,11 @@ UPart* Constructor::Update() {
 
 	TArray<FHitResult> Results;
 	FVector Start = CameraLocation;
-	FVector End;
+	// FVector End;
 	// node attachment
 	FVector SelectedLocaction = Selected->Mesh->GetComponentLocation();
 
+	/*
 	UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected);
 	for (auto& Node : Attachment->AttachmentNodes) {
 
@@ -210,15 +218,18 @@ UPart* Constructor::Update() {
 
 		return Part;
 	}
-	Selected->Mesh->SetWorldLocation(PartLocation);
+	*/
+
+	Selected->GetOwner()->SetActorLocation(PartLocation);
 	
+	/*
 	if (SymmetryCrafts.Num() > 0) {
 		for (ACraft* Craft : SymmetryCrafts) {
 			Craft->Destroy();
 		}
 		SymmetryCrafts.Empty();
 	}
-
+	*/
 	return nullptr;
 }
 
@@ -242,11 +253,12 @@ void Constructor::Place() {
 }
 
 void Constructor::Tick() {
+
 	if (Selected == nullptr) {
 		return;
 	}
 	// update location of selected part
-	// Update();
+	Update();
 }
 
 void Constructor::UpdateSymmetry(int InSymmetry) {
