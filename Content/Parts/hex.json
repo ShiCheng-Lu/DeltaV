@@ -1,0 +1,50 @@
+{
+    "name": "part",
+    "mesh": "/Game/Shapes/GC/GC_hex",
+    "type": "geometry_collection",
+    "attachment": [
+      {
+        "location": [0, 0, 0]
+      }
+    ],
+    "fields": [
+      {
+        "name": "width",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      },
+      {
+        "name": "height",
+        "type": "int",
+        "min": 1,
+        "max": 10,
+        "edit": "slider",
+        "slider_min": 1,
+        "slider_max": 4
+      }
+    ],
+    "craft": {
+      "name": "part",
+      "location": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "structure": {
+        "part": {}
+      },
+      "parts": {
+        "part": {
+          "type": "hex",
+          "location": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1],
+          "attached_at": 1,
+          "attach_location": [0, 0, 0]
+        }
+      },
+      "stages": []
+    }
+  }
+  

@@ -115,7 +115,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	}
 	else if (MeshTypeString == "geometry_collection") {
 		auto* GeometryCollection = UAssetLibrary::LoadAsset<UGeometryCollection>(*MeshPath);
-		auto* Component = NewObject<UGeometryCollectionComponent>(GetOwner());
+		auto* Component = NewObject<UGeometryCollectionComponent>(this);
 		Component->SetRestCollection(GeometryCollection);
 		Component->DamageThreshold = { 1e8 };
 

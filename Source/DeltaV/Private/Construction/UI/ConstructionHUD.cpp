@@ -72,6 +72,7 @@ void UConstructionHUD::PartClicked(UObject* Object) {
 	// UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->StageManager->Stages.Num());
 	TArray<UPart*> PartList;
 	Craft->Parts.GenerateValueArray(PartList);
+	Craft->SetActorEnableCollision(false);
 
 	if (PartList.Num() == 0) {
 		UE_LOG(LogTemp, Warning, TEXT("craft part list is empty"));

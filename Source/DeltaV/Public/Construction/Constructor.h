@@ -17,8 +17,6 @@ class DELTAV_API Constructor
 {
 	AConstructionController* Controller;
 
-	FActorSpawnParameters SpawnParamsAlwaysSpawn;
-
 	TArray<ACraft*> SymmetryCrafts;
 
 	UWorld* World;
@@ -51,8 +49,6 @@ public:
 	void Select(UPart* Part = nullptr);
 	void Deselect() { Select(nullptr); }
 
-
-	UPart* Trace(FVector Position, FVector Direction);
 
 	// Get the part under the mouse
 	UPart* TraceMouse();

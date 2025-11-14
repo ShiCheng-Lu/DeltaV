@@ -14,7 +14,6 @@
 
 Constructor::Constructor()
 {
-	SpawnParamsAlwaysSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
 
 Constructor::~Constructor()
@@ -37,19 +36,22 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	Craft->FinishSpawning(Transform);
 	Craft->SetPhysicsEnabled(false);
 	// add attachment nodes
-	/*
-	for (auto& PartKVP : Craft->Parts) {
+	for (auto& [Name, Part] : Craft->Parts) {
+
+		auto* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
+		AttachmentNodes->RegisterComponent();
+
+		/*
 		UPart* Part = PartKVP.Value;
 
 		Part->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Part->Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 		Part->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
-		Part->Mesh->SetSimulatePhysics(false);
 
 		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
 		AttachmentNodes->RegisterComponent();
+		*/
 	}
-	*/
 	// Craft->SetActorRotation(DefaultOrientation);
 	
 	return Craft;
@@ -90,10 +92,6 @@ void Constructor::Select(UPart* Part) {
 	Selected = Part;
 }
 
-UPart* Constructor::Trace(FVector Position, FVector Direction) {
-	return nullptr;
-}
-
 UPart* Constructor::TraceMouse() {
 	FHitResult Result;
 	if (Controller->GetHitResultUnderCursor(ECC_NoneHeldParts, true, Result)) {
@@ -112,7 +110,7 @@ void Constructor::Grab() {
 		return;
 	}
 	if (Craft->RootPart() != Part) {
-		ACraft* NewCraft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
+		ACraft* NewCraft = World->SpawnActor<ACraft>();
 		Craft->DetachPart(Part, NewCraft);
 	}
 	Select(Part);
@@ -140,15 +138,13 @@ UPart* Constructor::Update() {
 	FRotator _;
 	Controller->PlayerCameraManager->GetCameraViewPoint(CameraLocation2, _);
 
-	FVector PartLocation = CameraLocation + Direction * Distance;
 
 	TArray<FHitResult> Results;
-	FVector Start = CameraLocation;
-	// FVector End;
+	FVector Start = CameraLocation; // start of the trace ray
+	FVector End; // end of the trace ray, goes through every attachment node
 	// node attachment
 	FVector SelectedLocaction = Selected->Mesh->GetComponentLocation();
 
-	/*
 	UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected);
 	for (auto& Node : Attachment->AttachmentNodes) {
 
@@ -158,29 +154,25 @@ UPart* Constructor::Update() {
 
 		World->LineTraceMultiByChannel(Results, Start, End, ECC_AttachmentNodes);
 
-		for (auto& HitResult : Results) {
-			UStaticMeshComponent* TracedNode = Cast<UStaticMeshComponent>(HitResult.GetComponent());
-			if (TracedNode == nullptr) {
-				continue;
-			}
-
-			PartLocation = TracedNode->GetComponentLocation() - RelativeLocation;
-			Selected->Mesh->SetWorldLocation(PartLocation);
-
-			// node attachment, destroy any symmetry parts
-			if (SymmetryCrafts.Num() > 0) {
-				for (ACraft* Craft : SymmetryCrafts) {
-					Craft->Destroy();
-				}
-				SymmetryCrafts.Empty();
-			}
-			if (Selected) {
-				Selected->Physics->SetWorldLocation(TracedNode->GetComponentLocation());
-			}
-			return TracedNode->GetTypedOuter<UPart>();
+		if (Results.Num() <= 0) {
+			continue;
 		}
+		auto& HitResult = Results.Last();
+		
+		// Handle symmetry attachment
+
+		// Put the part so that the node traced at is at the same location as the target node
+		auto NodeLocation = HitResult.Component->GetComponentLocation();
+		auto* Part = HitResult.Component->GetTypedOuter<UPart>();
+		if (Part == nullptr) {
+			continue;
+		}
+		Selected->GetOwner()->SetActorLocation(NodeLocation - RelativeLocation);
+
+		return Part;
 	}
 
+	/*
 	// side attachment
 	End = Start + Direction * Distance;
 	World->LineTraceMultiByChannel(Results, Start, End, ECC_NoneHeldParts);
@@ -220,7 +212,8 @@ UPart* Constructor::Update() {
 	}
 	*/
 
-	Selected->GetOwner()->SetActorLocation(PartLocation);
+	// No attachment node or side attachment, place the craft/part at where it is
+	Selected->GetOwner()->SetActorLocation(CameraLocation + Direction * Distance);
 	
 	/*
 	if (SymmetryCrafts.Num() > 0) {
@@ -234,14 +227,19 @@ UPart* Constructor::Update() {
 }
 
 void Constructor::Place() {
+	UE_LOG(LogTemp, Warning, TEXT("Part placed"));
 	UPart* Part = Update(); // part to attach to
 	if (Part == nullptr || Selected == nullptr) {
 		Select(nullptr);
 		return;
 	}
-	ACraft* Craft = Cast<ACraft>(Part->GetOwner());
-
-	ACraft* Source = Cast<ACraft>(Selected->GetOwner());
+	ACraft* Craft = Part->GetOwner<ACraft>();
+	ACraft* Source = Selected->GetOwner<ACraft>();
+	if (Craft == nullptr || Source == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("for some reason part owners are not ACraft"));
+		return;
+	}
+	/*
 	Craft->AttachPart(Source, Part);
 	Select(nullptr);
 
@@ -249,6 +247,8 @@ void Constructor::Place() {
 		Craft->AttachPart(SymmetrySource, Part);
 	}
 	UpdateSymmetry(Symmetry);
+	*/
+	Select(nullptr);
 	return;
 }
 

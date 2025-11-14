@@ -24,6 +24,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TMap<FString, UPart*> Parts;
+
+	UPROPERTY(EditAnywhere)
+	TMap<UPrimitiveComponent*, FString> Meshes;
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UFuelManager> FuelManager;

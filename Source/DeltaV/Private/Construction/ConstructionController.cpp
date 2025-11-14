@@ -285,18 +285,19 @@ void AConstructionController::Pressed(FKey Key) {
 		switch (ConstructionMode)
 		{
 		case AConstructionController::EditMode:
-			/*
 			if (Constructor.Selected) {
 				UPart* Part = Constructor.Selected;
 				Constructor.Place();
+				/*
 				ACraft* Craft = Cast<ACraft>(Part->GetOwner());
 				if (Craft) {
 					HUD->SetCraft(Craft);
 				}
+				*/
 			}
 			else {
 				Constructor.Grab();
-			}*/
+			}
 			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode"));
 			break;
 		case AConstructionController::RotateMode:
