@@ -31,6 +31,7 @@
 
 #include "ChaosModularVehicle/VehicleSimComponentsInclude.h"
 #include "ModularVehicle/VehicleSimThruster2DComponent.h"
+#include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
 
 static TMap<FString, TSubclassOf<UPartComponent>> AdditionalFields = {
 	{"fuel", UFuelComponent::StaticClass()},
@@ -46,12 +47,6 @@ UPart::UPart(const FObjectInitializer& ObjectInitializer) : UActorComponent(Obje
 	Craft = GetOwner<ACraft>();
 	
 	Id = GetName();
-}
-
-void UPart::SetAttachmentNodeVisibility(bool visibility) {
-	for (auto node : AttachmentNodes) {
-		node->SetVisibility(visibility);
-	}
 }
 
 void UPart::SetParent(UPrimitiveComponent* NewParent) {
@@ -79,12 +74,6 @@ void UPart::SetParent(UPrimitiveComponent* NewParent) {
 
 void UPart::BeginPlay() {
 	Super::BeginPlay();
-
-	for (auto& FieldKVP : AdditionalComponents) {
-		FieldKVP.Value->RegisterComponent();
-	}
-	Mesh->RegisterComponent();
-	Physics->RegisterComponent();
 }
 
 void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
@@ -127,15 +116,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		MeshType = GEOMETRY_COLLECTION;
 	}
 
-	// Physics->AttachToComponent(Mesh, AttachmentRule);
-	// TODO: add custom collision channel for each craft, no intervessel collision
-	/*
-	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	Mesh->SetLinearDamping(0);
-	Mesh->SetAngularDamping(0);
-	*/
-
-	Mesh->SetAbsolute(false, false, true);
+	Mesh->SetAbsolute(true, true, true);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel11, ECR_Ignore);
 	Mesh->SetCollisionObjectType(ECC_GameTraceChannel11);
@@ -158,7 +139,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	if (Json->TryGetObjectField(TEXT("wheel"), SpecialJson)) {
 		auto& WheelJson = *SpecialJson;
 
-		auto* Suspension = NewObject<UVehicleSimSuspensionComponent>(GetOwner());
+		auto* Suspension = NewObject<UVehicleSimSuspensionComponent>(Mesh);
 		Suspension->SuspensionMaxDrop = 100;
 		Suspension->SuspensionMaxRaise = 100;
 		Suspension->SpringRate = 200;
@@ -166,8 +147,9 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		// Suspension->SuspensionForceEffect = 0;
 		Suspension->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 		Suspension->RegisterComponent();
+		Craft->AddOwnedComponent(Suspension);
 
-		auto* Wheel = NewObject<UVehicleSimWheelComponent>(GetOwner());
+		auto* Wheel = NewObject<UVehicleSimWheelComponent>(Mesh);
 		Wheel->MaxSteeringAngle = WheelJson->GetNumberField(TEXT("max_steering"));
 		Wheel->WheelRadius = 100;
 		Wheel->AxisType = EWheelAxisType::X;
@@ -175,40 +157,64 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		Wheel->bSteeringEnabled = true;
 		Wheel->AttachToComponent(Suspension, FAttachmentTransformRules::KeepRelativeTransform);
 		Wheel->RegisterComponent();
+		Craft->AddOwnedComponent(Wheel);
 	} else if (Json->TryGetObjectField(TEXT("thruster"), SpecialJson)) {
 		auto& ThrusterJson = *SpecialJson;
 
-		auto* Thruster = NewObject<UVehicleSimThruster2DComponent>(GetOwner());
+		auto* Thruster = NewObject<UVehicleSimThruster2DComponent>(Mesh);
 		Thruster->bSteeringEnabled = true;
 		Thruster->MaxThrustForce = 2000000.0f;
 		Thruster->MaxSteeringAngle = 20;
 		Thruster->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 		Thruster->RegisterComponent();
+		Craft->AddOwnedComponent(Thruster);
 	}
 	else {
-		auto* Chassis = NewObject<UVehicleSimChassisComponent>(GetOwner());
+		auto* Chassis = NewObject<UVehicleSimChassisComponent>(Mesh);
 		Chassis->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 		Chassis->RegisterComponent();
+		Craft->AddOwnedComponent(Chassis);
 	}
 
 	// extract to an overriden RegisterComponent that registers the mesh
 	Mesh->RegisterComponent();
+
+	UE_LOG(LogTemp, Warning, TEXT("%s has %s physics state"), *GetName(), Mesh->HasValidPhysicsState() ? TEXT("valid") : TEXT("invalid"));
+	// ! important, super important
+	Craft->GetClusterUnionComponent()->AddComponentToCluster(Mesh, {});
+	// Craft->GetClusterUnionComponent()->RemoveComponentFromCluster(Mesh);
 }
 
 TSharedPtr<FJsonObject> UPart::ToJson() {
-	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject());
+	TSharedPtr<FJsonObject> Json = MakeShared<FJsonObject>();
 
 	AActor* Owner = GetOwner();
 
 	Json->SetStringField(TEXT("type"), Type);
-	JsonUtil::Vector(Json, "location", Mesh->GetComponentLocation() - Owner->GetActorLocation());
-	JsonUtil::Rotator(Json, "rotation", Mesh->GetComponentRotation());
+	JsonUtil::Vector(Json, "location", Mesh->GetRelativeLocation());// -Owner->GetActorLocation());
+	JsonUtil::Rotator(Json, "rotation", Mesh->GetRelativeRotation());// -Owner->GetActorRotation());
 	JsonUtil::Vector(Json, "scale", Mesh->GetRelativeScale3D());
-	JsonUtil::Vector(Json, "attach_location", Physics->GetRelativeLocation());
+	// JsonUtil::Vector(Json, "attach_location", Physics->GetRelativeLocation());
 
-	for (auto& FieldKVP : AdditionalComponents) {
-		Json->SetObjectField(FieldKVP.Key, FieldKVP.Value->ToJson());
+	for (USceneComponent* Component : Mesh->GetAttachChildren()) {
+		if (auto* Suspension = Cast<UVehicleSimSuspensionComponent>(Component)) {
+			
+			auto& SuspensionChildren = Suspension->GetAttachChildren();
+			if (auto* Wheel = Cast<UVehicleSimWheelComponent>(SuspensionChildren.Last())) {
+				auto WheelJson = MakeShared<FJsonObject>();
+				WheelJson->SetNumberField("max_steering", -Wheel->MaxSteeringAngle);
+				Json->SetObjectField("wheel", WheelJson);
+			}
+		} else if (auto* Thruster = Cast<UVehicleSimThruster2DComponent>(Component)) {
+			auto ThrusterJson = MakeShared<FJsonObject>();
+			Json->SetObjectField(TEXT("thruster"), ThrusterJson);
+		} else if (auto* Chassis = Cast< UVehicleSimChassisComponent>(Component)) {
+
+		}
 	}
+	// if there is a suspension component
+	
+
 
 	return Json;
 }

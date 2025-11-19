@@ -11,6 +11,7 @@
 #include "Common/AttachmentNode.h"
 #include "Construction/ConstructionController.h"
 #include "Construction/AttachmentNodes.h"
+#include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
 
 Constructor::Constructor()
 {
@@ -28,19 +29,15 @@ void Constructor::SetController(AConstructionController* InController) {
 TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	// TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
 	FActorSpawnParameters Params = FActorSpawnParameters();
-	Params.Name = "custom-craft-name";
+	// Params.Name = "custom-craft-name";
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	FTransform Transform;
-	TObjectPtr<ACraft> Craft = World->SpawnActorDeferred<ACraft>(ACraft::StaticClass(), Transform);
+	TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(Params);
 	Craft->FromJson(CraftJson);
-	Craft->FinishSpawning(Transform);
-	Craft->SetPhysicsEnabled(false);
+	// Craft->SetPhysicsEnabled(false);
 	// add attachment nodes
 	for (auto& [Name, Part] : Craft->Parts) {
-
-		auto* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
+		auto* AttachmentNodes = NewObject<UAttachmentNodes>(Part->Mesh);
 		AttachmentNodes->RegisterComponent();
-
 		/*
 		UPart* Part = PartKVP.Value;
 
@@ -53,7 +50,10 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 		*/
 	}
 	// Craft->SetActorRotation(DefaultOrientation);
-	
+
+	// Craft->FinishSpawning(Transform);
+
+
 	return Craft;
 }
 
@@ -109,10 +109,11 @@ void Constructor::Grab() {
 	if (Craft == nullptr) {
 		return;
 	}
+	/**
 	if (Craft->RootPart() != Part) {
 		ACraft* NewCraft = World->SpawnActor<ACraft>();
 		Craft->DetachPart(Part, NewCraft);
-	}
+	}*/
 	Select(Part);
 	UpdateSymmetry(Symmetry);
 
@@ -239,16 +240,15 @@ void Constructor::Place() {
 		UE_LOG(LogTemp, Warning, TEXT("for some reason part owners are not ACraft"));
 		return;
 	}
-	/*
 	Craft->AttachPart(Source, Part);
 	Select(nullptr);
 
+	/*
 	for (ACraft* SymmetrySource : SymmetryCrafts) {
 		Craft->AttachPart(SymmetrySource, Part);
 	}
 	UpdateSymmetry(Symmetry);
 	*/
-	Select(nullptr);
 	return;
 }
 

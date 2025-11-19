@@ -39,7 +39,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer),
 	PostPhysics(ETickingGroup::TG_PostPhysics, &ACraft::TickPostPhysics)
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	BaseEyeHeight = 0;
@@ -54,11 +54,11 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 
 	static const FName Default__Craft(TEXT("Default__Craft"));
 	if (GetFName() == Default__Craft) {
-		
+
 	}
 	// Name = name.random-int
 	// name is the saved craft file name, appended .random-int is an instance of the craft
-	
+
 	// Add inputs
 	if (auto* BaseSim = GetVehicleSimulationComponent()) {
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Steering"), EModuleInputValueType::MAxis1D));
@@ -69,6 +69,7 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Yaw"), EModuleInputValueType::MAxis1D));
 		UE_LOG(LogTemp, Warning, TEXT("Setup inputs"));
 	}
+
 }
 
 void ACraft::OnConstruction(const FTransform& Transform) {
@@ -80,13 +81,16 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	// Array of (Parent, ChildJson[])
 
 	for (auto& [Name, Definition] : Json->GetObjectField(TEXT("parts"))->Values) {
+		FTransform Transform;
+		// auto* Part = Cast<UPart>(AddComponentByClass(UPart::StaticClass(), true, Transform, false));
+
 		auto* Part = NewObject<UPart>(this, FName(Name));
 		Part->FromJson(Definition->AsObject());
 		Parts.Add({ Name, Part });
 	}
 
 	// depth first traversal through the tree via array (avoid recursion)
-	TArray<TPair<UPrimitiveComponent*, TSharedPtr<FJsonObject>>> Structures = {
+	TArray<TPair<USceneComponent*, TSharedPtr<FJsonObject>>> Structures = {
 		{ GetClusterUnionComponent(), Json->GetObjectField(TEXT("structure")) }
 	};
 	while (Structures.Num() > 0) {
@@ -94,16 +98,44 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 		for (auto& [Name, GrandChildrenJson] : ChildJson->Values) {
 			auto Part = Parts.FindChecked(Name);
 			Part->Mesh->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
-			Structures.Add({ Part->Mesh, GrandChildrenJson->AsObject()});
+			Structures.Add({ Part->Mesh, GrandChildrenJson->AsObject() });
 		}
 	}
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
-	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject());
-	TSharedPtr<FJsonObject> Structure = MakeShareable(new FJsonObject());
-	TSharedPtr<FJsonObject> PartsJson = MakeShareable(new FJsonObject());
+	TSharedPtr<FJsonObject> Json = MakeShared<FJsonObject>();
+	TSharedPtr<FJsonObject> JsonStructure = MakeShared<FJsonObject>();
+	TSharedPtr<FJsonObject> JsonParts = MakeShared<FJsonObject>();
 
+	for (auto& [Name, Part] : Parts) {
+		auto PartJson = Part->ToJson();
+		JsonParts->SetObjectField(Name, PartJson);
+	}
+
+	// depth first traversal through 
+	TArray<TPair<USceneComponent*, TSharedPtr<FJsonObject>>> Structure = {
+		{ GetClusterUnionComponent(), JsonStructure }
+	};
+	while (Structure.Num() > 0) {
+		auto [Parent, ChildJson] = Structure.Pop();
+		for (auto& Child : Parent->GetAttachChildren()) {
+			// check the owner of this component is a UPart, if it is, it's the base primitive
+			// for the part, otherwise, it is be a subobject definition (sim/partial part)
+			if (UPart* Part = Cast<UPart>(Child->GetOuter())) {
+				TSharedPtr<FJsonObject> GrandChildrenJson = MakeShared<FJsonObject>();
+				ChildJson->SetObjectField(Part->GetName(), GrandChildrenJson);
+				Structure.Add({ Child, GrandChildrenJson });
+			}
+		}
+	}
+
+	JsonUtil::Vector(Json, TEXT("location"), GetActorLocation());
+	JsonUtil::Quat(Json, TEXT("rotation"), GetActorQuat());
+	Json->SetObjectField(TEXT("structure"), JsonStructure);
+	Json->SetObjectField(TEXT("parts"), JsonParts);
+
+	/**
 	// structure + parts
 	TArray<TPair<UPart*, TSharedPtr<FJsonObject>>> PartStructures;
 	if (RootPart()) {
@@ -130,7 +162,7 @@ TSharedPtr<FJsonObject> ACraft::ToJson() {
 
 	// stages
 	Json->SetArrayField(TEXT("stages"), StageManager->ToJson());
-
+	*/
 	return Json;
 }
 
@@ -148,12 +180,7 @@ ACraft* ACraft::Clone() {
 // Called when the game starts or when spawned
 void ACraft::BeginPlay()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Cluster children before begin play %d"), GetClusterUnionComponent()->GetAttachChildren().Num());
-
 	Super::BeginPlay();
-	
-	UE_LOG(LogTemp, Warning, TEXT("ClusterUnionComponent HasBegun status: %d"), GetClusterUnionComponent()->HasBegunPlay());
-
 }
 
 // Called every frame
@@ -292,6 +319,17 @@ void ACraft::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 // detaches everything, must be re-attached afterwards
 // also doesn't remove from the part list of the previous craft, so additional processing can be done
 static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
+	if (FromCraft == ToCraft) {
+		return;
+	}
+
+	Part->UnregisterComponent();
+
+	// All attached childrens are children in the part hierchy
+	
+
+	Part->Mesh->GetAttachChildren();
+
 	UE_LOG(LogTemp, Warning, TEXT("Transfer %s"), *Part->Id);
 	if (!FromCraft->Parts.Contains(Part->Id)) {
 		// Part has already been moved???
@@ -304,7 +342,6 @@ static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 	for (auto& Child : Part->Children) {
 		TransferPart(Child, FromCraft, ToCraft);
 	}
-
 	// every part that can be connected to this has been detached, we can safely rename (change ownership) now
 	// avoid name collisions
 	FString OriginalName = Part->Id;
@@ -319,6 +356,54 @@ static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 	}
 	Part->Rename(*Part->Id, ToCraft);
 	ToCraft->Parts.Add(Part->Id, Part);
+}
+
+void Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
+	if (SourcePart == nullptr || DestPart == nullptr) {
+		return;
+	}
+	ACraft* SourceCraft = SourcePart->GetOwner<ACraft>();
+	ACraft* DestCraft = DestPart->GetOwner<ACraft>();
+
+
+	if (SourceCraft == nullptr || DestCraft == nullptr) {
+		return;
+	}
+	
+	// go through all children of the part, unregister them, 
+
+	TArray<TPair<USceneComponent*, USceneComponent*>> Components;
+	TArray<UPart*> Parts;
+
+	// detach and unregister everything
+	while (Components.Num() > 0) {
+		auto [AttachedTo, Component] = Components.Pop();
+
+		Component->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+		Component->UnregisterComponent();
+
+		Component->Rename(nullptr, AttachedTo);
+
+		for (auto& Child : Component->GetAttachChildren()) {
+			Components.Add({ Component, Child });
+		}
+
+		// if the direct outer is a UPart, it's the base mesh transform
+		if (UPart* Part = Cast<UPart>(Component->GetOuter())) {
+			Parts.Add(Part);
+		}
+	}
+
+	// rename parts, which are the top owners of their own physics/etc
+	for (auto* Part : Parts) {
+		Part->Rename(nullptr, DestCraft);
+	}
+
+	// attach everything again
+	for (auto [AttachedTo, Component] : Components) {
+		Component->AttachToComponent(AttachedTo, FAttachmentTransformRules::KeepRelativeTransform);
+		Component->RegisterComponent();
+	}
 }
 
 void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
@@ -347,13 +432,14 @@ void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 }
 
 void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
-	if (!SourceCraft->RootPart()) {
+	auto& RootMeshes = SourceCraft->GetRootComponent()->GetAttachChildren();
+	if (RootMeshes.Num() <= 0) {
 		UE_LOG(LogTemp, Warning, TEXT("Source craft has no root part!"));
 		return;
 	}
+	UPart* Part = RootMeshes.Last()->GetTypedOuter<UPart>();
 
 	// transfer
-	UPart* Part = SourceCraft->RootPart();
 	TransferPart(Part, SourceCraft, this);
 
 	// Part->SetParent(AttachToPart);
@@ -373,12 +459,7 @@ void ACraft::AttachPart(ACraft* SourceCraft, UPart* AttachToPart) {
 }
 
 void ACraft::Rotate(FRotator Rotator, float Strength) {
-	UPart* Engine = RootPart();
-	if (PhysicsEnabled && Engine && !Rotator.IsZero()) {
-		FVector Axis = GetActorRotation().RotateVector(Rotator.Quaternion().GetRotationAxis());
-
-		Engine->Mesh->AddTorqueInDegrees(Axis * Strength);
-	}
+	
 }
 
 void ACraft::SetPhysicsEnabled(bool enabled) {
@@ -388,10 +469,6 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 		{
 			PrimComp->SetSimulatePhysics(enabled);
 		}
-	}
-
-	if (enabled == PhysicsEnabled) {
-		return;
 	}
 	PhysicsEnabled = enabled;
 }

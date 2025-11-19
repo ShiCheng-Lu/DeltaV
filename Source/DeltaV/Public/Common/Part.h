@@ -41,8 +41,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<FString, UPartComponent*> AdditionalComponents;
 
-	UPhysicsConstraintComponent* Physics;
-
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMeshComponent> Mesh;
 	FName Bone;
@@ -53,8 +51,6 @@ public:
 	UPart(const FObjectInitializer &ObjectInitializer);
 
 	virtual void BeginPlay() override;
-
-	void SetAttachmentNodeVisibility(bool visibility);
 
 	void SetParent(UPrimitiveComponent* Parent);
 

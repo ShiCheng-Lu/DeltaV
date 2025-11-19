@@ -27,11 +27,11 @@ UAttachmentNodes::UAttachmentNodes()
 	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
 	for (auto& LocationJson : PartDefinition->GetArrayField(TEXT("attachment"))) {
 		FVector Location = JsonUtil::Vector(LocationJson->AsObject(), "location");
-		auto Node = CreateDefaultSubobject<UStaticMeshComponent>(*Location.ToString());
+		auto Node = NewObject<UStaticMeshComponent>(this, *Location.ToString());
 		Node->SetStaticMesh(SphereMeshAsset.Object);
 		Node->SetRelativeScale3D(FVector(0.1f));
 
-		Node->SetupAttachment(this);
+		Node->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Node->SetRelativeLocation(Location);
 		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -68,7 +68,7 @@ UAttachmentNodes::UAttachmentNodes()
 	else {
 		SideAttachment = FVector(INFINITY);
 	}
-	SetupAttachment(Part->Mesh);
+	AttachToComponent(Part->Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 

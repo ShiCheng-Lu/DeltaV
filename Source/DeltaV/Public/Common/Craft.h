@@ -9,6 +9,7 @@
 #include "Common/Part.h"
 #include "Components/SphereComponent.h"
 #include "Common/CustomTickFunction.h"
+#include "PhysicsEngine/ClusterUnionComponent.h"
 
 #include "Craft.generated.h"
 
@@ -63,6 +64,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void AddComponentToSimulation(UPrimitiveComponent* InComponent, const TArray<FClusterUnionBoneData>& BonesData, const TArray<FClusterUnionBoneData>& RemovedBoneIDs, bool bIsNew);
+
 	void AttachPart(ACraft* SourceCraft, UPart* AttachToPart);
 
 	void DetachPart(UPart* Part, ACraft* NewCraft);
@@ -83,9 +86,6 @@ public:
 	FVector CalculateCoM();
 
 	FVector GetWorldCoM();
-
-	UPart* RootPart() { return Root; }
-
 
 	FCustomActorTick<ACraft> PostPhysics;
 	void TickPostPhysics(float DeltaTime);

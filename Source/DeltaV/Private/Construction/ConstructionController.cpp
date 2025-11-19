@@ -370,6 +370,25 @@ void AConstructionController::Released(FKey Key) {
 }
 
 void AConstructionController::Save() {
+	/*
+	TSharedPtr<FJsonObject> CraftJson = OwnedCraft->ToJson();
+
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/saved.json");
+	JsonUtil::WriteFile(Path, CraftJson);
+	OwnedCraft->Destroy();
+
+	OwnedCraft = Constructor.CreateCraft(CraftJson);
+	// OwnedCraft->SetActorLocation(FVector(0, 100, 0));
+	OwnedCraft->SetPhysicsEnabled(true);
+
+	HUD->SetCraft(OwnedCraft);
+	Possess(OwnedCraft);
+	*/
+
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
+	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
+	OwnedCraft->FromJson(CraftJson);
+	/*
 	TArray<AActor*> Actors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACraft::StaticClass(), Actors);
 	for (AActor* Actor : Actors) {
@@ -377,6 +396,7 @@ void AConstructionController::Save() {
 		FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 		JsonUtil::WriteFile(Path, Craft->ToJson());
 	}
+	*/
 }
 
 void AConstructionController::Load() {
@@ -384,7 +404,8 @@ void AConstructionController::Load() {
 	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
 	OwnedCraft = Constructor.CreateCraft(CraftJson);
-	OwnedCraft->SetActorLocation(FVector(0, -100, 0));
+	// OwnedCraft->SetActorLocation(FVector(0, 0, 0));
+	OwnedCraft->SetPhysicsEnabled(false);
 
 	HUD->SetCraft(OwnedCraft);
 	Possess(OwnedCraft);
