@@ -64,7 +64,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void AddComponentToSimulation(UPrimitiveComponent* InComponent, const TArray<FClusterUnionBoneData>& BonesData, const TArray<FClusterUnionBoneData>& RemovedBoneIDs, bool bIsNew);
+	static void Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart);
 
 	void AttachPart(ACraft* SourceCraft, UPart* AttachToPart);
 

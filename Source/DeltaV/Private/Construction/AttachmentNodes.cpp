@@ -21,7 +21,7 @@ UAttachmentNodes::UAttachmentNodes()
 	if (Part == nullptr) {
 		return;
 	}
-
+	static FAttachmentTransformRules AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepRelative, true);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>SphereMeshAsset(TEXT("/Game/Shapes/AttachmentNode"));
 
 	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
@@ -31,7 +31,7 @@ UAttachmentNodes::UAttachmentNodes()
 		Node->SetStaticMesh(SphereMeshAsset.Object);
 		Node->SetRelativeScale3D(FVector(0.1f));
 
-		Node->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		Node->AttachToComponent(this, AttachmentRule);
 		Node->SetRelativeLocation(Location);
 		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -68,7 +68,7 @@ UAttachmentNodes::UAttachmentNodes()
 	else {
 		SideAttachment = FVector(INFINITY);
 	}
-	AttachToComponent(Part->Mesh, FAttachmentTransformRules::KeepRelativeTransform);
+	AttachToComponent(Part->Mesh, AttachmentRule);
 }
 
 
@@ -76,15 +76,17 @@ UAttachmentNodes::UAttachmentNodes()
 void UAttachmentNodes::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
 	for (auto& Node : AttachmentNodes) {
 		Node->RegisterComponent();
 	}
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("Location %s"), *GetComponentLocation().ToString());
+
+void UAttachmentNodes::OnRegister() {
+	Super::OnRegister();
 
 }
+
 
 
 // Called every frame
@@ -99,8 +101,7 @@ UAttachmentNodes* UAttachmentNodes::Get(UPart* Part) {
 	TArray<USceneComponent*> Components;
 	Part->Mesh->GetChildrenComponents(false, Components);
 	for (USceneComponent* Component : Components) {
-		UAttachmentNodes* Node = Cast<UAttachmentNodes>(Component);
-		if (Node) {
+		if (UAttachmentNodes* Node = Cast<UAttachmentNodes>(Component)) {
 			return Node;
 		}
 	}

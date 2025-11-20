@@ -18,9 +18,12 @@ public:
 	// Sets default values for this component's properties
 	UAttachmentNodes();
 
+	virtual void OnRegister() override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
 
 public:	
 	// Called every frame

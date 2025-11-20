@@ -50,8 +50,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 	FuelManager = CreateDefaultSubobject<UFuelManager>("FuelManager");
 	StageManager = CreateDefaultSubobject<UStageManager>("StageManager");
 
-
-
 	static const FName Default__Craft(TEXT("Default__Craft"));
 	if (GetFName() == Default__Craft) {
 
@@ -97,10 +95,12 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 		auto [Parent, ChildJson] = Structures.Pop();
 		for (auto& [Name, GrandChildrenJson] : ChildJson->Values) {
 			auto Part = Parts.FindChecked(Name);
-			Part->Mesh->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
+			Part->Mesh->AttachToComponent(Parent, FAttachmentTransformRules::KeepWorldTransform);
 			Structures.Add({ Part->Mesh, GrandChildrenJson->AsObject() });
 		}
 	}
+
+
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
@@ -181,6 +181,7 @@ ACraft* ACraft::Clone() {
 void ACraft::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("ACraft BeginPlay called"));
 }
 
 // Called every frame
@@ -358,42 +359,62 @@ static void TransferPart(UPart* Part, ACraft* FromCraft, ACraft* ToCraft) {
 	ToCraft->Parts.Add(Part->Id, Part);
 }
 
-void Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
+void ACraft::Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
 	if (SourcePart == nullptr || DestPart == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("some parts were nullptr"));
 		return;
 	}
 	ACraft* SourceCraft = SourcePart->GetOwner<ACraft>();
 	ACraft* DestCraft = DestPart->GetOwner<ACraft>();
-
-
 	if (SourceCraft == nullptr || DestCraft == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("some crafts were nullptr"));
 		return;
 	}
+	auto* SourceClusterUnion = SourceCraft->GetClusterUnionComponent();
+	auto* DestClusterUnion = DestCraft->GetClusterUnionComponent();
 	
 	// go through all children of the part, unregister them, 
 
-	TArray<TPair<USceneComponent*, USceneComponent*>> Components;
+	TArray<TPair<USceneComponent*, USceneComponent*>> Components = { { DestPart, SourcePart->Mesh } };
 	TArray<UPart*> Parts;
 
 	// detach and unregister everything
 	while (Components.Num() > 0) {
-		auto [AttachedTo, Component] = Components.Pop();
+		auto [AttachTo, Component] = Components.Pop();
 
-		Component->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+		// if the direct outer is a UPart, it's the base mesh transform
+		if (UPart* Part = Cast<UPart>(Component->GetOuter())) {
+			Part->Rename(nullptr, DestCraft);
+			Part->ReregisterComponent();
+			Parts.Add(Part);
+			Component->Rename(nullptr, Part);
+		}
+		else {
+			Component->Rename(nullptr, AttachTo);
+		}
+
+		if (auto* PrimitiveComponent = Cast<UPrimitiveComponent>(Component)) {
+			SourceClusterUnion->RemoveComponentFromCluster(PrimitiveComponent);
+			DestClusterUnion->AddComponentToCluster(PrimitiveComponent, {});
+		}
+		Component->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 		Component->UnregisterComponent();
 
-		Component->Rename(nullptr, AttachedTo);
+		Component->AttachToComponent(AttachTo, FAttachmentTransformRules::KeepWorldTransform);
+		Component->RegisterComponent();
 
 		for (auto& Child : Component->GetAttachChildren()) {
 			Components.Add({ Component, Child });
 		}
-
-		// if the direct outer is a UPart, it's the base mesh transform
-		if (UPart* Part = Cast<UPart>(Component->GetOuter())) {
-			Parts.Add(Part);
-		}
 	}
 
+	for (auto* Part : Parts) {
+		UE_LOG(LogTemp, Warning, TEXT("transfer part - %s - %s"), *Part->GetName(), *Part->GetOuter()->GetName());
+	}
+	UE_LOG(LogTemp, Warning, TEXT("part transfer complete"));
+
+	/*
 	// rename parts, which are the top owners of their own physics/etc
 	for (auto* Part : Parts) {
 		Part->Rename(nullptr, DestCraft);
@@ -404,6 +425,7 @@ void Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
 		Component->AttachToComponent(AttachedTo, FAttachmentTransformRules::KeepRelativeTransform);
 		Component->RegisterComponent();
 	}
+	*/
 }
 
 void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {

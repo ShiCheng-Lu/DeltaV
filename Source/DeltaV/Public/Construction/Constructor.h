@@ -36,7 +36,7 @@ public:
 	/*
 	Create a craft with json, and perform the necessary steps to make it workable in the construction editor
 	*/
-	TObjectPtr<ACraft> CreateCraft(TSharedPtr<FJsonObject> CraftJson);
+	TObjectPtr<ACraft> CreateCraft(TSharedPtr<FJsonObject> CraftJson, FVector Location = FVector(0));
 
 	UPart* Update();
 

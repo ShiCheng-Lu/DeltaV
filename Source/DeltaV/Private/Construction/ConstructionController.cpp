@@ -48,13 +48,13 @@ void AConstructionController::BeginPlay() {
 
 	HUD = CreateWidget<UConstructionHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(UConstructionHUDClass));
 	HUD->AddToPlayerScreen();
-
+	/**
 	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();
 	TransformGadget->Controller = this;
 
 	PartShapeEditor = GetWorld()->SpawnActor<APartShapeEditor>();
 	PartShapeEditor->SetController(this);
-
+	*/
 	Load();
 }
 
@@ -274,7 +274,7 @@ void AConstructionController::DebugAction() {
 	//DynamicMesh->bEnableMeshGenerator = true;
 	//DynamicMesh->SetMeshGenerator(ShapeEditor);
 	ShapeEditor->Generate(Mesh);
-	DynamicMesh->SetMesh(Mesh);
+	DynamicMesh->SetMesh(Mesh); 
 	*/
 }
 
@@ -294,11 +294,12 @@ void AConstructionController::Pressed(FKey Key) {
 					HUD->SetCraft(Craft);
 				}
 				*/
+				UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode Place"));
 			}
 			else {
+				UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode Grab"));
 				Constructor.Grab();
 			}
-			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode"));
 			break;
 		case AConstructionController::RotateMode:
 			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton RotateMode"));
@@ -404,7 +405,7 @@ void AConstructionController::Load() {
 	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
 	OwnedCraft = Constructor.CreateCraft(CraftJson);
-	// OwnedCraft->SetActorLocation(FVector(0, 0, 0));
+	// OwnedCraft->SetActorLocation(FVector(0, 0, 100));
 	OwnedCraft->SetPhysicsEnabled(false);
 
 	HUD->SetCraft(OwnedCraft);

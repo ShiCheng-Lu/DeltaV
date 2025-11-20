@@ -12,6 +12,7 @@
 #include "Construction/ConstructionController.h"
 #include "Construction/AttachmentNodes.h"
 #include "ChaosModularVehicle/ClusterUnionVehicleComponent.h"
+#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
 
 Constructor::Constructor()
 {
@@ -26,7 +27,7 @@ void Constructor::SetController(AConstructionController* InController) {
 	World = Controller->GetWorld();
 }
 
-TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
+TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson, FVector Location) {
 	// TObjectPtr<ACraft> Craft = World->SpawnActor<ACraft>(SpawnParamsAlwaysSpawn);
 	FActorSpawnParameters Params = FActorSpawnParameters();
 	// Params.Name = "custom-craft-name";
@@ -38,21 +39,20 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson) {
 	for (auto& [Name, Part] : Craft->Parts) {
 		auto* AttachmentNodes = NewObject<UAttachmentNodes>(Part->Mesh);
 		AttachmentNodes->RegisterComponent();
-		/*
-		UPart* Part = PartKVP.Value;
 
-		Part->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
-		Part->Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+		// Part->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		// Part->Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 		Part->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
+		Part->Mesh->RegisterComponent();
+		// Craft->ClusterUnionVehicleComponent()->AddComponent(Part->Mesh);
 
-		UAttachmentNodes* AttachmentNodes = NewObject<UAttachmentNodes>(Part);
-		AttachmentNodes->RegisterComponent();
-		*/
+		// part must be (re)registered after collision response type set, otherwise collision don't work ?!
+		
 	}
 	// Craft->SetActorRotation(DefaultOrientation);
 
 	// Craft->FinishSpawning(Transform);
-
+	Craft->SetActorLocation(Location);
 
 	return Craft;
 }
@@ -85,7 +85,9 @@ void Constructor::Select(UPart* Part) {
 		for (auto& PartKVP : Craft->Parts) {
 			PartKVP.Value->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
 			UAttachmentNodes::Get(PartKVP.Value)->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
-		}*/
+		}
+		*/
+		UE_LOG(LogTemp, Warning, TEXT("Select: part not null"));
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Set selected"));
@@ -95,6 +97,8 @@ void Constructor::Select(UPart* Part) {
 UPart* Constructor::TraceMouse() {
 	FHitResult Result;
 	if (Controller->GetHitResultUnderCursor(ECC_NoneHeldParts, true, Result)) {
+		;
+		UE_LOG(LogTemp, Warning, TEXT("TraceMouse, has part under mouse %s"), *Result.GetComponent()->GetName());
 		return Result.GetComponent()->GetTypedOuter<UPart>();
 	}
 	return nullptr;
@@ -105,22 +109,34 @@ void Constructor::Grab() {
 	if (Part == nullptr) {
 		return;
 	}
-	ACraft* Craft = Cast<ACraft>(Part->GetOwner());
+	ACraft* Craft = Part->GetOwner<ACraft>();
 	if (Craft == nullptr) {
 		return;
 	}
+	ACraft* Other = World->SpawnActor<ACraft>();
+	ACraft::Transfer(Part, Other->GetClusterUnionComponent());
 	/**
 	if (Craft->RootPart() != Part) {
 		ACraft* NewCraft = World->SpawnActor<ACraft>();
 		Craft->DetachPart(Part, NewCraft);
 	}*/
+	/*
 	Select(Part);
 	UpdateSymmetry(Symmetry);
 
-	FVector CameraLocation; FRotator _;
-	Controller->PlayerCameraManager->GetCameraViewPoint(CameraLocation, _);
+	*/
+	FVector Start; FRotator Rotation;
+	Controller->PlayerCameraManager->GetCameraViewPoint(Start, Rotation);
+	FVector End = Start + Rotation.RotateVector(FVector(1000000, 0, 0));
+	FHitResult Result;
+	World->LineTraceSingleByChannel(Result, Start, End, ECC_NoneHeldParts);
 
-	Distance = FVector::Distance(CameraLocation, Part->Mesh->GetComponentLocation());
+
+
+	Distance = FVector::Distance(Start, Part->Mesh->GetComponentLocation());
+
+	// UPart* Part = Cast<UPart>(Other->GetClusterUnionComponent()->GetAttachChildren().Last().GetOuter());
+	Select(Part);
 }
 
 UPart* Constructor::Update() {
@@ -133,6 +149,7 @@ UPart* Constructor::Update() {
 	FVector CameraLocation;
 	FVector Direction;
 	if (!Controller->DeprojectMousePositionToWorld(CameraLocation, Direction)) {
+		UE_LOG(LogTemp, Warning, TEXT("Update called camera deproject failed"));
 		return nullptr;
 	}
 	FVector CameraLocation2;
@@ -140,7 +157,7 @@ UPart* Constructor::Update() {
 	Controller->PlayerCameraManager->GetCameraViewPoint(CameraLocation2, _);
 
 
-	TArray<FHitResult> Results;
+	FHitResult Result;
 	FVector Start = CameraLocation; // start of the trace ray
 	FVector End; // end of the trace ray, goes through every attachment node
 	// node attachment
@@ -153,23 +170,23 @@ UPart* Constructor::Update() {
 
 		End = (Direction * Distance + RelativeLocation) * 2 + Start;
 
-		World->LineTraceMultiByChannel(Results, Start, End, ECC_AttachmentNodes);
+		World->LineTraceSingleByChannel(Result, Start, End, ECC_AttachmentNodes);
 
-		if (Results.Num() <= 0) {
+		if (!Result.bBlockingHit) {
 			continue;
 		}
-		auto& HitResult = Results.Last();
 		
 		// Handle symmetry attachment
 
 		// Put the part so that the node traced at is at the same location as the target node
-		auto NodeLocation = HitResult.Component->GetComponentLocation();
-		auto* Part = HitResult.Component->GetTypedOuter<UPart>();
+		auto NodeLocation = Result.Component->GetComponentLocation();
+		auto* Part = Result.Component->GetTypedOuter<UPart>();
 		if (Part == nullptr) {
 			continue;
 		}
 		Selected->GetOwner()->SetActorLocation(NodeLocation - RelativeLocation);
 
+		UE_LOG(LogTemp, Warning, TEXT("Update part is attached"));
 		return Part;
 	}
 
@@ -214,8 +231,9 @@ UPart* Constructor::Update() {
 	*/
 
 	// No attachment node or side attachment, place the craft/part at where it is
-	Selected->GetOwner()->SetActorLocation(CameraLocation + Direction * Distance);
-	
+	Selected->GetOwner<ACraft>()->SetActorLocation(CameraLocation + Direction * Distance);
+
+	UE_LOG(LogTemp, Warning, TEXT("Update set location to %s - %s"), *(Selected->GetOwner<ACraft>()->GetActorLocation()).ToString(), *Selected->Mesh->GetComponentLocation().ToString());
 	/*
 	if (SymmetryCrafts.Num() > 0) {
 		for (ACraft* Craft : SymmetryCrafts) {
@@ -257,6 +275,7 @@ void Constructor::Tick() {
 	if (Selected == nullptr) {
 		return;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("update called"));
 	// update location of selected part
 	Update();
 }

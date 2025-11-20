@@ -107,6 +107,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		auto* Component = NewObject<UGeometryCollectionComponent>(this);
 		Component->SetRestCollection(GeometryCollection);
 		Component->DamageThreshold = { 1e8 };
+		Component->bForceUpdateActiveTransforms = true;
 
 		UE_LOG(LogTemp, Warning, TEXT("Creating geometry collection"));
 
@@ -116,14 +117,20 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		MeshType = GEOMETRY_COLLECTION;
 	}
 
-	Mesh->SetAbsolute(true, true, true);
+	Mesh->SetAbsolute(false, false, false);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel11, ECR_Ignore);
-	Mesh->SetCollisionObjectType(ECC_GameTraceChannel11);
+
+	// ignore self collision
+	// Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel11, ECR_Ignore);
+	// Mesh->SetCollisionObjectType(ECC_GameTraceChannel11);
 	
-	Mesh->SetRelativeLocation(JsonUtil::Vector(Json, "location"));
+	Mesh->SetWorldLocation(JsonUtil::Vector(Json, "location"));
 	Mesh->SetWorldRotation(JsonUtil::Rotator(Json, "rotation"));
 	Mesh->SetWorldScale3D(JsonUtil::Vector(Json, "scale"));
+
+	
+
+	// Mesh->SetAbsolute(false, false, true);
 
 	/*
 	for (auto& FieldKVP : AdditionalFields) {
@@ -175,14 +182,14 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		Chassis->RegisterComponent();
 		Craft->AddOwnedComponent(Chassis);
 	}
-
 	// extract to an overriden RegisterComponent that registers the mesh
-	Mesh->RegisterComponent();
-
+	
 	UE_LOG(LogTemp, Warning, TEXT("%s has %s physics state"), *GetName(), Mesh->HasValidPhysicsState() ? TEXT("valid") : TEXT("invalid"));
 	// ! important, super important
 	Craft->GetClusterUnionComponent()->AddComponentToCluster(Mesh, {});
 	// Craft->GetClusterUnionComponent()->RemoveComponentFromCluster(Mesh);
+	// Mesh->RegisterComponent();
+
 }
 
 TSharedPtr<FJsonObject> UPart::ToJson() {
