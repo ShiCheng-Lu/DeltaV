@@ -10,7 +10,7 @@ class UPart;
 class UStaticMeshComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UAttachmentNodes : public USceneComponent
+class DELTAV_API UAttachmentNodes : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 
@@ -18,9 +18,12 @@ public:
 	// Sets default values for this component's properties
 	UAttachmentNodes();
 
+	virtual void OnRegister() override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
 
 public:	
 	// Called every frame

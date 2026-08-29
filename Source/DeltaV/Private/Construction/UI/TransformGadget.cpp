@@ -77,11 +77,11 @@ double RayIntersection1(const FRay& A, const FRay& B) {
 void ATransformGadget::BeginPlay()
 {
 	Super::BeginPlay();
-
+	/*
 	TranslateX->RegisterComponent();
 	TranslateY->RegisterComponent();
 	TranslateZ->RegisterComponent();
-
+	*/
 	GetRootComponent()->SetHiddenInGame(true, true);
 }
 

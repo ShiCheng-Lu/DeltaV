@@ -20,6 +20,7 @@
 #include "Simulation/CelestialBody.h"
 #include "Simulation/ControlStabilizer.h"
 #include "Simulation/UI/Navball.h"
+#include "Common/AssetLibrary.h"
 
 
 ASimulationController::ASimulationController(const FObjectInitializer& ObjectInitializer)
@@ -64,7 +65,7 @@ void ASimulationController::BeginPlay() {
 	FVector origin, extent;
 	Craft->GetActorBounds(true, origin, extent);
 
-	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 1;
+	double SpawnDistance = Earth->GetActorScale3D().Z * 100 + extent.Z + 100;
 	FVector CraftLocation = FVector(SpawnDistance, 0, 0);
 	Craft->SetLocation(CraftLocation);
 
@@ -86,8 +87,7 @@ void ASimulationController::BeginPlay() {
 	Craft->Orbit->UpdateOrbit(CraftLocation, FVector(0, 0, 1000).Cross(CraftLocation.GetSafeNormal()), 0);
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
-
-	HUD = CreateWidget<USimulationHUD>(this, USimulationHUD::BlueprintClass);
+	HUD = CreateWidget<USimulationHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(USimulationHUDClass));
 	HUD->AddToPlayerScreen();
 
 	HUD->SetNavballTarget(Craft, FVector(0, 0, 0));

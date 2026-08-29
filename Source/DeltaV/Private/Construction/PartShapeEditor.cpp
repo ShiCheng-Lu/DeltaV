@@ -37,6 +37,7 @@ APartShapeEditor::APartShapeEditor(const FObjectInitializer& ObjectInitializer) 
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>SquareMesh(TEXT("/Game/Shapes/square"));
 
+	/*
 	Mesh = CreateDefaultSubobject<UDynamicMeshComponent>("Mesh");
 	SetRootComponent(Mesh);
 
@@ -56,7 +57,7 @@ APartShapeEditor::APartShapeEditor(const FObjectInitializer& ObjectInitializer) 
 		Corner->SetupAttachment(Mesh);
 
 		Corners.Push(Corner);
-	}
+	}*/
 }
 
 void APartShapeEditor::SetPart(UPart* Part) {
@@ -81,8 +82,9 @@ void APartShapeEditor::SetPart(UPart* Part) {
 	Box.GetCenter();
 	Box.GetExtent();
 
+	/*
 	Part->CopyMeshToDynamicMesh(Mesh->GetDynamicMesh());
-
+	*/
 	Mesh->EditMesh([this](FDynamicMesh3& MeshInOut) {
 		UpdateMesh(MeshInOut);
 	});
@@ -132,6 +134,8 @@ void APartShapeEditor::Tick(float DeltaTime) {
 }
 
 void APartShapeEditor::UpdateMesh(FDynamicMesh3& MeshInOut) {
+	return;
+	/*
 	FMeshDescription* MeshDescription = SelectedPart->CopyMeshToDynamicMesh(nullptr);
 	FVertexArray vertices = MeshDescription->Vertices();
 
@@ -165,5 +169,6 @@ void APartShapeEditor::UpdateMesh(FDynamicMesh3& MeshInOut) {
 
 		MeshInOut.SetVertex(Id, transformed_position);
 	}
+	*/
 }
 

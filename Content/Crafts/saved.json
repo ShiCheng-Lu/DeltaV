@@ -1,0 +1,109 @@
+{
+	"location": [ 15.37790262797977, -0.40910575587439801, -576.22819966409361 ],
+	"rotation": [ 0.00017248665745414119, -0.031961138871420623, 0.00028825597458676899, 0.99948905584748038 ],
+	"structure":
+	{
+		"cockpit":
+		{
+			"cockpit-2":
+			{
+				"cockpit-3":
+				{
+				}
+			},
+			"thruster":
+			{
+			},
+			"tire_fl":
+			{
+			},
+			"tire_fr":
+			{
+			},
+			"tire_rl":
+			{
+			},
+			"tire_rr":
+			{
+			}
+		}
+	},
+	"parts":
+	{
+		"cockpit":
+		{
+			"type": "cockpit",
+			"location": [ 0, 0, 0 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ]
+		},
+		"cockpit-2":
+		{
+			"type": "cockpit",
+			"location": [ 300, 0, 0 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 0.20000000000000001, 0.20000000000000001, 0.20000000000000001 ]
+		},
+		"cockpit-3":
+		{
+			"type": "cockpit",
+			"location": [ 0, 0, 100 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 0.20000000000000001, 0.20000000000000001, 0.20000000000000001 ]
+		},
+		"thruster":
+		{
+			"type": "engine",
+			"location": [ -150, 0, 0 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ],
+			"thruster":
+			{
+			}
+		},
+		"tire_fl":
+		{
+			"type": "tire",
+			"location": [ 200, -150, -50 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ],
+			"wheel":
+			{
+				"max_steering": 30
+			}
+		},
+		"tire_fr":
+		{
+			"type": "tire",
+			"location": [ 200, 150, -50 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ],
+			"wheel":
+			{
+				"max_steering": 30
+			}
+		},
+		"tire_rl":
+		{
+			"type": "tire",
+			"location": [ -200, -150, -50 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ],
+			"wheel":
+			{
+				"max_steering": 0
+			}
+		},
+		"tire_rr":
+		{
+			"type": "tire",
+			"location": [ -200, 150, -50 ],
+			"rotation": [ 0, 0, 0 ],
+			"scale": [ 1, 1, 1 ],
+			"wheel":
+			{
+				"max_steering": 0
+			}
+		}
+	}
+}

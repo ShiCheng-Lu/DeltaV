@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -14,7 +14,10 @@
 				"SlateCore",
 				"UMG",
 				"GeometryFramework",
-				"CoreUObject"
+				"CoreUObject",
+				"ChaosModularVehicleEngine",
+				"EnhancedInput",
+				"Niagara"
 			]
 		}
 	],
@@ -36,6 +39,18 @@
 		},
 		{
 			"Name": "GeometryScripting",
+			"Enabled": true
+		},
+		{
+			"Name": "SkeletalMeshModelingTools",
+			"Enabled": true
+		},
+		{
+			"Name": "ChaosModularVehicle",
+			"Enabled": true
+		},
+		{
+			"Name": "ChaosModularVehicleExamples",
 			"Enabled": true
 		}
 	]

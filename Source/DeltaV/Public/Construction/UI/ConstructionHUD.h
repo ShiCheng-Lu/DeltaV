@@ -18,6 +18,8 @@ class UDragReorderList;
 class AConstructionController;
 class ACraft;
 
+#define UConstructionHUDClass "/Game/Construction/UI/WBP_ConstructionHUD.WBP_ConstructionHUD_C"
+
 /**
  * 
  */
@@ -33,8 +35,6 @@ protected:
 	virtual void NativeOnInitialized() override;
 
 public:
-	inline static TSubclassOf<UUserWidget> BlueprintClass;
-
 	AConstructionController* Controller;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))

@@ -54,20 +54,19 @@ void UStageManager::FromJson(TArray<TSharedPtr<FJsonValue>> Json) {
 		}
 		Stages.Push(Stage);
 	}
-
 }
 
 TArray<TSharedPtr<FJsonValue>> UStageManager::ToJson() {
 	TArray<TSharedPtr<FJsonValue>> Json;
 	for (UStage* Stage : Stages) {
-		TSharedPtr<FJsonObject> StageJson = MakeShareable(new FJsonObject());
+		auto StageJson = MakeShared<FJsonObject>();
 
 		TArray<TSharedPtr<FJsonValue>> Array;
 		for (UPart* Part : Stage->Parts) {
-			Array.Add(MakeShareable(new FJsonValueString(Part->Id)));
+			Array.Add(MakeShared<FJsonValueString>(Part->Id));
 		}
-		StageJson->SetArrayField("parts", Array);
-		Json.Push(MakeShareable(new FJsonValueObject(StageJson)));
+		StageJson->SetArrayField(TEXT("parts"), Array);
+		Json.Push(MakeShared<FJsonValueObject>(StageJson));
 	}
 	return Json;
 }

@@ -25,6 +25,7 @@ public:
 	enum EMeshType {
 		STATIC_MESH,
 		SKELETAL_MESH,
+		GEOMETRY_COLLECTION,
 	};
 
 	EMeshType MeshType;
@@ -40,8 +41,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<FString, UPartComponent*> AdditionalComponents;
 
-	UPhysicsConstraintComponent* Physics;
-
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMeshComponent> Mesh;
 	FName Bone;
@@ -53,9 +52,7 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void SetAttachmentNodeVisibility(bool visibility);
-
-	void SetParent(UPart* Part);
+	void SetParent(UPrimitiveComponent* Parent);
 
 	/*
 	Json serialization
@@ -86,12 +83,5 @@ public:
 		}
 		return nullptr;
 	}
-
-	bool PhysicsEnabled;
-	void SetPhysicsEnabled(bool bSimulate);
-
-	void Attach();
-	void Detach();
-
-	FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
+	// FMeshDescription* CopyMeshToDynamicMesh(TObjectPtr<UDynamicMesh> DynamicMesh, int LOD = 0);
 };

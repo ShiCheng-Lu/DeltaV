@@ -56,9 +56,9 @@ FVector JsonUtil::Vector(const TSharedPtr<FJsonObject>& Json, const FString& Fie
 void JsonUtil::Vector(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FVector& Vector) {
 	TArray<TSharedPtr<FJsonValue>> Array;
 	
-	Array.Add(MakeShareable(new FJsonValueNumber(Vector.X)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Vector.Y)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Vector.Z)));
+	Array.Add(MakeShared<FJsonValueNumber>(Vector.X));
+	Array.Add(MakeShared<FJsonValueNumber>(Vector.Y));
+	Array.Add(MakeShared<FJsonValueNumber>(Vector.Z));
 
 	Json->SetArrayField(FieldName, Array);
 }
@@ -81,10 +81,10 @@ FQuat JsonUtil::Quat(const TSharedPtr<FJsonObject>& Json, const FString& FieldNa
 void JsonUtil::Quat(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FQuat& Quat) {
 	TArray<TSharedPtr<FJsonValue>> Array;
 
-	Array.Add(MakeShareable(new FJsonValueNumber(Quat.X)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Quat.Y)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Quat.Z)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Quat.W)));
+	Array.Add(MakeShared<FJsonValueNumber>(Quat.X));
+	Array.Add(MakeShared<FJsonValueNumber>(Quat.Y));
+	Array.Add(MakeShared<FJsonValueNumber>(Quat.Z));
+	Array.Add(MakeShared<FJsonValueNumber>(Quat.W));
 
 	Json->SetArrayField(FieldName, Array);
 }
@@ -106,9 +106,9 @@ FRotator JsonUtil::Rotator(const TSharedPtr<FJsonObject>& Json, const FString& F
 void JsonUtil::Rotator(TSharedPtr<FJsonObject>& Json, const FString& FieldName, const FRotator& Rotator) {
 	TArray<TSharedPtr<FJsonValue>> Array;
 
-	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Pitch)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Yaw)));
-	Array.Add(MakeShareable(new FJsonValueNumber(Rotator.Roll)));
+	Array.Add(MakeShared<FJsonValueNumber>(Rotator.Pitch));
+	Array.Add(MakeShared<FJsonValueNumber>(Rotator.Yaw));
+	Array.Add(MakeShared<FJsonValueNumber>(Rotator.Roll));
 
 	Json->SetArrayField(FieldName, Array);
 }

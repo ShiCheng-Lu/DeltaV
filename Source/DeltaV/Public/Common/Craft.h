@@ -4,15 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "ChaosModularVehicle/ModularVehicleClusterPawn.h"
 
 #include "Common/Part.h"
 #include "Components/SphereComponent.h"
 #include "Common/CustomTickFunction.h"
+#include "PhysicsEngine/ClusterUnionComponent.h"
 
 #include "Craft.generated.h"
 
 UCLASS()
-class DELTAV_API ACraft : public APawn
+class DELTAV_API ACraft : public AModularVehicleClusterPawn
 {
 	GENERATED_BODY()
 
@@ -23,6 +25,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TMap<FString, UPart*> Parts;
+
+	UPROPERTY(EditAnywhere)
+	TMap<UPrimitiveComponent*, FString> Meshes;
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UFuelManager> FuelManager;
@@ -37,6 +42,7 @@ public:
 	FVector TargetVelocity; // Absolute velocity target for physics simulation (from orbit)
 	FVector TargetPosition;
 
+	// must be called before BeginPlay() on simulation paths
 	void FromJson(TSharedPtr<FJsonObject> Json);
 	TSharedPtr<FJsonObject> ToJson();
 	ACraft* Clone();
@@ -49,12 +55,16 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	static void Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart);
 
 	void AttachPart(ACraft* SourceCraft, UPart* AttachToPart);
 
@@ -76,9 +86,6 @@ public:
 	FVector CalculateCoM();
 
 	FVector GetWorldCoM();
-
-	UPart* RootPart() { return Root; }
-
 
 	FCustomActorTick<ACraft> PostPhysics;
 	void TickPostPhysics(float DeltaTime);

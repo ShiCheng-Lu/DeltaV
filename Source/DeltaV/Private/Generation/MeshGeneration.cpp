@@ -31,7 +31,7 @@ void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
 	MeshInOut.Attributes()->EnableMaterialID();
 	MeshInOut.EnableVertexNormals(FVector3f(0));
 
-	GenerateIsoSphere(MeshInOut, 6);
+	GenerateIsoSphere(MeshInOut, 8);
 
 	for (int VertexId : MeshInOut.VertexIndicesItr()) {
 		FVector Vertex = MeshInOut.GetVertex(VertexId);
@@ -44,6 +44,9 @@ void UMeshGeneration::Initialize(FDynamicMesh3& MeshInOut) {
 			Height = Radius;
 		}
 		HeightMap.Add(VertexId, Height);
+		PositionMap.Add(VertexId, Vertex);
+		GradientMap.Add(VertexId, {});
+
 		MeshInOut.SetVertex(VertexId, Vertex.GetSafeNormal() * HeightMap[VertexId]);
 	}
 }
@@ -80,6 +83,36 @@ void UMeshGeneration::ComputeDrainageArea(TArray<Node>& Tree, int Node) {
 	Tree[Node].Processed = true;
 }
 
+void UMeshGeneration::Iterate3(FDynamicMesh3& MeshInOut) {
+	MeshInOut.CompactInPlace();
+	
+
+	// apply corrosion and uplift
+	// add the drain area of self to downstream
+	for (const auto& Vertex : MeshInOut.VerticesItr()) {
+
+	}
+
+
+	double Friction = 0.95; // friction?
+	
+	// build the tree
+	// or screw the tree, just go from highest point to lowest point and apply contribution only to lower neighbours (even with momentum)
+	// or apply local erosion with momentum once, and then
+	for (const auto VertexId : MeshInOut.VertexIndicesItr()) {
+		FVector Gradient = GradientMap[VertexId];
+
+		TMap<int, float> Contribution;
+		for (auto OtherVertexId : MeshInOut.VtxVerticesItr(VertexId)) {
+			// PositionMap[OtherVertexId];
+
+		}
+	}
+
+	// solve 
+
+}
+
 void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 	// iterate through every edge, construct child/parent tree, O(E) <= O(6V)
 	// use parent tree to resolve dependency, update child nodes with drainage area
@@ -112,6 +145,7 @@ void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 		Tree[High].Below.Add(Low);
 	}
 
+
 	// Connect up lakes
 
 	// traverse tree and calculate
@@ -135,8 +169,9 @@ void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 		DeltaMap.Add(Node, Delta);
 	}
 
-
 	FlushPersistentDebugLines(GetWorld());
+	return;
+	/*
 	for (int Node = 0; Node < HeightMap.Num(); ++Node) {
 		FVector A = MeshInOut.GetVertex(Node);
 		
@@ -152,6 +187,7 @@ void UMeshGeneration::Iterate2(FDynamicMesh3& MeshInOut) {
 			}
 		}
 	}
+	*/
 }
 
 void UMeshGeneration::Iterate(FDynamicMesh3& MeshInOut) {

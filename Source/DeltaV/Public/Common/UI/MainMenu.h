@@ -23,6 +23,9 @@ public:
 	void PlayButtonClicked();
 
 	UFUNCTION(BlueprintCallable)
+	void GenerationButtonClicked();
+
+	UFUNCTION(BlueprintCallable)
 	void SettingsButtonClicked();
 
 	UFUNCTION(BlueprintCallable)

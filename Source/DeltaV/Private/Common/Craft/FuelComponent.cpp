@@ -156,9 +156,6 @@ void UFuelComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!Part->PhysicsEnabled) {
-		return;
-	}
 	// only tick for fuel components at the root of each fuel group, root if parent is null or a decoupler
 	if (Part->Parent != nullptr && Part->Parent->Type != "decoupler") {
 		return;

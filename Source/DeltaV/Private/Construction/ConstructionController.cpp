@@ -22,6 +22,10 @@
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Common/AssetLibrary.h"
+#include "EnhancedInputSubsystems.h"
+#include "ChaosModularVehicle/ModularVehicleBaseComponent.h"
+
 AConstructionController::AConstructionController() {
 
 	bEnableClickEvents = true;
@@ -42,35 +46,72 @@ void AConstructionController::BeginPlay() {
 	SetShowMouseCursor(true);
 	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
-	HUD = CreateWidget<UConstructionHUD>(this, UConstructionHUD::BlueprintClass);
+	HUD = CreateWidget<UConstructionHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(UConstructionHUDClass));
 	HUD->AddToPlayerScreen();
-
+	/**
 	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();
 	TransformGadget->Controller = this;
 
 	PartShapeEditor = GetWorld()->SpawnActor<APartShapeEditor>();
 	PartShapeEditor->SetController(this);
-
+	*/
 	Load();
 }
 
 void AConstructionController::SetupInputComponent() {
 	Super::SetupInputComponent();
 
+	
+	if (auto* LocalPlayer = GetLocalPlayer()) {
+		if (auto* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) {
+			//auto* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/IMC_Construction");
+			//Subsystem->AddMappingContext(InputMappingContext, 1);
 
-	// PlayerCameraManager->SetupInput(PlayerInput, InputComponent);
+			auto* IMC_Common = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Common");
+			Subsystem->AddMappingContext(IMC_Common, 2);
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::W, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveForwardBackward", EKeys::S, -1.f));
+			auto* IMC_Simulation = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Simulation");
+			Subsystem->AddMappingContext(IMC_Simulation, 0);
+		}
+	}
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent)) {
+		auto* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Move");
+		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveLeftRight", EKeys::A, -1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveLeftRight", EKeys::D, 1.f));
+		UE_LOG(LogTemp, Warning, TEXT("Added input"));
+		if (OwnedCraft != nullptr) {
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveUpDown", EKeys::SpaceBar, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("MoveUpDown", EKeys::LeftShift, -1.f));
+		}
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookX", EKeys::MouseX, 1.f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("LookY", EKeys::MouseY, -1.f));
+		auto SetupCraftInput = [this, EnhancedInput](const FString Name) {
+			auto* Input = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_" + Name);
+			EnhancedInput->BindActionValueLambda(Input, ETriggerEvent::Triggered, [this, Name](const FInputActionValue& Input) {
+				if (OwnedCraft != nullptr) {
+					OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName(Name), Input.Get<float>());
+				}
+			});
+		};
+
+		SetupCraftInput("Steering");
+		SetupCraftInput("Thrust");
+		SetupCraftInput("Throttle");
+		SetupCraftInput("Pitch");
+		SetupCraftInput("Roll");
+		SetupCraftInput("Yaw");
+
+		auto* Look = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Look");
+		EnhancedInput->BindActionValueLambda(Look, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			AddPitchInput(Input.Get<FVector2D>().Y);
+			AddYawInput(Input.Get<FVector2D>().X);
+		});
+
+		auto* Stage = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Stage");
+		EnhancedInput->BindActionValueLambda(Stage, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
+			if (OwnedCraft != nullptr) {
+				OwnedCraft->StageCraft();
+			}
+		});
+	}
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("CameraZoom", EKeys::MouseWheelAxis, 0.05f));
 
@@ -103,12 +144,6 @@ void AConstructionController::SetupInputComponent() {
 
 	InputComponent->BindAxis("CameraZoom", this, &AConstructionController::Zoom);
 
-	InputComponent->BindAction("RightClick", EInputEvent::IE_Pressed, this, &AConstructionController::EnableMovement);
-	InputComponent->BindAction("RightClick", EInputEvent::IE_Released, this, &AConstructionController::DisableMovement);
-
-	InputComponent->BindAxis("LookX", this, &AConstructionController::AddYawInput);
-	InputComponent->BindAxis("LookY", this, &AConstructionController::AddPitchInput);
-
 	InputComponent->BindAction("LeftClick", IE_Pressed, this, &AConstructionController::Pressed);
 	InputComponent->BindAction("RightClick", IE_Pressed, this, &AConstructionController::Pressed);
 	InputComponent->BindAction("MiddleClick", IE_Pressed, this, &AConstructionController::Pressed);
@@ -124,8 +159,6 @@ void AConstructionController::SetupInputComponent() {
 	InputComponent->BindAction("Save", IE_Pressed, this, &AConstructionController::Save);
 	InputComponent->BindAction("Load", IE_Pressed, this, &AConstructionController::Load);
 
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::I, 0.1f));
-	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Throttle", EKeys::K, -0.1f));
 	// InputComponent->BindAxis("Throttle", this, &AConstructionController::Throttle);
 
 	PlayerInput->AddActionMapping(FInputActionKeyMapping("DebugAction", EKeys::L));
@@ -189,6 +222,17 @@ void AConstructionController::DisableMovement() {
 	SetIgnoreLookInput(true);
 }
 
+void AConstructionController::Move(const FInputActionValue& Movement) {
+	UE_LOG(LogTemp, Warning, TEXT("Moved: %s"), *Movement.ToString());
+
+	FRotator ControlSpaceRot = GetControlRotation();
+	ControlSpaceRot.Pitch = 0;
+	FVector Input = Movement.Get<FVector>();
+	FVector Move = FVector(Input.Y, Input.X, 0);
+	FVector Direction = ControlSpaceRot.RotateVector(Move);
+	Direction.Z = Input.Z;
+	GetPawn()->AddMovementInput(Direction);
+}
 
 void AConstructionController::Zoom(float value) {
 	if (value != 0) {
@@ -230,7 +274,7 @@ void AConstructionController::DebugAction() {
 	//DynamicMesh->bEnableMeshGenerator = true;
 	//DynamicMesh->SetMeshGenerator(ShapeEditor);
 	ShapeEditor->Generate(Mesh);
-	DynamicMesh->SetMesh(Mesh);
+	DynamicMesh->SetMesh(Mesh); 
 	*/
 }
 
@@ -244,23 +288,31 @@ void AConstructionController::Pressed(FKey Key) {
 			if (Constructor.Selected) {
 				UPart* Part = Constructor.Selected;
 				Constructor.Place();
+				/*
 				ACraft* Craft = Cast<ACraft>(Part->GetOwner());
 				if (Craft) {
 					HUD->SetCraft(Craft);
 				}
+				*/
+				UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode Place"));
 			}
 			else {
+				UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton EditMode Grab"));
 				Constructor.Grab();
 			}
 			break;
 		case AConstructionController::RotateMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton RotateMode"));
 			break;
 		case AConstructionController::TranslateMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton TranslateMode"));
 			TransformGadget->StartTracking();
 			break;
 		case AConstructionController::ScaleMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton ScaleMode"));
 			break;
 		case AConstructionController::WarpMode:
+			UE_LOG(LogTemp, Warning, TEXT("LeftMouseButton WarpMode"));
 			PartShapeEditor->Pressed(Key);
 			break;
 		default:
@@ -319,6 +371,25 @@ void AConstructionController::Released(FKey Key) {
 }
 
 void AConstructionController::Save() {
+	/*
+	TSharedPtr<FJsonObject> CraftJson = OwnedCraft->ToJson();
+
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/saved.json");
+	JsonUtil::WriteFile(Path, CraftJson);
+	OwnedCraft->Destroy();
+
+	OwnedCraft = Constructor.CreateCraft(CraftJson);
+	// OwnedCraft->SetActorLocation(FVector(0, 100, 0));
+	OwnedCraft->SetPhysicsEnabled(true);
+
+	HUD->SetCraft(OwnedCraft);
+	Possess(OwnedCraft);
+	*/
+
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
+	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
+	OwnedCraft->FromJson(CraftJson);
+	/*
 	TArray<AActor*> Actors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACraft::StaticClass(), Actors);
 	for (AActor* Actor : Actors) {
@@ -326,17 +397,31 @@ void AConstructionController::Save() {
 		FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
 		JsonUtil::WriteFile(Path, Craft->ToJson());
 	}
+	*/
 }
 
 void AConstructionController::Load() {
-	FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+	// FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), "ship2.json");
+	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json");
 	TSharedPtr<FJsonObject> CraftJson = JsonUtil::ReadFile(Path);
-	ACraft* Craft = Constructor.CreateCraft(CraftJson);
-	HUD->SetCraft(Craft);
+	OwnedCraft = Constructor.CreateCraft(CraftJson);
+	// OwnedCraft->SetActorLocation(FVector(0, 0, 100));
+	OwnedCraft->SetPhysicsEnabled(false);
+
+	HUD->SetCraft(OwnedCraft);
+	Possess(OwnedCraft);
 }
 
 void AConstructionController::PlayerTick(float DeltaTime) {
 	Super::PlayerTick(DeltaTime);
+
+	/*
+	if (OwnedCraft != nullptr) {
+		if (auto* Sim = OwnedCraft->GetVehicleSimulationComponent()) {
+			Sim->SetInputAxis1D(FName("Throttle"), 1);
+		}
+	}
+	*/
 
 	// UE_LOG(LogTemp, Warning, TEXT("tick"));
 

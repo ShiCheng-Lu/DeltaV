@@ -29,7 +29,7 @@ TPair<UStage*, int> FindStageOfPart(TArray<UStage*>& Stages, UPart* Part) {
 UDragDropOperation* UStagesList::DragItem(UUserWidget* Widget) {
 	UDragDropOperation* Operation = NewObject<UDragDropOperation>();
 
-	UStageGroup* NewWidget = CreateWidget<UStageGroup>(this, UStageGroup::BlueprintClass);
+	UStageGroup* NewWidget = CreateWidget<UStageGroup>(this, UStageGroup::BlueprintClass());
 
 	UStageGroup* StageItem = Cast<UStageGroup>(Widget);
 

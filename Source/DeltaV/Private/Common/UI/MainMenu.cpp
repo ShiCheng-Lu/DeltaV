@@ -26,10 +26,14 @@ void UMainMenu::PlayButtonClicked() {
 
 void UMainMenu::SettingsButtonClicked() {
 	UE_LOG(LogTemp, Warning, TEXT("Settings button pressed"));
-	UGameplayStatics::OpenLevel(GetWorld(), "Simulation");
+	// UGameplayStatics::OpenLevel(GetWorld(), "Simulation");
 }
 
 void UMainMenu::QuitButtonClicked() {
 	UE_LOG(LogTemp, Warning, TEXT("Quit button pressed"));
 	RequestEngineExit("Quit Button Clicked");
+}
+
+void UMainMenu::GenerationButtonClicked() {
+	UGameplayStatics::OpenLevel(GetWorld(), "Generation");
 }

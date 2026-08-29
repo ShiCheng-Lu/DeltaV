@@ -23,12 +23,6 @@
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!UConstructionHUD::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<UConstructionHUD> Widget(TEXT("WidgetBlueprint'/Game/Construction/UI/WBP_ConstructionHUD'"));
-		if (Widget.Succeeded()) {
-			UConstructionHUD::BlueprintClass = Widget.Class;
-		}
-	}
 }
 
 void UConstructionHUD::NativeOnInitialized() {
@@ -61,7 +55,7 @@ void UConstructionHUD::SaveClicked() {
 
 
 
-	Controller->Load();
+	// Controller->Load();
 }
 
 void UConstructionHUD::ClearPart() {
@@ -74,15 +68,23 @@ void UConstructionHUD::PartClicked(UObject* Object) {
 	if (!Data) {
 		return;
 	}
-
 	auto Craft = Controller->Constructor.CreateCraft(Data->CraftJson);
-	UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->StageManager->Stages.Num());
+	// UE_LOG(LogTemp, Warning, TEXT("stages %d"), Craft->StageManager->Stages.Num());
+	TArray<UPart*> PartList;
+	Craft->Parts.GenerateValueArray(PartList);
+	Craft->SetActorEnableCollision(false);
+
+	if (PartList.Num() == 0) {
+		UE_LOG(LogTemp, Warning, TEXT("craft part list is empty"));
+		return;
+	}
+	UPart* Part = PartList[0];
 
 	if (Controller->Constructor.Selected) {
-		Controller->Constructor.Selected->GetOwner()->Destroy();
+		UE_LOG(LogTemp, Warning, TEXT("has a selected thing"));
 		Controller->Constructor.Selected = nullptr;
 	}
-	Controller->Constructor.Select(Craft->RootPart());
+	Controller->Constructor.Select(Part);
 	Controller->Constructor.Distance = 500;
 }
 

@@ -14,8 +14,6 @@
 UWheelComponent::UWheelComponent() {
 	// create a physics contraint
 
-
-	UE_LOG(LogTemp, Warning, TEXT("Wheel created"));
 }
 
 // Called when the game starts
@@ -42,6 +40,7 @@ void UWheelComponent::SetPhysicsEnabled(bool bSimulate) {
 		//Mesh->DetachFromComponent(DetachmentRule);
 		//Physics->SetConstrainedComponents(Part, "", Mesh, "");
 		//Mesh->SetSimulatePhysics(true);
+
 	}
 	else {
 

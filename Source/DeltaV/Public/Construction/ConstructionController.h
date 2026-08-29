@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Constructor.h"
+#include "InputActionValue.h"
 #include "ConstructionController.generated.h"
 
 class UPart;
 class ACraft;
 class UConstructionHUD;
 
-#define ECC_NoneHeldParts ECC_GameTraceChannel1
-#define ECC_AttachmentNodes ECC_GameTraceChannel2
+#define ECC_AttachmentNodes ECC_GameTraceChannel1
 #define ECC_TransformGadget ECC_GameTraceChannel3
 
 /**
@@ -29,10 +29,14 @@ public:
 	void Pressed(FKey Key);
 	void Released(FKey Key);
 
+	void Move(const FInputActionValue& Movement);
+
 	virtual void SetupInputComponent() override;
 
 	virtual void PlayerTick(float DeltaTime) override;
 
+
+	ACraft* OwnedCraft;
 protected:
 	virtual void BeginPlay() override;
 

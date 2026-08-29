@@ -33,9 +33,6 @@ void UAeroComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!Part->PhysicsEnabled) {
-		return;
-	}
 	// aerodynamics???
 
 	// find air deflection based on velocity

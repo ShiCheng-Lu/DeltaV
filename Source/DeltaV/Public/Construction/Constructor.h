@@ -17,8 +17,6 @@ class DELTAV_API Constructor
 {
 	AConstructionController* Controller;
 
-	FActorSpawnParameters SpawnParamsAlwaysSpawn;
-
 	TArray<ACraft*> SymmetryCrafts;
 
 	UWorld* World;
@@ -38,7 +36,7 @@ public:
 	/*
 	Create a craft with json, and perform the necessary steps to make it workable in the construction editor
 	*/
-	TObjectPtr<ACraft> CreateCraft(TSharedPtr<FJsonObject> CraftJson);
+	TObjectPtr<ACraft> CreateCraft(TSharedPtr<FJsonObject> CraftJson, FVector Location = FVector(0));
 
 	UPart* Update();
 
@@ -51,8 +49,6 @@ public:
 	void Select(UPart* Part = nullptr);
 	void Deselect() { Select(nullptr); }
 
-
-	UPart* Trace(FVector Position, FVector Direction);
 
 	// Get the part under the mouse
 	UPart* TraceMouse();

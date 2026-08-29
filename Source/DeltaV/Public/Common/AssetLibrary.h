@@ -27,7 +27,8 @@ public:
 			Object = Cast<T>(ObjectPath.TryLoad());
 		}
 		if (Object == nullptr) {
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load asset"));
+			FString FilePathStr = FString(Path);
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load asset %s"), *FilePathStr);
 		}
 		return Object;
 	}
@@ -58,4 +59,17 @@ public:
 	static T* LoadAsset(const ANSICHAR* Path) { return LoadAsset<T>(FAnsiStringView(Path)); }
 
 	static TSharedPtr<FJsonObject> PartDefinition(FString PartName);
+
+	template <typename T, typename S>
+	static TSubclassOf<T> LoadClass(S Path) {
+		auto Class = TSoftClassPtr<UUserWidget>(FSoftObjectPath(Path));
+		if (Class.IsValid()) {
+			return Class.Get();
+		}
+		auto Loaded = Class.LoadSynchronous();
+		if (Loaded) {
+			return Loaded;
+		}
+		throw "Blueprint class not found";
+	}
 };

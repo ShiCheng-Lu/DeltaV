@@ -10,11 +10,18 @@ public class DeltaV : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "GeometryFramework", 
-			"GeometryCore", "DynamicMesh", "ImageWrapper", "ProceduralMeshComponent",
+			"GeometryCore", "DynamicMesh", "ImageWrapper", "ProceduralMeshComponent", "GeometryCollectionEngine", "ChaosModularVehicleEngine",
+            "Chaos", "ChaosVehicles", "PhysicsCore", "ChaosModularVehicle", "ChaosModularVehicleEngine",
+            "ChaosVehiclesCore",
+            "ChaosVehiclesEngine",
+			"Niagara",
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
-			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "DynamicMesh", "GeometryScriptingCore"
+			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "GeometryScriptingCore",
+            "Chaos", "ChaosVehicles", "PhysicsCore", "ChaosModularVehicle", "ChaosModularVehicleEngine",
+            "ChaosVehiclesCore",
+            "ChaosVehiclesEngine",
         });
 
 		// Uncomment if you are using Slate UI

@@ -15,7 +15,7 @@ UControlStabilizer::UControlStabilizer()
 
 	TimeSinceLastInput = 0;
 
-	TimeSinceLastInputThreshold = 0.2;
+	TimeSinceLastInputThreshold = 0.2f;
 	Controller = nullptr;
 }
 

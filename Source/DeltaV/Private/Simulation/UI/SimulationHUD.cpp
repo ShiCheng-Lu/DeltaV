@@ -24,12 +24,6 @@
 USimulationHUD::USimulationHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!USimulationHUD::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<USimulationHUD> Widget(TEXT("WidgetBlueprint'/Game/Simulation/UI/WBP_SimulationHUD'"));
-		if (Widget.Succeeded()) {
-			USimulationHUD::BlueprintClass = Widget.Class;
-		}
-	}
 }
 
 void USimulationHUD::NativeOnInitialized() {

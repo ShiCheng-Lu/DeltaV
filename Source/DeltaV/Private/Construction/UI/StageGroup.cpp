@@ -14,15 +14,19 @@
 UStageGroup::UStageGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (!UStageGroup::BlueprintClass) {
-		ConstructorHelpers::FClassFinder<UStageGroup> Widget(TEXT("WidgetBlueprint'/Game/Common/UI/WBP_StageGroup'"));
-		if (Widget.Succeeded()) {
-			UStageGroup::BlueprintClass = Widget.Class;
-		}
-		else {
-			UE_LOG(LogTemp, Warning, TEXT("WBP_StageGroup not found"));
-		}
+}
+
+
+TSubclassOf<UUserWidget> UStageGroup::BlueprintClass() {
+	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("WidgetBlueprint'/Game/Common/UI/WBP_StageGroup'"));
+	if (Widget.IsValid()) {
+		return Widget.Get();
 	}
+	auto Loaded = Widget.LoadSynchronous();
+	if (Loaded) {
+		return Loaded;
+	}
+	throw "Blueprint class not found";
 }
 
 void UStageGroup::Init(UObject* Object) {

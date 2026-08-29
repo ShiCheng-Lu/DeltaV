@@ -21,18 +21,17 @@ UAttachmentNodes::UAttachmentNodes()
 	if (Part == nullptr) {
 		return;
 	}
-
+	static FAttachmentTransformRules AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepRelative, true);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>SphereMeshAsset(TEXT("/Game/Shapes/AttachmentNode"));
 
 	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
 	for (auto& LocationJson : PartDefinition->GetArrayField(TEXT("attachment"))) {
 		FVector Location = JsonUtil::Vector(LocationJson->AsObject(), "location");
-
-		auto Node = CreateDefaultSubobject<UStaticMeshComponent>(*Location.ToString());
+		auto Node = NewObject<UStaticMeshComponent>(this, *Location.ToString());
 		Node->SetStaticMesh(SphereMeshAsset.Object);
 		Node->SetRelativeScale3D(FVector(0.1f));
 
-		Node->SetupAttachment(this);
+		Node->AttachToComponent(this, AttachmentRule);
 		Node->SetRelativeLocation(Location);
 		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
 		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -41,14 +40,35 @@ UAttachmentNodes::UAttachmentNodes()
 
 		AttachmentNodes.Add(Node);
 	}
+	/*
+	for (FName& SocketName : Part->Mesh->GetAllSocketNames()) {
+		if (!SocketName.ToString().StartsWith("node")) {
+			continue;
+		}
+		FTransform SocketTransform = Part->Mesh->GetSocketTransform(SocketName, RTS_Component);
 
+		auto Node = CreateDefaultSubobject<UStaticMeshComponent>(SocketName);
+		Node->SetStaticMesh(SphereMeshAsset.Object);
+		Node->SetRelativeScale3D(FVector(0.1f));
+
+		Node->SetupAttachment(this, SocketName);
+		Node->SetRelativeLocation(SocketTransform.GetLocation());
+
+		Node->SetCollisionEnabled(ECollisionEnabled::QueryAndProbe);
+		Node->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Node->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Block);
+		Node->SetAbsolute(false, false, true);
+
+		AttachmentNodes.Add(Node);
+	}
+	*/
 	if (PartDefinition->HasField(TEXT("side_attachment"))) {
 		SideAttachment = JsonUtil::Vector(PartDefinition, "side_attachment");
 	}
 	else {
 		SideAttachment = FVector(INFINITY);
 	}
-	SetupAttachment(Part->Mesh);
+	AttachToComponent(Part->Mesh, AttachmentRule);
 }
 
 
@@ -56,15 +76,17 @@ UAttachmentNodes::UAttachmentNodes()
 void UAttachmentNodes::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
 	for (auto& Node : AttachmentNodes) {
 		Node->RegisterComponent();
 	}
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("Location %s"), *GetComponentLocation().ToString());
+
+void UAttachmentNodes::OnRegister() {
+	Super::OnRegister();
 
 }
+
 
 
 // Called every frame
@@ -79,8 +101,7 @@ UAttachmentNodes* UAttachmentNodes::Get(UPart* Part) {
 	TArray<USceneComponent*> Components;
 	Part->Mesh->GetChildrenComponents(false, Components);
 	for (USceneComponent* Component : Components) {
-		UAttachmentNodes* Node = Cast<UAttachmentNodes>(Component);
-		if (Node) {
+		if (UAttachmentNodes* Node = Cast<UAttachmentNodes>(Component)) {
 			return Node;
 		}
 	}
