@@ -65,7 +65,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Pitch"), EModuleInputValueType::MAxis1D));
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Roll"), EModuleInputValueType::MAxis1D));
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Yaw"), EModuleInputValueType::MAxis1D));
-		UE_LOG(LogTemp, Warning, TEXT("Setup inputs"));
 	}
 
 }
@@ -84,7 +83,7 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 
 		auto* Part = NewObject<UPart>(this, FName(Name));
 		Part->FromJson(Definition->AsObject());
-		Parts.Add({ Name, Part });
+		Parts.Add(FString(Name), Part);
 	}
 
 	// depth first traversal through the tree via array (avoid recursion)
@@ -94,13 +93,11 @@ void ACraft::FromJson(TSharedPtr<FJsonObject> Json) {
 	while (Structures.Num() > 0) {
 		auto [Parent, ChildJson] = Structures.Pop();
 		for (auto& [Name, GrandChildrenJson] : ChildJson->Values) {
-			auto Part = Parts.FindChecked(Name);
+			auto Part = Parts.FindChecked(FString(Name));
 			Part->Mesh->AttachToComponent(Parent, FAttachmentTransformRules::KeepWorldTransform);
 			Structures.Add({ Part->Mesh, GrandChildrenJson->AsObject() });
 		}
 	}
-
-
 }
 
 TSharedPtr<FJsonObject> ACraft::ToJson() {
@@ -373,42 +370,67 @@ void ACraft::Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
 	auto* SourceClusterUnion = SourceCraft->GetClusterUnionComponent();
 	auto* DestClusterUnion = DestCraft->GetClusterUnionComponent();
 	
-	// go through all children of the part, unregister them, 
 
-	TArray<TPair<USceneComponent*, USceneComponent*>> Components = { { DestPart, SourcePart->Mesh } };
+	UE_LOG(LogTemp, Warning, TEXT("Start detach"));
+
+	// go through all children of the part, unregister them, 
+	// AttachTo, Component
+	TArray<TTuple<USceneComponent*, UPrimitiveComponent*>> Components = { { DestPart, SourcePart->Mesh } };
 	TArray<UPart*> Parts;
 
 	// detach and unregister everything
-	while (Components.Num() > 0) {
-		auto [AttachTo, Component] = Components.Pop();
+	for (int i = 0; i < Components.Num(); ++i) {
+		auto& [AttachTo, Component] = Components[i];
 
+		for (auto& Child : Component->GetAttachChildren()) {
+			// all sub componnets of cluster union should be primitive, so we just ignore everything that's not
+			if (auto* PrimitiveChild = Cast<UPrimitiveComponent>(Child)) {
+				Components.Add({ Component, PrimitiveChild });
+			}
+		}
+
+		Component->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		SourceClusterUnion->RemoveComponentFromCluster(Component);
+		//Component->UnregisterComponent();
+		
 
 		// if the direct outer is a UPart, it's the base mesh transform
 		if (UPart* Part = Cast<UPart>(Component->GetOuter())) {
-			Part->Rename(nullptr, DestCraft);
-			Part->ReregisterComponent();
+			// detach
+			SourceCraft->Parts.Remove(Part->Id);
+			SourceCraft->RemoveOwnedComponent(Part);
+			//Part->UnregisterComponent();
 			Parts.Add(Part);
-			Component->Rename(nullptr, Part);
 		}
-		else {
-			Component->Rename(nullptr, AttachTo);
-		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Start rename"));
 
-		if (auto* PrimitiveComponent = Cast<UPrimitiveComponent>(Component)) {
-			SourceClusterUnion->RemoveComponentFromCluster(PrimitiveComponent);
-			DestClusterUnion->AddComponentToCluster(PrimitiveComponent, {});
-		}
-		Component->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		Component->UnregisterComponent();
+	// rename
+	for (auto* Part : Parts) {
+		Part->Rename(*Part->Id, DestCraft);
+	}
 
+	UE_LOG(LogTemp, Warning, TEXT("Start attach"));
+	// reattach
+	for (int i = 0; i < Components.Num(); ++i) {
+		auto& [AttachTo, Component] = Components[i];
 		Component->AttachToComponent(AttachTo, FAttachmentTransformRules::KeepWorldTransform);
-		Component->RegisterComponent();
+		DestClusterUnion->AddComponentToCluster(Component, {});
+		//Component->RegisterComponent();
 
-		for (auto& Child : Component->GetAttachChildren()) {
-			Components.Add({ Component, Child });
+		if (UPart* Part = Cast<UPart>(Component->GetOuter())) {
+			DestCraft->Parts.Add({ Part->Id, Part});
+			DestCraft->AddOwnedComponent(Part);
+			//Part->RegisterComponent();
 		}
 	}
 
+	/*
+	SourceClusterUnion->UpdateChildTransforms();
+	SourceClusterUnion->MarkRenderStateDirty();
+	DestClusterUnion->UpdateChildTransforms();
+	DestClusterUnion->MarkRenderStateDirty();
+	*/
 	for (auto* Part : Parts) {
 		UE_LOG(LogTemp, Warning, TEXT("transfer part - %s - %s"), *Part->GetName(), *Part->GetOuter()->GetName());
 	}
@@ -427,6 +449,71 @@ void ACraft::Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
 	}
 	*/
 }
+
+/*
+
+
+struct Attach_Outer_Component {
+	USceneComponent* Attach;
+	UObject* Outer;
+	USceneComponent* Component;
+};
+
+void ACraft::Transfer(UPart* SourcePart, UPrimitiveComponent* DestPart) {
+	if (SourcePart == nullptr || DestPart == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("some parts were nullptr"));
+		return;
+	}
+	ACraft* SourceCraft = SourcePart->GetOwner<ACraft>();
+	ACraft* DestCraft = DestPart->GetOwner<ACraft>();
+	if (SourceCraft == nullptr || DestCraft == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("some crafts were nullptr"));
+		return;
+	}
+	auto* SourceClusterUnion = SourceCraft->GetClusterUnionComponent();
+	auto* DestClusterUnion = DestCraft->GetClusterUnionComponent();
+
+	// go through all children of the part, unregister them,
+
+
+
+	TArray<Attach_Outer_Component> Components = { { DestPart, SourcePart, SourcePart->Mesh } };
+	TArray<UPart*> Parts;
+
+	// detach and unregister everything
+	for (int i = 0; i < Components.Num(); ++i) {
+		auto Component = Components[i].Component;
+
+		for (auto& Child : Component->GetAttachChildren()) {
+			Components.Add({ Component, Child->GetOuter(), Child });
+		}
+		if (auto* PrimitiveComponent = Cast<UPrimitiveComponent>(Component)) {
+			SourceClusterUnion->RemoveComponentFromCluster(PrimitiveComponent);
+			DestClusterUnion->AddComponentToCluster(PrimitiveComponent, {});
+		}
+		Component->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		Component->UnregisterComponent();
+
+	}
+
+	for (auto* Part : Parts) {
+		UE_LOG(LogTemp, Warning, TEXT("transfer part - %s - %s"), *Part->GetName(), *Part->GetOuter()->GetName());
+	}
+	UE_LOG(LogTemp, Warning, TEXT("part transfer complete"));
+
+	// rename parts, which are the top owners of their own physics/etc
+	for (auto* Part : Parts) {
+		Part->Rename(nullptr, DestCraft);
+	}
+
+	// attach everything again
+	for (auto [AttachedTo, Component] : Components) {
+		Component->AttachToComponent(AttachedTo, FAttachmentTransformRules::KeepRelativeTransform);
+		Component->RegisterComponent();
+	}
+}
+
+*/
 
 void ACraft::DetachPart(UPart* Part, ACraft* NewCraft) {
 	
@@ -499,10 +586,13 @@ FVector ACraft::CalculateCoM() {
 	// center of mass relative to root
 	double Mass = 0;
 	FVector CenterOfMass = FVector(0);
-	for (auto PartKVP : Parts) {
-		auto Part = PartKVP.Value;
-		CenterOfMass += Part->Mesh->GetRelativeLocation() * Part->Mesh->CalculateMass();
-		Mass += Part->Mesh->CalculateMass();
+	for (auto& PartKVP : Parts) {
+		auto& PartMesh = PartKVP.Value->Mesh;
+		FBodyInstance* PartBody = PartMesh->GetBodyInstance();
+		// try getting the mass via physics instance, otherwise fallback to using CalculateMass() which is not exact
+		double PartMass = PartBody ? PartBody->GetBodyMass() : PartMesh->CalculateMass();
+		CenterOfMass += PartMesh->GetRelativeLocation() * PartMass;
+		Mass += PartMass;
 	}
 	return CenterOfMass / Mass;
 }
@@ -512,10 +602,13 @@ FVector ACraft::GetWorldCoM() {
 	// center of mass relative to root
 	double Mass = 0;
 	FVector CenterOfMass = FVector(0);
-	for (auto PartKVP : Parts) {
-		auto Part = PartKVP.Value;
-		CenterOfMass += Part->Mesh->GetComponentLocation() * Part->Mesh->CalculateMass();
-		Mass += Part->Mesh->CalculateMass();
+	for (auto& PartKVP : Parts) {
+		auto& PartMesh = PartKVP.Value->Mesh;
+		FBodyInstance* PartBody = PartMesh->GetBodyInstance();
+		// try getting the mass via physics instance, otherwise fallback to using CalculateMass() which is not exact
+		double PartMass = PartBody ? PartBody->GetBodyMass() : PartMesh->CalculateMass();
+		CenterOfMass += PartMesh->GetComponentLocation() * PartMass;
+		Mass += PartMass;
 	}
 	return CenterOfMass / Mass;
 }

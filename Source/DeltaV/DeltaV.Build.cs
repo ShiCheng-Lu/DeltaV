@@ -14,6 +14,7 @@ public class DeltaV : ModuleRules
             "Chaos", "ChaosVehicles", "PhysicsCore", "ChaosModularVehicle", "ChaosModularVehicleEngine",
             "ChaosVehiclesCore",
             "ChaosVehiclesEngine",
+			"Niagara",
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 

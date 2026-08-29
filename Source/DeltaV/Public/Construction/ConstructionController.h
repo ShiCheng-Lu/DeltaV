@@ -12,8 +12,7 @@ class UPart;
 class ACraft;
 class UConstructionHUD;
 
-#define ECC_NoneHeldParts ECC_GameTraceChannel1
-#define ECC_AttachmentNodes ECC_GameTraceChannel2
+#define ECC_AttachmentNodes ECC_GameTraceChannel1
 #define ECC_TransformGadget ECC_GameTraceChannel3
 
 /**

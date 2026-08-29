@@ -188,7 +188,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	// ! important, super important
 	Craft->GetClusterUnionComponent()->AddComponentToCluster(Mesh, {});
 	// Craft->GetClusterUnionComponent()->RemoveComponentFromCluster(Mesh);
-	// Mesh->RegisterComponent();
+	Mesh->RegisterComponent();
 
 }
 
@@ -209,8 +209,8 @@ TSharedPtr<FJsonObject> UPart::ToJson() {
 			auto& SuspensionChildren = Suspension->GetAttachChildren();
 			if (auto* Wheel = Cast<UVehicleSimWheelComponent>(SuspensionChildren.Last())) {
 				auto WheelJson = MakeShared<FJsonObject>();
-				WheelJson->SetNumberField("max_steering", -Wheel->MaxSteeringAngle);
-				Json->SetObjectField("wheel", WheelJson);
+				WheelJson->SetNumberField(TEXT("max_steering"), -Wheel->MaxSteeringAngle);
+				Json->SetObjectField(TEXT("wheel"), WheelJson);
 			}
 		} else if (auto* Thruster = Cast<UVehicleSimThruster2DComponent>(Component)) {
 			auto ThrusterJson = MakeShared<FJsonObject>();

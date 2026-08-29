@@ -65,7 +65,7 @@ TArray<TSharedPtr<FJsonValue>> UStageManager::ToJson() {
 		for (UPart* Part : Stage->Parts) {
 			Array.Add(MakeShared<FJsonValueString>(Part->Id));
 		}
-		StageJson->SetArrayField("parts", Array);
+		StageJson->SetArrayField(TEXT("parts"), Array);
 		Json.Push(MakeShared<FJsonValueObject>(StageJson));
 	}
 	return Json;

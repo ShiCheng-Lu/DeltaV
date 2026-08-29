@@ -10,7 +10,7 @@ class UPart;
 class UStaticMeshComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DELTAV_API UAttachmentNodes : public USceneComponent
+class DELTAV_API UAttachmentNodes : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 

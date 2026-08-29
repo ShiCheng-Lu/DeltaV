@@ -42,12 +42,9 @@ TObjectPtr<ACraft> Constructor::CreateCraft(TSharedPtr<FJsonObject> CraftJson, F
 
 		// Part->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		// Part->Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-		Part->Mesh->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Block);
-		Part->Mesh->RegisterComponent();
 		// Craft->ClusterUnionVehicleComponent()->AddComponent(Part->Mesh);
 
 		// part must be (re)registered after collision response type set, otherwise collision don't work ?!
-		
 	}
 	// Craft->SetActorRotation(DefaultOrientation);
 
@@ -96,9 +93,14 @@ void Constructor::Select(UPart* Part) {
 
 UPart* Constructor::TraceMouse() {
 	FHitResult Result;
-	if (Controller->GetHitResultUnderCursor(ECC_NoneHeldParts, true, Result)) {
-		;
+	if (Controller->GetHitResultUnderCursor(ECC_WorldDynamic, false, Result)) {
 		UE_LOG(LogTemp, Warning, TEXT("TraceMouse, has part under mouse %s"), *Result.GetComponent()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("TraceMouse, Outer is %s"), *Result.GetComponent()->GetOuter()->GetName());
+		return Result.GetComponent()->GetTypedOuter<UPart>();
+	}
+	if (Controller->GetHitResultUnderCursor(ECC_WorldDynamic, true, Result)) {
+		UE_LOG(LogTemp, Warning, TEXT("TraceMouse Complex, has part under mouse %s"), *Result.GetComponent()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("TraceMouse Complex, Outer is %s"), *Result.GetComponent()->GetOuter()->GetName());
 		return Result.GetComponent()->GetTypedOuter<UPart>();
 	}
 	return nullptr;
@@ -107,14 +109,22 @@ UPart* Constructor::TraceMouse() {
 void Constructor::Grab() {
 	UPart* Part = TraceMouse();
 	if (Part == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("Grab part is null"));
 		return;
 	}
 	ACraft* Craft = Part->GetOwner<ACraft>();
 	if (Craft == nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("Grab craft is null"));
 		return;
 	}
-	ACraft* Other = World->SpawnActor<ACraft>();
+	FActorSpawnParameters Params = FActorSpawnParameters();
+	// Params.Name = "custom-craft-name";
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ACraft* Other = World->SpawnActor<ACraft>(Params);
+	Other->SetActorLocation(Part->Mesh->GetComponentLocation());
 	ACraft::Transfer(Part, Other->GetClusterUnionComponent());
+	Other->SetPhysicsEnabled(false);
+
 	/**
 	if (Craft->RootPart() != Part) {
 		ACraft* NewCraft = World->SpawnActor<ACraft>();
@@ -129,7 +139,7 @@ void Constructor::Grab() {
 	Controller->PlayerCameraManager->GetCameraViewPoint(Start, Rotation);
 	FVector End = Start + Rotation.RotateVector(FVector(1000000, 0, 0));
 	FHitResult Result;
-	World->LineTraceSingleByChannel(Result, Start, End, ECC_NoneHeldParts);
+	World->LineTraceSingleByChannel(Result, Start, End, ECC_WorldStatic);
 
 
 
@@ -163,31 +173,34 @@ UPart* Constructor::Update() {
 	// node attachment
 	FVector SelectedLocaction = Selected->Mesh->GetComponentLocation();
 
-	UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected);
-	for (auto& Node : Attachment->AttachmentNodes) {
+	if (UAttachmentNodes* Attachment = UAttachmentNodes::Get(Selected)) {
+		for (auto& Node : Attachment->AttachmentNodes) {
 
-		FVector RelativeLocation = Node->GetComponentLocation() - SelectedLocaction;
+			FVector RelativeLocation = Node->GetComponentLocation() - SelectedLocaction;
 
-		End = (Direction * Distance + RelativeLocation) * 2 + Start;
+			End = (Direction * Distance + RelativeLocation) * 2 + Start;
 
-		World->LineTraceSingleByChannel(Result, Start, End, ECC_AttachmentNodes);
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(Selected->GetOwner());
+			World->LineTraceSingleByChannel(Result, Start, End, ECC_AttachmentNodes, Params);
 
-		if (!Result.bBlockingHit) {
-			continue;
-		}
+			if (!Result.bBlockingHit) {
+				continue;
+			}
 		
-		// Handle symmetry attachment
+			// Handle symmetry attachment
 
-		// Put the part so that the node traced at is at the same location as the target node
-		auto NodeLocation = Result.Component->GetComponentLocation();
-		auto* Part = Result.Component->GetTypedOuter<UPart>();
-		if (Part == nullptr) {
-			continue;
+			// Put the part so that the node traced at is at the same location as the target node
+			auto NodeLocation = Result.Component->GetComponentLocation();
+			auto* Part = Result.Component->GetTypedOuter<UPart>();
+			if (Part == nullptr) {
+				continue;
+			}
+			Selected->GetOwner()->SetActorLocation(NodeLocation - RelativeLocation);
+
+			UE_LOG(LogTemp, Warning, TEXT("Update part is attached to %s (part owner: %s)"), *Result.Component->GetOwner()->GetName(), *Selected->GetOwner()->GetName());
+			return Part;
 		}
-		Selected->GetOwner()->SetActorLocation(NodeLocation - RelativeLocation);
-
-		UE_LOG(LogTemp, Warning, TEXT("Update part is attached"));
-		return Part;
 	}
 
 	/*
@@ -233,7 +246,7 @@ UPart* Constructor::Update() {
 	// No attachment node or side attachment, place the craft/part at where it is
 	Selected->GetOwner<ACraft>()->SetActorLocation(CameraLocation + Direction * Distance);
 
-	UE_LOG(LogTemp, Warning, TEXT("Update set location to %s - %s"), *(Selected->GetOwner<ACraft>()->GetActorLocation()).ToString(), *Selected->Mesh->GetComponentLocation().ToString());
+	// UE_LOG(LogTemp, Warning, TEXT("Update set location to %s - %s"), *(Selected->GetOwner<ACraft>()->GetActorLocation()).ToString(), *Selected->Mesh->GetComponentLocation().ToString());
 	/*
 	if (SymmetryCrafts.Num() > 0) {
 		for (ACraft* Craft : SymmetryCrafts) {
@@ -275,7 +288,6 @@ void Constructor::Tick() {
 	if (Selected == nullptr) {
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("update called"));
 	// update location of selected part
 	Update();
 }
@@ -297,10 +309,10 @@ void Constructor::UpdateSymmetry(int InSymmetry) {
 			for (auto* Component : Craft->GetComponents()) {
 				UMeshComponent* SceneComponent = Cast<UMeshComponent>(Component);
 				if (Component->GetClass() == UPart::StaticClass()) {
-					SceneComponent->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
+					// SceneComponent->SetCollisionResponseToChannel(ECC_NoneHeldParts, ECR_Ignore);
 				}
 				if (Component->GetClass() == UAttachmentNode::StaticClass()) {
-					SceneComponent->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
+					// SceneComponent->SetCollisionResponseToChannel(ECC_AttachmentNodes, ECR_Ignore);
 				}
 			}
 
