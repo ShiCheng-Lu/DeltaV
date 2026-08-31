@@ -186,6 +186,38 @@ void ACraft::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	
+	if (!IsValid(Orbit)) {
+		return;
+	}
+	
+	// calculate new location and orientation
+	FVector NewLocation;
+	double EccentricAnomalyGuess = 0;
+	double Time = GetWorld()->GetTimeSeconds();
+	Orbit->GetPositionAndVelocity(&NewLocation, nullptr, Orbit->GetTrueAnomaly(Time, &EccentricAnomalyGuess));
+
+	FQuat NewRotation;
+	FHitResult SweepHitResult;
+
+	UClusterUnionVehicleComponent* Cluster = GetClusterUnionComponent();
+	Cluster->SetWorldLocationAndRotation(NewLocation, NewRotation, true, &SweepHitResult, ETeleportType::None);
+	
+	// Theres a collision
+	if (SweepHitResult.bBlockingHit) {
+		// calculate the state at the time of collision
+		// Tick order: 1. DeltaTime calculated, 2. World time increment, 3. Actor ticks 
+		double HitTime = Time - (1 - SweepHitResult.Time) * DeltaTime;
+		FVector NewVelocity;
+		Orbit->GetPositionAndVelocity(nullptr, &NewVelocity, Orbit->GetTrueAnomaly(HitTime, &EccentricAnomalyGuess));
+
+
+		// enter Chaos physics simulation for collision
+		// Cluster->SetAllPhysicsAngularVelocityInDegrees();
+		Cluster->SetAllPhysicsLinearVelocity(NewVelocity);
+		Cluster->SetSimulatePhysics(true);
+	}
+
 	/*
 	if (!PhysicsEnabled) {
 		if (Orbit->CentralBody != nullptr) { // simulation, but no physics
@@ -583,34 +615,18 @@ void ACraft::SetPhysicsEnabled(bool enabled) {
 }
 
 FVector ACraft::CalculateCoM() {
-	// center of mass relative to root
-	double Mass = 0;
-	FVector CenterOfMass = FVector(0);
-	for (auto& PartKVP : Parts) {
-		auto& PartMesh = PartKVP.Value->Mesh;
-		FBodyInstance* PartBody = PartMesh->GetBodyInstance();
-		// try getting the mass via physics instance, otherwise fallback to using CalculateMass() which is not exact
-		double PartMass = PartBody ? PartBody->GetBodyMass() : PartMesh->CalculateMass();
-		CenterOfMass += PartMesh->GetRelativeLocation() * PartMass;
-		Mass += PartMass;
-	}
-	return CenterOfMass / Mass;
+	FVector RelativeOffset = GetWorldCoM() - GetActorLocation();
+	return GetActorRotation().UnrotateVector(RelativeOffset);
 }
 
 
 FVector ACraft::GetWorldCoM() {
-	// center of mass relative to root
-	double Mass = 0;
-	FVector CenterOfMass = FVector(0);
-	for (auto& PartKVP : Parts) {
-		auto& PartMesh = PartKVP.Value->Mesh;
-		FBodyInstance* PartBody = PartMesh->GetBodyInstance();
-		// try getting the mass via physics instance, otherwise fallback to using CalculateMass() which is not exact
-		double PartMass = PartBody ? PartBody->GetBodyMass() : PartMesh->CalculateMass();
-		CenterOfMass += PartMesh->GetComponentLocation() * PartMass;
-		Mass += PartMass;
+	if (UClusterUnionVehicleComponent* Cluster = GetClusterUnionComponent()) {
+		if (FBodyInstance* Body = Cluster->GetBodyInstance(NAME_None, true, 0)) {
+			return Body->GetCOMPosition();
+		}
 	}
-	return CenterOfMass / Mass;
+	return FVector::ZeroVector;
 }
 
 TArray<ACraft*> ACraft::StageCraft() {

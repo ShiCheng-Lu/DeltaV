@@ -105,7 +105,7 @@ double UOrbitComponent::GetTime(double TrueAnomaly) {
 	}
 }
 
-double UOrbitComponent::GetTrueAnomaly(double Time) const {
+double UOrbitComponent::GetTrueAnomaly(double Time, double* EccentricAnomalyGuess, double Tolerance, int MaxInterations) const {
 	if (OrbitDuration == 0) {
 		UE_LOG(LogTemp, Warning, TEXT("Orbit duration is 0, Eccentricity is %f"), Eccentricity);
 		return 0;
@@ -120,12 +120,11 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 	// if e > 1
 	// u^2 / h^3 * t = ((e sqrt(e^2 - 1) sin a) / (1 + e cos a) - ln((sqrt(e + 1) + sqrt(e - 1) tan (a / 2)) / (sqrt(e + 1) - sqrt(e - 1) tan (a / 2)))) / (e^2 - 1)^(3/2)
 
-	static double LastEccentricAnomalyGuess = 0;
 	if (Eccentricity < 1) {
 		double MeanAnomaly = FMath::Modulo(Time - TimeAtPeriapsis, OrbitDuration) * (2 * PI) / OrbitDuration;
 		// solve EccentricAnomaly - Eccentricity * sin(EccentricAnomaly) - MeanAnomaly = f(EccentricAnomaly) = 0
 		//   with derivative f'(EccentricAnomaly) = 1 - Eccentricity * cos(EccentricAnomaly)
-		double EccentricAnomaly = 0;
+		double EccentricAnomaly = EccentricAnomalyGuess != nullptr ? *EccentricAnomalyGuess : 0;
 		double SinEccentricityAnomaly, CosEccentricityAnomaly, FunctionValue, DerivativeValue;
 
 		int i = 0;
@@ -135,9 +134,11 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 			FunctionValue = EccentricAnomaly - Eccentricity * SinEccentricityAnomaly - MeanAnomaly;
 			DerivativeValue = 1 - Eccentricity * CosEccentricityAnomaly;
 			EccentricAnomaly = EccentricAnomaly - FunctionValue / DerivativeValue;
-		} while (FMath::Abs(FunctionValue) > 1e-13 && i++ < 10);
+		} while (FMath::Abs(FunctionValue) > Tolerance && i++ < MaxInterations);
 
-		LastEccentricAnomalyGuess = EccentricAnomaly;
+		if (EccentricAnomalyGuess != nullptr) {
+			*EccentricAnomalyGuess = EccentricAnomaly;
+		}
 
 		double TrueAnomaly = FMath::Atan(FMath::Tan(EccentricAnomaly / 2) / FMath::Sqrt((1 - Eccentricity) / (1 + Eccentricity))) * 2;
 
@@ -150,6 +151,10 @@ double UOrbitComponent::GetTrueAnomaly(double Time) const {
 }
 
 void UOrbitComponent::GetPositionAndVelocity(FVector* Position, FVector* Velocity, double TrueAnomaly) const {
+	if (!IsValid(CentralBody)) {
+		return;
+	}
+
 	FVector RightApsisDirection = AngularMomentum.GetSafeNormal().Cross(PeriapsisDirection);
 
 	// Position and Velocity

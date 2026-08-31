@@ -77,5 +77,5 @@ public:
 
 	double GetTime(double TrueAnomaly);
 
-	double GetTrueAnomaly(double Time) const;
+	double GetTrueAnomaly(double Time, double* EccentricAnomalyGuess = nullptr, double Tolerance = 1e-13, int MaxInterations = 10) const;
 };
