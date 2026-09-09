@@ -6,6 +6,7 @@
 #include "Components/EditableTextBox.h"
 #include "Components/SpinBox.h"
 
+#include "Common/AssetLibrary.h"
 #include "Common/Part.h"
 #include "Construction/ConstructionController.h"
 #include "Construction/PartShapeEditor.h"
@@ -17,15 +18,7 @@ UPartDetails::UPartDetails(const FObjectInitializer& ObjectInitializer)
 }
 
 TSubclassOf<UUserWidget> UPartDetails::BlueprintClass() {
-	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("/Game/Construction/UI/WBP_PartDetails.WBP_PartDetails_C"));
-	if (Widget.IsValid()) {
-		return Widget.Get();
-	}
-	auto Loaded = Widget.LoadSynchronous();
-	if (Loaded) {
-		return Loaded;
-	}
-	throw "Blueprint class not found";
+	return FAssetLibrary::LoadClass<UUserWidget>("/Game/Construction/UI/WBP_PartDetails.WBP_PartDetails_C");
 }
 
 void UPartDetails::NativeOnInitialized() {

@@ -9,14 +9,14 @@
 /**
  * 
  */
-UCLASS()
-class DELTAV_API UAssetLibrary : public UObject
+USTRUCT()
+struct DELTAV_API FAssetLibrary
 {
 	GENERATED_BODY()
 
 public:
-	UAssetLibrary();
-	~UAssetLibrary();
+	FAssetLibrary();
+	~FAssetLibrary();
 
 	template <typename T>
 	static T* LoadAsset(FWideStringView Path) {

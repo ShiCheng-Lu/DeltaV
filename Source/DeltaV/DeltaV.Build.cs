@@ -10,11 +10,11 @@ public class DeltaV : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "GeometryFramework", 
-			"GeometryCore", "DynamicMesh", "ImageWrapper", "ProceduralMeshComponent", "GeometryCollectionEngine", "ChaosModularVehicleEngine",
-            "Chaos", "ChaosVehicles", "PhysicsCore", "ChaosModularVehicle", "ChaosModularVehicleEngine",
-            "ChaosVehiclesCore",
-            "ChaosVehiclesEngine",
+			"GeometryCore", "DynamicMesh", "ImageWrapper", "ProceduralMeshComponent", "GeometryCollectionEngine",
+            "PhysicsCore",
+            "Chaos", "ChaosVehicles", "ChaosModularVehicle", "ChaosModularVehicleEngine", "ChaosVehiclesCore", "ChaosVehiclesEngine",
 			"Niagara",
+			"ImageWrapper"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 

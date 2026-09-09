@@ -22,7 +22,7 @@ UPartItemData* UPartItemData::Create(FString Name) {
 	UPartItemData* Data = NewObject<UPartItemData>();
 
 	Data->Name = Name;
-	Data->PartJson = UAssetLibrary::PartDefinition(Name);
+	Data->PartJson = FAssetLibrary::PartDefinition(Name);
 	if (Data->PartJson.IsValid()) {
 		Data->CraftJson = Data->PartJson->GetObjectField(TEXT("craft"));
 	}
@@ -37,15 +37,7 @@ UPartItem::UPartItem(const FObjectInitializer& ObjectInitializer)
 }
 
 TSubclassOf<UUserWidget> UPartItem::BlueprintClass() {
-	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("WidgetBlueprint'/Game/Construction/UI/WBP_PartItem'"));
-	if (Widget.IsValid()) {
-		return Widget.Get();
-	}
-	auto Loaded = Widget.LoadSynchronous();
-	if (Loaded) {
-		return Loaded;
-	}
-	throw "Blueprint class not found";
+	return FAssetLibrary::LoadClass<UUserWidget>("WidgetBlueprint'/Game/Construction/UI/WBP_PartItem'");
 }
 
 void UPartItem::Init(UObject* ListItemObject) {

@@ -79,12 +79,12 @@ void UPart::BeginPlay() {
 void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 	Type = Json->GetStringField(TEXT("type"));
 
-	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Type);
+	TSharedPtr<FJsonObject> PartDefinition = FAssetLibrary::PartDefinition(Type);
 	FString MeshPath = PartDefinition->GetStringField(TEXT("mesh"));
 	FString MeshTypeString = PartDefinition->GetStringField(TEXT("type"));
 
 	if (MeshTypeString == "static") {
-		TObjectPtr<UStaticMesh> StaticMesh = UAssetLibrary::LoadAsset<UStaticMesh>(*MeshPath);
+		TObjectPtr<UStaticMesh> StaticMesh = FAssetLibrary::LoadAsset<UStaticMesh>(*MeshPath);
 		TObjectPtr<UStaticMeshComponent> MeshObj = NewObject<UStaticMeshComponent>(this);
 		MeshObj->SetStaticMesh(StaticMesh);
 		Mesh = MeshObj;
@@ -92,7 +92,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		MeshType = STATIC_MESH;
 	}
 	else if (MeshTypeString == "skeletal") {
-		TObjectPtr<USkeletalMesh> SkeletalMesh = UAssetLibrary::LoadAsset<USkeletalMesh>(*MeshPath);
+		TObjectPtr<USkeletalMesh> SkeletalMesh = FAssetLibrary::LoadAsset<USkeletalMesh>(*MeshPath);
 		TObjectPtr<USkeletalMeshComponent> MeshObj = NewObject<USkeletalMeshComponent>(this);
 		MeshObj->SetSkeletalMesh(SkeletalMesh);
 		Mesh = MeshObj;
@@ -103,7 +103,7 @@ void UPart::FromJson(TSharedPtr<FJsonObject> Json) {
 		MeshType = SKELETAL_MESH;
 	}
 	else if (MeshTypeString == "geometry_collection") {
-		auto* GeometryCollection = UAssetLibrary::LoadAsset<UGeometryCollection>(*MeshPath);
+		auto* GeometryCollection = FAssetLibrary::LoadAsset<UGeometryCollection>(*MeshPath);
 		auto* Component = NewObject<UGeometryCollectionComponent>(this);
 		Component->SetRestCollection(GeometryCollection);
 		Component->DamageThreshold = { 1e8 };

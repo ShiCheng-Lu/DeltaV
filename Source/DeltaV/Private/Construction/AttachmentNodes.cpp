@@ -24,7 +24,7 @@ UAttachmentNodes::UAttachmentNodes()
 	static FAttachmentTransformRules AttachmentRule = FAttachmentTransformRules(EAttachmentRule::KeepRelative, true);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>SphereMeshAsset(TEXT("/Game/Shapes/AttachmentNode"));
 
-	TSharedPtr<FJsonObject> PartDefinition = UAssetLibrary::PartDefinition(Part->Type);
+	TSharedPtr<FJsonObject> PartDefinition = FAssetLibrary::PartDefinition(Part->Type);
 	for (auto& LocationJson : PartDefinition->GetArrayField(TEXT("attachment"))) {
 		FVector Location = JsonUtil::Vector(LocationJson->AsObject(), "location");
 		auto Node = NewObject<UStaticMeshComponent>(this, *Location.ToString());

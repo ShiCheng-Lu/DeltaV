@@ -46,7 +46,7 @@ void AConstructionController::BeginPlay() {
 	SetShowMouseCursor(true);
 	SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
 
-	HUD = CreateWidget<UConstructionHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(UConstructionHUDClass));
+	HUD = CreateWidget<UConstructionHUD>(this, FAssetLibrary::LoadClass<UUserWidget>(UConstructionHUDClass));
 	HUD->AddToPlayerScreen();
 	/**
 	TransformGadget = GetWorld()->SpawnActor<ATransformGadget>();
@@ -67,15 +67,15 @@ void AConstructionController::SetupInputComponent() {
 			//auto* InputMappingContext = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Construction/IMC_Construction");
 			//Subsystem->AddMappingContext(InputMappingContext, 1);
 
-			auto* IMC_Common = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Common");
+			auto* IMC_Common = FAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Common");
 			Subsystem->AddMappingContext(IMC_Common, 2);
 
-			auto* IMC_Simulation = UAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Simulation");
+			auto* IMC_Simulation = FAssetLibrary::LoadAsset<UInputMappingContext>("/Game/Inputs/IMC_Simulation");
 			Subsystem->AddMappingContext(IMC_Simulation, 0);
 		}
 	}
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent)) {
-		auto* Move = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Move");
+		auto* Move = FAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Move");
 		EnhancedInput->BindAction(Move, ETriggerEvent::Triggered, this, &AConstructionController::Move);
 
 		UE_LOG(LogTemp, Warning, TEXT("Added input"));
@@ -84,7 +84,7 @@ void AConstructionController::SetupInputComponent() {
 		}
 
 		auto SetupCraftInput = [this, EnhancedInput](const FString Name) {
-			auto* Input = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_" + Name);
+			auto* Input = FAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_" + Name);
 			EnhancedInput->BindActionValueLambda(Input, ETriggerEvent::Triggered, [this, Name](const FInputActionValue& Input) {
 				if (OwnedCraft != nullptr) {
 					OwnedCraft->GetVehicleSimulationComponent()->SetInputAxis1D(FName(Name), Input.Get<float>());
@@ -99,13 +99,13 @@ void AConstructionController::SetupInputComponent() {
 		SetupCraftInput("Roll");
 		SetupCraftInput("Yaw");
 
-		auto* Look = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Look");
+		auto* Look = FAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Look");
 		EnhancedInput->BindActionValueLambda(Look, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			AddPitchInput(Input.Get<FVector2D>().Y);
 			AddYawInput(Input.Get<FVector2D>().X);
 		});
 
-		auto* Stage = UAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Stage");
+		auto* Stage = FAssetLibrary::LoadAsset<UInputAction>("/Game/Inputs/IA_Stage");
 		EnhancedInput->BindActionValueLambda(Stage, ETriggerEvent::Triggered, [this](const FInputActionValue& Input) {
 			if (OwnedCraft != nullptr) {
 				OwnedCraft->StageCraft();

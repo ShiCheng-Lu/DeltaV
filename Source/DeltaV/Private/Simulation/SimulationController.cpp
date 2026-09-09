@@ -87,7 +87,7 @@ void ASimulationController::BeginPlay() {
 	Craft->Orbit->UpdateOrbit(CraftLocation, FVector(0, 0, 1000).Cross(CraftLocation.GetSafeNormal()), 0);
 
 	PlayerCameraManager->CameraStyle = FName(TEXT("FreeCam"));
-	HUD = CreateWidget<USimulationHUD>(this, UAssetLibrary::LoadClass<UUserWidget>(USimulationHUDClass));
+	HUD = CreateWidget<USimulationHUD>(this, FAssetLibrary::LoadClass<UUserWidget>(USimulationHUDClass));
 	HUD->AddToPlayerScreen();
 
 	HUD->SetNavballTarget(Craft, FVector(0, 0, 0));

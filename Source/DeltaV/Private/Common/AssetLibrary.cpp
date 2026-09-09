@@ -4,17 +4,17 @@
 #include "Common/AssetLibrary.h"
 #include "Common/JsonUtil.h"
 
-UAssetLibrary::UAssetLibrary()
+FAssetLibrary::FAssetLibrary()
 {
 	
 }
 
-UAssetLibrary::~UAssetLibrary()
+FAssetLibrary::~FAssetLibrary()
 {
 
 }
 
-TSharedPtr<FJsonObject> UAssetLibrary::PartDefinition(FString PartName) {
+TSharedPtr<FJsonObject> FAssetLibrary::PartDefinition(FString PartName) {
 	FString Path = FPaths::Combine(FPaths::ProjectContentDir(), "Parts", PartName + ".json");
 	return JsonUtil::ReadFile(Path);
 }

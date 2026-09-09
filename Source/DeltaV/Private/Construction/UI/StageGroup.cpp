@@ -10,6 +10,7 @@
 #include "Common/UI/StagesList.h"
 #include "Common/Craft/StageManager.h"
 #include "Common/Part.h"
+#include "Common/AssetLibrary.h"
 
 UStageGroup::UStageGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -18,15 +19,7 @@ UStageGroup::UStageGroup(const FObjectInitializer& ObjectInitializer)
 
 
 TSubclassOf<UUserWidget> UStageGroup::BlueprintClass() {
-	auto Widget = TSoftClassPtr<UUserWidget>(FSoftObjectPath("WidgetBlueprint'/Game/Common/UI/WBP_StageGroup'"));
-	if (Widget.IsValid()) {
-		return Widget.Get();
-	}
-	auto Loaded = Widget.LoadSynchronous();
-	if (Loaded) {
-		return Loaded;
-	}
-	throw "Blueprint class not found";
+	return FAssetLibrary::LoadClass<UUserWidget>("WidgetBlueprint'/Game/Common/UI/WBP_StageGroup'");
 }
 
 void UStageGroup::Init(UObject* Object) {

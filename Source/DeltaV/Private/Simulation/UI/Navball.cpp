@@ -12,12 +12,12 @@
 #include "Common/AssetLibrary.h"
 
 UStaticMeshComponent* SetupTargetTexture(ANavball* Navball, FString Target, FVector Colour) {
-	UStaticMesh* Plane = UAssetLibrary::LoadAsset<UStaticMesh>(TEXT("/Game/Shapes/plane"));
+	UStaticMesh* Plane = FAssetLibrary::LoadAsset<UStaticMesh>(TEXT("/Game/Shapes/plane"));
 
-	UMaterial* PlaneMaterial = UAssetLibrary::LoadAsset<UMaterial>(TEXT("/Game/Simulation/UI/PlaneMaterial"));
+	UMaterial* PlaneMaterial = FAssetLibrary::LoadAsset<UMaterial>(TEXT("/Game/Simulation/UI/PlaneMaterial"));
 	UStaticMeshComponent* Mesh = Navball->CreateDefaultSubobject<UStaticMeshComponent>(FName(Target));
 
-	UTexture2D* Texture = UAssetLibrary::LoadAsset<UTexture2D>(TEXT("/Game/Simulation/UI/Stabilization/") + Target);
+	UTexture2D* Texture = FAssetLibrary::LoadAsset<UTexture2D>(TEXT("/Game/Simulation/UI/Stabilization/") + Target);
 	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(PlaneMaterial, Navball);
 	Material->SetTextureParameterValue("Texture", Texture);
 	Material->SetVectorParameterValue("Colour", Colour);
@@ -45,7 +45,7 @@ ANavball::ANavball()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 
-	UStaticMesh* StaticMesh = UAssetLibrary::LoadAsset<UStaticMesh>(TEXT("/Game/Shapes/Navball2"));
+	UStaticMesh* StaticMesh = FAssetLibrary::LoadAsset<UStaticMesh>(TEXT("/Game/Shapes/Navball2"));
 	if (StaticMesh == nullptr) {
 		return;
 	}
@@ -63,7 +63,7 @@ ANavball::ANavball()
 	
 	SetRootComponent(Mesh);
 
-	RenderTarget = UAssetLibrary::LoadAsset<UTextureRenderTarget2D>(TEXT("/Game/Simulation/UI/Navballrender"));
+	RenderTarget = FAssetLibrary::LoadAsset<UTextureRenderTarget2D>(TEXT("/Game/Simulation/UI/Navballrender"));
 	// RenderTarget->InitAutoFormat(512, 512);
 	// RenderTarget->UpdateResourceImmediate();
 	Camera = CreateDefaultSubobject<USceneCaptureComponent2D>("Camera");
