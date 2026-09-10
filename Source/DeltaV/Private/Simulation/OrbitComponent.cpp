@@ -107,7 +107,7 @@ double UOrbitComponent::GetTime(double TrueAnomaly) {
 
 double UOrbitComponent::GetTrueAnomaly(double Time, double* EccentricAnomalyGuess, double Tolerance, int MaxInterations) const {
 	if (OrbitDuration == 0) {
-		UE_LOG(LogTemp, Warning, TEXT("Orbit duration is 0, Eccentricity is %f"), Eccentricity);
+		// UE_LOG(LogTemp, Warning, TEXT("Orbit duration is 0, Eccentricity is %f"), Eccentricity);
 		return 0;
 	}
 	// get angle from time after periapsis

@@ -71,4 +71,7 @@ public:
 	void PartClicked(UObject* Object);
 
 	void SetCraft(ACraft* Craft) const;
+
+	UFUNCTION(BlueprintCallable)
+	void TEST_FUNCTION(int i);
 };

@@ -10,6 +10,9 @@
  */
 class DELTAV_API ThumbnailGenerator
 {
+	TObjectPtr<UWorld> World;
+	TObjectPtr<UTextureRenderTarget2D> RenderTarget;
+
 public:
 	ThumbnailGenerator();
 	~ThumbnailGenerator();
@@ -18,9 +21,7 @@ public:
 	void GenerateThumbnails(TMap<FString, TObjectPtr<AActor>> FilePathToActors);
 
 private:
-	TObjectPtr<UWorld> CreateWorld();
-	void SpawnActors(TObjectPtr<UWorld> World);
-	void Render(TObjectPtr<UWorld> World);
-	void SaveImage(TObjectPtr<UWorld> World);
-	void DestroyWorld(TObjectPtr<UWorld> World);
+	bool Initialize();
+	bool Render(const FString& Path, TObjectPtr<AActor> Actor);
+	void Cleanup();
 };

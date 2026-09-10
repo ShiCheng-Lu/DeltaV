@@ -20,6 +20,8 @@
 #include "Common/Craft/StageManager.h"
 #include "Common/UI/StagesList.h"
 
+#include "Construction/ThumbnailGenerator.h"
+
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -92,4 +94,8 @@ void UConstructionHUD::SetCraft(ACraft* Craft) const {
 	UStagesList* StagesList = Cast<UStagesList>(StagesListWidget);
 	StagesList->Manager = Craft->StageManager;
 	StagesList->Reload();
+}
+
+void UConstructionHUD::TEST_FUNCTION(int i) {
+	ThumbnailGenerator().GenerateThumbnail(FString("Hello"), nullptr);
 }
