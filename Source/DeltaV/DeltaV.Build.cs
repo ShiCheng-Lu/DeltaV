@@ -14,14 +14,13 @@ public class DeltaV : ModuleRules
             "PhysicsCore",
             "Chaos", "ChaosVehicles", "ChaosModularVehicle", "ChaosModularVehicleEngine", "ChaosVehiclesCore", "ChaosVehiclesEngine",
 			"Niagara",
-			"ImageWrapper"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
-			"Slate", "SlateCore", "UMG", "Json", "GeometryFramework", "GeometryCore", "GeometryScriptingCore",
-            "Chaos", "ChaosVehicles", "PhysicsCore", "ChaosModularVehicle", "ChaosModularVehicleEngine",
-            "ChaosVehiclesCore",
-            "ChaosVehiclesEngine",
+			"Slate", "SlateCore", "UMG", "Json", "PhysicsCore",
+            "GeometryFramework", "GeometryCore", "GeometryScriptingCore",
+            "Chaos", "ChaosVehicles", "ChaosModularVehicle", "ChaosModularVehicleEngine", "ChaosVehiclesCore", "ChaosVehiclesEngine",
+            "ImageWrapper", "RenderCore",
         });
 
 		// Uncomment if you are using Slate UI

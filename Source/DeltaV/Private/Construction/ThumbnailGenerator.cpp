@@ -11,9 +11,9 @@
 #include "Engine/SceneCapture2D.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/StaticMeshActor.h"
+#include "EngineUtils.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Components/DirectionalLightComponent.h"
-
+#include "RenderingThread.h"
 
 ThumbnailGenerator::ThumbnailGenerator()
 {
@@ -23,64 +23,23 @@ ThumbnailGenerator::~ThumbnailGenerator()
 {
 }
 
-void ThumbnailGenerator::GenerateThumbnail(const FString& Path, TObjectPtr<AActor> Actor) {
-	return GenerateThumbnails({ {Path, Actor} });
+void ThumbnailGenerator::GenerateThumbnail(const FString& Path, FSpawnActor SpawnActor) {
+	return GenerateThumbnails({ Path }, SpawnActor);
 }
 
-static void LogObjectFlags(const UObject* Object, const TCHAR* Label)
-{
-	if (!Object)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s: nullptr"), Label);
+void ThumbnailGenerator::GenerateThumbnails(TArray<FString> Paths, FSpawnActor SpawnActor) {
+	if (!SpawnActor.IsBound()) {
+		UE_LOG(LogTemp, Warning, TEXT("Spawn function not bound"));
 		return;
 	}
 
-	const EObjectFlags Flags = Object->GetFlags();
-
-	UE_LOG(
-		LogTemp,
-		Warning,
-		TEXT("%s: %s | Flags=0x%08X"),
-		Label,
-		*Object->GetFullName(),
-		static_cast<uint32>(Flags)
-	);
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_Public:             %s"),
-		EnumHasAnyFlags(Flags, RF_Public) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_Standalone:         %s"),
-		EnumHasAnyFlags(Flags, RF_Standalone) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_Transient:          %s"),
-		EnumHasAnyFlags(Flags, RF_Transient) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_MarkAsRootSet:      %s"),
-		EnumHasAnyFlags(Flags, RF_MarkAsRootSet) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_BeginDestroyed:     %s"),
-		EnumHasAnyFlags(Flags, RF_BeginDestroyed) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_FinishDestroyed:    %s"),
-		EnumHasAnyFlags(Flags, RF_FinishDestroyed) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_NeedInitialization: %s"),
-		EnumHasAnyFlags(Flags, RF_NeedInitialization) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_NeedLoad:            %s"),
-		EnumHasAnyFlags(Flags, RF_NeedLoad) ? TEXT("YES") : TEXT("NO"));
-
-	UE_LOG(LogTemp, Warning, TEXT("  RF_NeedPostLoad:        %s"),
-		EnumHasAnyFlags(Flags, RF_NeedPostLoad) ? TEXT("YES") : TEXT("NO"));
-}
-
-void ThumbnailGenerator::GenerateThumbnails(TMap<FString, TObjectPtr<AActor>> FilePathToActors) {
 	if (!Initialize()) {
+		UE_LOG(LogTemp, Warning, TEXT("Initialize failed"));
 		return;
 	}
 
-	for (auto& [Path, Actor] : FilePathToActors) {
-		Render(Path, Actor);
+	for (auto& Path : Paths) {
+		Render(Path, SpawnActor);
 	}
 
 	Cleanup();
@@ -106,8 +65,6 @@ bool ThumbnailGenerator::Initialize() {
 
 		World = Cast<UWorld>(StaticDuplicateObjectEx(DuplicationsParams));
 
-		LogObjectFlags(World, TEXT("After Load"));
-
 		if (!World) {
 			return false;
 		}
@@ -123,7 +80,6 @@ bool ThumbnailGenerator::Initialize() {
 				.ShouldSimulatePhysics(false)
 			);
 		}
-		LogObjectFlags(World, TEXT("After InitWorld"));
 
 		if (!World->AreActorsInitialized()) {
 			World->InitializeActorsForPlay(FURL());
@@ -131,65 +87,17 @@ bool ThumbnailGenerator::Initialize() {
 		if (!World->HasBegunPlay()) {
 			World->BeginPlay();
 		}
-		UE_LOG(LogTemp, Warning,
-			TEXT("Runtime World: %s"),
-			World ? *World->GetFullName() : TEXT("NULL"));
-
-		UE_LOG(LogTemp, Warning,
-			TEXT("Runtime PersistentLevel: %s"),
-			World && World->PersistentLevel
-			? *World->PersistentLevel->GetFullName()
-			: TEXT("NULL"));
-
-		if (World && World->PersistentLevel)
+	}
+	if (!CaptureComponent) {
+		ASceneCapture2D* SceneCapture = nullptr;
+		for (TActorIterator<ASceneCapture2D> It(World); It; ++It)
 		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Runtime actor count: %d"),
-				World->PersistentLevel->Actors.Num()
-			);
-
-			for (AActor* Actor : World->PersistentLevel->Actors)
-			{
-				if (!Actor)
-				{
-					continue;
-				}
-
-				if (AStaticMeshActor* MeshActor = Cast<AStaticMeshActor>(Actor))
-				{
-					UStaticMeshComponent* Mesh = MeshActor->GetStaticMeshComponent();
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("StaticMeshActor: %s"), *GetNameSafe(MeshActor));
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  Mesh: %s"), *GetNameSafe(Mesh->GetStaticMesh()));
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  Registered: %d"), Mesh->IsRegistered());
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  Visible: %d"), Mesh->IsVisible());
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  HiddenInGame: %d"), Mesh->bHiddenInGame);
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  Bounds Origin: %s"),
-						*Mesh->Bounds.Origin.ToString());
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  Bounds Extent: %s"),
-						*Mesh->Bounds.BoxExtent.ToString());
-
-					UE_LOG(LogTemp, Warning,
-						TEXT("  CastShadow: %d"), Mesh->CastShadow);
-				}
-			}
+			CaptureComponent = It->GetCaptureComponent2D();
 		}
-		LogObjectFlags(World, TEXT("After BeginPlay"));
+		if (!CaptureComponent) {
+			UE_LOG(LogTemp, Warning, TEXT("No capture component found"));
+			return false;
+		}
 	}
 	if (!RenderTarget) {
 		RenderTarget = FAssetLibrary::LoadAsset<UTextureRenderTarget2D>(
@@ -203,8 +111,6 @@ bool ThumbnailGenerator::Initialize() {
 }
 
 void ThumbnailGenerator::Cleanup() {
-	
-
 	if (RenderTarget) {
 		RenderTarget = nullptr;
 	}
@@ -217,29 +123,61 @@ void ThumbnailGenerator::Cleanup() {
 	}
 	World->ClearFlags(RF_Standalone);
 
-	LogObjectFlags(World, TEXT("After CleanupWorld"));
-
 	World = nullptr;
 }
 
-bool ThumbnailGenerator::Render(const FString& Path, TObjectPtr<AActor> Actor) {
+bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 	// Spawn actor
+	if (!SpawnActor.IsBound()) {
+		UE_LOG(LogTemp, Warning, TEXT("Actor spawning method is unbound"));
+		return false;
+	}
+
+	TObjectPtr<AActor> Actor = SpawnActor.Execute(World, Path);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("Actor %s: BegunPlay=%d, ActorInitialized=%d"),
+		*Actor->GetName(),
+		Actor->HasActorBegunPlay(),
+		Actor->IsActorInitialized());
+	
+	TArray<UPrimitiveComponent*> Components;
+	Actor->GetComponents<UPrimitiveComponent>(Components);
+
+	for (UPrimitiveComponent* Component : Components)
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("%s: Registered=%d, Visible=%d, Bounds=%s"),
+			*Component->GetName(),
+			Component->IsRegistered(),
+			Component->IsVisible(),
+			*Component->Bounds.GetBox().ToString());
+
+		Component->Bounds.GetSphere().Center;
+		Component->Bounds.SphereRadius;
+	}
+
+	// Fit actor into the camera
+	float Radius, HalfHeight;
+	Actor->GetComponentsBoundingCylinder(Radius, HalfHeight);
+	double Scale = 500 / FMath::Max(Radius, HalfHeight);
+	Actor->SetActorScale3D(FVector(Scale));
+	UE_LOG(LogTemp, Warning, TEXT("Rendering is setting scale at %f, ship size: %f %f"), Scale, Radius, HalfHeight);
+
+	// Capture the scene
+	CaptureComponent->CaptureScene();
+	FlushRenderingCommands();
 
 	// Render and save image
 	FImage Image;
 	TArray64<uint8> PNGData;
 	if (FImageUtils::GetRenderTargetImage(RenderTarget, Image)) {
 		// Invert the alpha channel because SceneCapture captures in RGB with inv opacity in A
-		if (Image.Format == ERawImageFormat::RGBA16F)
-		{
-			FFloat16Color* Pixels =
-				reinterpret_cast<FFloat16Color*>(Image.RawData.GetData());
+		if (Image.Format == ERawImageFormat::RGBA16F) {
+			FFloat16Color* Pixels = reinterpret_cast<FFloat16Color*>(Image.RawData.GetData());
+			const int64 PixelCount = int64(Image.SizeX) * int64(Image.SizeY);
 
-			const int64 PixelCount =
-				int64(Image.SizeX) * int64(Image.SizeY);
-
-			for (int64 i = 0; i < PixelCount; ++i)
-			{
+			for (int64 i = 0; i < PixelCount; ++i) {
 				Pixels[i].A = 1.0f - Pixels[i].A;
 			}
 		}
@@ -247,10 +185,12 @@ bool ThumbnailGenerator::Render(const FString& Path, TObjectPtr<AActor> Actor) {
 		if (FImageUtils::CompressImage(PNGData, TEXT("png"), Image)) {
 			FString FilePath = FPaths::ProjectSavedDir() + TEXT("Temp/thumbnail.png");
 			FFileHelper::SaveArrayToFile(PNGData, *FilePath);
+			UE_LOG(LogTemp, Warning, TEXT("Saved image"));
 		}
 	}
 
 	// Cleanup actor
+	Actor->Destroy();
 
 	return true;
 }

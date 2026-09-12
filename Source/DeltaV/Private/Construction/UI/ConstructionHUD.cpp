@@ -21,6 +21,7 @@
 #include "Common/UI/StagesList.h"
 
 #include "Construction/ThumbnailGenerator.h"
+#include "Common/JsonUtil.h"
 
 UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -97,5 +98,14 @@ void UConstructionHUD::SetCraft(ACraft* Craft) const {
 }
 
 void UConstructionHUD::TEST_FUNCTION(int i) {
-	ThumbnailGenerator().GenerateThumbnail(FString("Hello"), nullptr);
+
+	FSpawnActor SpawnActor = FSpawnActor::CreateLambda([](UWorld* World, FString Path) {
+		FActorSpawnParameters Params = FActorSpawnParameters();
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		ACraft* Craft = World->SpawnActor<ACraft>();
+		Craft->FromJson(JsonUtil::ReadFile(FPaths::Combine(FPaths::ProjectContentDir(), "Crafts/car.json")));
+		return Craft;
+	});
+
+	ThumbnailGenerator().GenerateThumbnail(FString("Hello"), SpawnActor);
 }
