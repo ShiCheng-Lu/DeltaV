@@ -132,37 +132,38 @@ bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 		UE_LOG(LogTemp, Warning, TEXT("Actor spawning method is unbound"));
 		return false;
 	}
-
 	TObjectPtr<AActor> Actor = SpawnActor.Execute(World, Path);
 
-	UE_LOG(LogTemp, Warning,
-		TEXT("Actor %s: BegunPlay=%d, ActorInitialized=%d"),
-		*Actor->GetName(),
-		Actor->HasActorBegunPlay(),
-		Actor->IsActorInitialized());
-	
+	// Fit actor into the camera
+	FQuat CameraRotation = CaptureComponent->GetComponentQuat();
+	FQuat CameraInverse = CameraRotation.Inverse();
+
+	double MinX = INFINITY, MinY = INFINITY, MinZ = INFINITY;
+	double MaxY = -INFINITY, MaxZ = -INFINITY;
 	TArray<UPrimitiveComponent*> Components;
 	Actor->GetComponents<UPrimitiveComponent>(Components);
 
+	FVector ActorCenter = Actor->GetActorLocation();
 	for (UPrimitiveComponent* Component : Components)
 	{
-		UE_LOG(LogTemp, Warning,
-			TEXT("%s: Registered=%d, Visible=%d, Bounds=%s"),
-			*Component->GetName(),
-			Component->IsRegistered(),
-			Component->IsVisible(),
-			*Component->Bounds.GetBox().ToString());
+		FBox Box = Component->Bounds.GetBox();
+		FVector Vertices[8];
+		Box.GetVertices(Vertices);
 
-		Component->Bounds.GetSphere().Center;
-		Component->Bounds.SphereRadius;
+		for (FVector& Vertex : Vertices) {
+			FVector Projection = CameraInverse.RotateVector(Vertex - ActorCenter);
+			MinY = FMath::Min(MinY, Projection.Y);
+			MaxY = FMath::Max(MaxY, Projection.Y);
+			MinZ = FMath::Min(MinZ, Projection.Z);
+			MaxZ = FMath::Max(MaxZ, Projection.Z);
+			MinX = FMath::Min(MinX, Projection.X);
+		}
 	}
+	FVector CenterOffset = FVector(-MinX, -(MinY + MaxY) / 2, -(MinZ + MaxZ) / 2);
+	double Scale = 1000 / FMath::Max(MaxY - MinY, MaxZ - MinZ);
 
-	// Fit actor into the camera
-	float Radius, HalfHeight;
-	Actor->GetComponentsBoundingCylinder(Radius, HalfHeight);
-	double Scale = 500 / FMath::Max(Radius, HalfHeight);
+	Actor->SetActorLocation(CameraRotation.RotateVector(CenterOffset) * Scale);
 	Actor->SetActorScale3D(FVector(Scale));
-	UE_LOG(LogTemp, Warning, TEXT("Rendering is setting scale at %f, ship size: %f %f"), Scale, Radius, HalfHeight);
 
 	// Capture the scene
 	CaptureComponent->CaptureScene();

@@ -68,7 +68,7 @@
       },
       "tire_fr": {
         "type": "tire",
-        "location": [ 200, 150, -50 ],
+        "location": [ 200, 150, 0 ],
         "rotation": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ],
         "attached_at": 1,
@@ -78,7 +78,7 @@
       },
       "tire_rl": {
         "type": "tire",
-        "location": [ -200, -150, -50 ],
+        "location": [ -200, -1050, 0 ],
         "rotation": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ],
         "attached_at": 1,
