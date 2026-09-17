@@ -14,6 +14,9 @@ struct DELTAV_API FAssetLibrary
 {
 	GENERATED_BODY()
 
+private:
+	static TMap<FString, UTexture2D*> TextureCache;
+
 public:
 	FAssetLibrary();
 	~FAssetLibrary();
@@ -72,4 +75,8 @@ public:
 		}
 		throw "Blueprint class not found";
 	}
+
+	static UTexture2D* LoadTexture(const FString& Path);
+
+	static void ClearTextureCache(const FString& Path);
 };

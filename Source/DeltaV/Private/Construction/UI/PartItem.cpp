@@ -55,6 +55,6 @@ void UPartItem::Init(UObject* ListItemObject) {
 	PartLabel->SetText(FText::FromString(Data->Name));
 
 	// Load image
-	UTexture2D* ThumbnailTexture = FImageUtils::ImportFileAsTexture2D(ThumbnailFileForPath(Data->Name));
+	UTexture2D* ThumbnailTexture = FAssetLibrary::LoadTexture(ThumbnailFileForPath(Data->Name));
 	Thumbnail->SetBrushFromTexture(ThumbnailTexture);
 }
