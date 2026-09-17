@@ -8,6 +8,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 #include "Common/Craft.h"
 #include "Common/Part.h"
@@ -16,7 +17,11 @@
 #include "Construction/ConstructionController.h"
 #include "Construction/Constructor.h"
 #include "UObject/Interface.h"
+#include "ImageUtils.h"
 
+static FString ThumbnailFileForPath(FString PartName) {
+	return FPaths::Combine(FPaths::ProjectSavedDir(), "Parts", PartName + TEXT(".png"));
+}
 
 UPartItemData* UPartItemData::Create(FString Name) {
 	UPartItemData* Data = NewObject<UPartItemData>();
@@ -48,4 +53,8 @@ void UPartItem::Init(UObject* ListItemObject) {
 	}
 
 	PartLabel->SetText(FText::FromString(Data->Name));
+
+	// Load image
+	UTexture2D* ThumbnailTexture = FImageUtils::ImportFileAsTexture2D(ThumbnailFileForPath(Data->Name));
+	Thumbnail->SetBrushFromTexture(ThumbnailTexture);
 }

@@ -133,12 +133,15 @@ bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 		return false;
 	}
 	TObjectPtr<AActor> Actor = SpawnActor.Execute(World, Path);
+	if (!IsValid(Actor)) {
+		return false;
+	}
 
 	// Fit actor into the camera
 	FQuat CameraRotation = CaptureComponent->GetComponentQuat();
 	FQuat CameraInverse = CameraRotation.Inverse();
 
-	double MinX = INFINITY, MinY = INFINITY, MinZ = INFINITY;
+	double MinY = INFINITY, MinZ = INFINITY;
 	double MaxY = -INFINITY, MaxZ = -INFINITY;
 	TArray<UPrimitiveComponent*> Components;
 	Actor->GetComponents<UPrimitiveComponent>(Components);
@@ -156,10 +159,9 @@ bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 			MaxY = FMath::Max(MaxY, Projection.Y);
 			MinZ = FMath::Min(MinZ, Projection.Z);
 			MaxZ = FMath::Max(MaxZ, Projection.Z);
-			MinX = FMath::Min(MinX, Projection.X);
 		}
 	}
-	FVector CenterOffset = FVector(-MinX, -(MinY + MaxY) / 2, -(MinZ + MaxZ) / 2);
+	FVector CenterOffset = FVector(0, -(MinY + MaxY) / 2, -(MinZ + MaxZ) / 2);
 	double Scale = 1000 / FMath::Max(MaxY - MinY, MaxZ - MinZ);
 
 	Actor->SetActorLocation(CameraRotation.RotateVector(CenterOffset) * Scale);
@@ -184,7 +186,10 @@ bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Image format: %d"), Image.Format);
 		if (FImageUtils::CompressImage(PNGData, TEXT("png"), Image)) {
-			FString FilePath = FPaths::ProjectSavedDir() + TEXT("Temp/thumbnail.png");
+			FString FilePath = FPaths::ProjectSavedDir() + Path;
+			if (!Path.EndsWith(".png")) {
+				FilePath.Append(".png");
+			}
 			FFileHelper::SaveArrayToFile(PNGData, *FilePath);
 			UE_LOG(LogTemp, Warning, TEXT("Saved image"));
 		}
@@ -194,4 +199,8 @@ bool ThumbnailGenerator::Render(const FString& Path, FSpawnActor SpawnActor) {
 	Actor->Destroy();
 
 	return true;
+}
+
+FString ThumbnailGenerator::PathForPart(FString PartName) {
+	return FPaths::Combine(FPaths::ProjectSavedDir(), "Parts", PartName + TEXT(".png"));
 }

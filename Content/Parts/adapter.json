@@ -1,7 +1,7 @@
 {
   "name": "adapter",
   "mesh": "/Game/Shapes/GC/GC_adapter",
-  "type": "static",
+  "type": "geometry_collection",
   "attachment": [
     {
       "location": [-50, 0, 0]
