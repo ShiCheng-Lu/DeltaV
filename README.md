@@ -12,6 +12,7 @@ https://spencermortensen.com/articles/bezier-circle/
 
 Craft structure:
 
+```
 Craft (ModularVehiclePawn)
  |- ClusterUnionComponent
  |   |- part_0 (root)
@@ -25,11 +26,13 @@ Craft (ModularVehiclePawn)
  |   |- part_def_1
  |   |- part_def_2
  |       |- part_def_3
+```
 
 @self: Read this
 https://dev.epicgames.com/documentation/en-us/unreal-engine/chaos-modular-vehicles-quickstart
 
 Craft Json:
+```
 {
   "name": <craft name>,
   "location": [ 0, 0, 0 ],
@@ -83,6 +86,7 @@ Craft Json:
     }
   ]
 }
+```
 
 Creating a geoemtry collection: 
 uncheck "Generate Root Proxies", which disables the collection to use a invisible root as a wrapper, so collisions can be visualized
