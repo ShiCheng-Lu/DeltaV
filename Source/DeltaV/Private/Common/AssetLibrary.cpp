@@ -23,14 +23,22 @@ TSharedPtr<FJsonObject> FAssetLibrary::PartDefinition(FString PartName) {
 }
 
 UTexture2D* FAssetLibrary::LoadTexture(const FString& Path) {
+	UTexture2D* Texture;
 	if (TextureCache.Contains(Path)) {
-		return TextureCache.FindChecked(Path);
+		Texture = TextureCache.FindChecked(Path);
+		if (Texture) {
+			return Texture;
+		}
 	}
-	UTexture2D* Texture = FImageUtils::ImportFileAsTexture2D(Path);
+	Texture = FImageUtils::ImportFileAsTexture2D(Path);
 	TextureCache.Add({ Path, Texture });
 	return Texture;
 }
 
 void FAssetLibrary::ClearTextureCache(const FString& Path) {
 	TextureCache.Remove(Path);
+}
+
+void FAssetLibrary::ClearTextureCache() {
+	TextureCache.Reset();
 }

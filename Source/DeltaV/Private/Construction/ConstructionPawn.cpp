@@ -25,7 +25,7 @@ AConstructionPawn::AConstructionPawn()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SetActorEnableCollision(false);
-	SetCanBeDamaged(true);
+	SetCanBeDamaged(false);
 
 	DisableInput(nullptr);
 
@@ -42,14 +42,14 @@ AConstructionPawn::AConstructionPawn()
 	CollisionComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 
 	CollisionComponent->CanCharacterStepUpOn = ECB_No;
-	CollisionComponent->SetShouldUpdatePhysicsVolume(true);
+	CollisionComponent->SetShouldUpdatePhysicsVolume(false);
 	CollisionComponent->SetCanEverAffectNavigation(false);
-	CollisionComponent->bDynamicObstacle = true;
+	CollisionComponent->bDynamicObstacle = false;
 
 	RootComponent = CollisionComponent;
 
 	MovementComponent = CreateDefaultSubobject<UPawnMovementComponent, UFloatingPawnMovement>("AConstructionPawn::MovementComponentName");
-	MovementComponent->UpdatedComponent = CollisionComponent;
+	MovementComponent->UpdatedComponent = nullptr;
 }
 
 // Called when the game starts or when spawned
@@ -77,7 +77,6 @@ void AConstructionPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 }
 
 void AConstructionPawn::Move(const FInputActionValue& Movement) {
-	UE_LOG(LogTemp, Warning, TEXT("Moved: %s"), *Movement.ToString());
 	if (Controller) {
 		FRotator ControlSpaceRot = Controller->GetControlRotation();
 		ControlSpaceRot.Pitch = 0;
@@ -141,10 +140,10 @@ void AConstructionPawn::LookUpAtRate(float Rate)
 void AConstructionPawn::HandleClick(FKey Key) {
 
 	if (Key == EKeys::LeftMouseButton) {
-		UE_LOG(LogTemp, Warning, TEXT("AA Left clicked"));
+		UE_LOG(LogTemp, Warning, TEXT("Left clicked"));
 	}
 	else if (Key == EKeys::RightMouseButton) {
-		UE_LOG(LogTemp, Warning, TEXT("AA Right clicked"));
+		UE_LOG(LogTemp, Warning, TEXT("Right clicked"));
 	}
 	// AMyPlayerController* PlayerController = Cast<AMyPlayerController>(GetController());
 	// PlayerController->HandleClick(key);

@@ -23,7 +23,7 @@ public:
 	void GenerateThumbnail(const FString& Path, FSpawnActor SpawnActor);
 	void GenerateThumbnails(TArray<FString> Paths, FSpawnActor SpawnActor);
 
-	FString PathForPart(FString PartName);
+	static FString PathForPart(FString PartName);
 
 private:
 	bool Initialize();

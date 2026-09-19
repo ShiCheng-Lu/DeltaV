@@ -66,7 +66,6 @@ ACraft::ACraft(const FObjectInitializer& ObjectInitializer)
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Roll"), EModuleInputValueType::MAxis1D));
 		BaseSim->InputConfig.Add(FModuleInputSetup(FName("Yaw"), EModuleInputValueType::MAxis1D));
 	}
-
 }
 
 void ACraft::OnConstruction(const FTransform& Transform) {
@@ -187,7 +186,7 @@ void ACraft::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	
-	if (!IsValid(Orbit)) {
+	if (!IsValid(Orbit) || !IsValid(Orbit->CentralBody)) {
 		return;
 	}
 	
@@ -604,6 +603,8 @@ void ACraft::Rotate(FRotator Rotator, float Strength) {
 }
 
 void ACraft::SetPhysicsEnabled(bool enabled) {
+	ClusterUnionVehicleComponent->SetSimulatePhysics(enabled);
+
 	for (UActorComponent* Component : GetComponents())
 	{
 		if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Component))

@@ -79,4 +79,6 @@ public:
 	static UTexture2D* LoadTexture(const FString& Path);
 
 	static void ClearTextureCache(const FString& Path);
+
+	static void ClearTextureCache();
 };

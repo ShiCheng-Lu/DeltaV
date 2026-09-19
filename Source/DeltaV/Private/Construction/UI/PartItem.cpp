@@ -18,10 +18,7 @@
 #include "Construction/Constructor.h"
 #include "UObject/Interface.h"
 #include "ImageUtils.h"
-
-static FString ThumbnailFileForPath(FString PartName) {
-	return FPaths::Combine(FPaths::ProjectSavedDir(), "Parts", PartName + TEXT(".png"));
-}
+#include "Construction/ThumbnailGenerator.h"
 
 UPartItemData* UPartItemData::Create(FString Name) {
 	UPartItemData* Data = NewObject<UPartItemData>();
@@ -55,6 +52,6 @@ void UPartItem::Init(UObject* ListItemObject) {
 	PartLabel->SetText(FText::FromString(Data->Name));
 
 	// Load image
-	UTexture2D* ThumbnailTexture = FAssetLibrary::LoadTexture(ThumbnailFileForPath(Data->Name));
+	UTexture2D* ThumbnailTexture = FAssetLibrary::LoadTexture(ThumbnailGenerator::PathForPart(Data->Name));
 	Thumbnail->SetBrushFromTexture(ThumbnailTexture);
 }

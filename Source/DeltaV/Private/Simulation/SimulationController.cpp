@@ -122,6 +122,9 @@ void ASimulationController::UpdateRotation(float DeltaTime)
 }
 
 void ASimulationController::SetupInputComponent() {
+
+
+
 	Super::SetupInputComponent();
 
 	PlayerInput->AddAxisMapping(FInputAxisKeyMapping("Pitch", EKeys::W, -1.f));

@@ -29,10 +29,6 @@ UConstructionHUD::UConstructionHUD(const FObjectInitializer& ObjectInitializer)
 {
 }
 
-static FString ThumbnailFileForPath(FString PartName) {
-	return FPaths::Combine(FPaths::ProjectSavedDir(), "Parts", PartName + TEXT(".png"));
-}
-
 void UConstructionHUD::NativeOnInitialized() {
 	Super::NativeOnInitialized();
 	Controller = GetOwningPlayer<AConstructionController>();
@@ -49,11 +45,12 @@ void UConstructionHUD::NativeOnInitialized() {
 	TMap<FString, FString> NameToPath;
 	for (FString& FileName : FileNames) {
 		FString PartName = FPaths::GetBaseFilename(FileName);
-		Thumbnails.Push(ThumbnailFileForPath(PartName));
+		Thumbnails.Push(ThumbnailGenerator::PathForPart(PartName));
 	}
 
 	FSpawnActor SpawnActor = FSpawnActor::CreateLambda([](UWorld* World, FString Path) {
 		FString PartName = FPaths::GetBaseFilename(Path);
+		UE_LOG(LogTemp, Warning, TEXT("Rendering: %s"), *PartName);
 		UPartItemData* Data = UPartItemData::Create(PartName);
 
 		FActorSpawnParameters Params = FActorSpawnParameters();
